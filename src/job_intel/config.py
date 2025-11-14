@@ -16,5 +16,5 @@ MODELS_DIR = PROJECT_ROOT / "models"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 FIGURES_DIR = REPORTS_DIR / "figures"
 
-# Raw dataset file name (to update once you download it)
-RAW_JOBS_FILE = RAW_DATA_DIR / "data_scientist_jobs.csv"
+# Raw dataset file name
+RAW_JOBS_FILE = RAW_DATA_DIR / "DataScientist.csv"
