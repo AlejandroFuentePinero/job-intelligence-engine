@@ -17,4 +17,5 @@ REPORTS_DIR = PROJECT_ROOT / "reports"
 FIGURES_DIR = REPORTS_DIR / "figures"
 
 # Raw dataset file name
-RAW_JOBS_FILE = RAW_DATA_DIR / "DataScientist.csv"
+RAW_DS_JOBS_FILE = RAW_DATA_DIR / "DataScientist.csv"
+RAW_DA_JOBS_FILE = RAW_DATA_DIR / "DataAnalyst.csv"
