@@ -19,3 +19,6 @@ FIGURES_DIR = REPORTS_DIR / "figures"
 # Raw dataset file name
 RAW_DS_JOBS_FILE = RAW_DATA_DIR / "DataScientist.csv"
 RAW_DA_JOBS_FILE = RAW_DATA_DIR / "DataAnalyst.csv"
+
+# Interim dataset file name
+INTERIM_CLEANED_JOBS = INTERIM_DATA_DIR / "cleaned_jobs_interim.csv"

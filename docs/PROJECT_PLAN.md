@@ -22,6 +22,7 @@
 ### Stretch
 - **NER Skill Extraction (spaCy / transformer)**  
 - **Domain-Specific Embedding Fine-Tuning (SBERT)**
+- **Advanced Clustering / Hierarchical Titles / Multi-Label Titles** (Optional sophistication, Only valuable once the system has a functional baseline)
 
 ---
 
