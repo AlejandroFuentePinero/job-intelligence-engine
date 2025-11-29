@@ -22,3 +22,4 @@ RAW_DA_JOBS_FILE = RAW_DATA_DIR / "DataAnalyst.csv"
 
 # Interim dataset file name
 INTERIM_CLEANED_JOBS = INTERIM_DATA_DIR / "01_cleaned_jobs_interim.csv"
+INTERIM_NORM_TITLE = INTERIM_DATA_DIR / "03_job_titles_cleaned_domain_and_family.csv"

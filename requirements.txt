@@ -6,3 +6,5 @@ seaborn
 jupyter
 notebook
 joblib
+collections
+re
