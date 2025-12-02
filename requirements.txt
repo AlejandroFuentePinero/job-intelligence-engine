@@ -8,3 +8,6 @@ notebook
 joblib
 collections
 re
+sentence_transformers
+sklearn
+nltk
