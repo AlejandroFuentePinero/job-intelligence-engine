@@ -1,6 +1,7 @@
 core_basic = [
     "python",
     "python.",
+    "python3",
     "javascript",
     "js",
     "java",
@@ -63,6 +64,9 @@ de_pipe_basic = [
     "archiving",
     "backup",
     "batch processing",
+    "data cleaning",
+    "data transformation",
+    "data integration",
 ]
 de_pipe_intermediate = [
     "sqoop",
@@ -120,6 +124,10 @@ de_pipe_intermediate = [
     "benchmarks",
     "benchmarking",
     "tuning",
+    "data ingestion",
+    "data validation",
+    "automation scripts",
+    "power query",
 ]
 de_pipe_advanced = [
     "apache flink",
@@ -167,6 +175,10 @@ de_pipe_advanced = [
     "memory optimisation",
     "system tuning",
     "pipeline optimization",
+    "distributed data processing",
+    "data workflow orchestration",
+    "large-scale data pipelines",
+    "big data processing",
 ]
 ml_ai_basic = [
     "statistical modelling",
@@ -195,6 +207,8 @@ ml_ai_basic = [
     "artificial intelligence",
     "decision trees",
     "nltk",
+    "regression models",
+    "basic time series models",
 ]
 ml_ai_intermediate = [
     "recommender",
@@ -256,6 +270,9 @@ ml_ai_intermediate = [
     "forecasting",
     "tensorflow",
     "caret",
+    "predictive modeling",
+    "model evaluation",
+    "machine learning deployment",
 ]
 ml_ai_advanced = [
     "pytorch",
@@ -323,6 +340,12 @@ ml_ai_advanced = [
     "markov models",
     "optimization models",
     "chromadb",
+    "llm development",
+    "multi-agent llm systems",
+    "model quantization",
+    "inference optimization",
+    "agentic ai platforms",
+    "advanced statistical modelling",
 ]
 analytics_stats_basic = [
     "exploratory analysis",
@@ -370,6 +393,9 @@ analytics_stats_basic = [
     "tidyverse",
     "dplyr",
     "data.table",
+    "descriptive statistics",
+    "data quality assessment",
+    "data exploration",
 ]
 analytics_stats_intermediate = [
     "a b testing",
@@ -396,6 +422,9 @@ analytics_stats_intermediate = [
     "product experimentation",
     "customer journey modeling",
     "lift analysis",
+    "statistical analysis",
+    "statistical methods",
+    "cause-effect analysis",
 ]
 analytics_stats_advanced = [
     "sample size calculation",
@@ -425,6 +454,7 @@ bi_viz_basic = [
     "seaborn pairplot",
     "data studio",
     "powerpoint",
+    "reports",
 ]
 bi_viz_intermediate = [
     "shiny",
@@ -460,6 +490,7 @@ bi_viz_intermediate = [
     "self service analytics",
     "report automation",
     "storytelling with data",
+    "amplitude analytics",
 ]
 bi_viz_advanced = [
     "executive dashboards",
@@ -477,6 +508,7 @@ cloud_basic = [
     "oci",
     "ec2",
     "aws ec2",
+    "cloud certification",
 ]
 cloud_intermediate = [
     "docker",
@@ -539,6 +571,11 @@ cloud_advanced = [
     "aws glue",
     "aws athena",
     "aws cloudwatch",
+    "multi-gpu deployment",
+    "llm inference architectures",
+    "vllm",
+    "sglang",
+    "production llm services",
 ]
 db_storage_basic = [
     "csv",
@@ -550,6 +587,7 @@ db_storage_basic = [
     "sql.",
     "xml",
     "yaml",
+    "relational databases",
 ]
 db_storage_intermediate = [
     "athena",
@@ -591,6 +629,8 @@ db_storage_intermediate = [
     "tsql",
     "vertica",
     "wide-column databases",
+    "oltp systems",
+    "olap data warehouses",
 ]
 db_storage_advanced = [
     "columnar storage",
@@ -601,6 +641,9 @@ db_storage_advanced = [
     "join optimization",
     "query optimization",
     "window functions",
+    "on-chain data platforms",
+    "big data storage systems",
+    "big data storage",
 ]
 productivity_workflow_basic = [
     "pip",
@@ -621,6 +664,7 @@ productivity_workflow_basic = [
     "documentation best practices",
     "streamlining",
     "streamlined",
+    "google sheets",
 ]
 productivity_workflow_intermediate = [
     "strategic planning",
@@ -648,6 +692,8 @@ productivity_workflow_intermediate = [
     "scrum",
     "sdlc",
     "uat",
+    "remote collaboration tools",
+    "ai-assisted development",
 ]
 productivity_workflow_advanced = [
     "business process optimisation",
@@ -660,6 +706,8 @@ productivity_workflow_advanced = [
     "feature prioritization",
     "okr tracking",
     "data documentation",
+    "project documentation standards",
+    "cross-team workflow design",
 ]
 soft_core = [
     "coaching",
@@ -764,6 +812,10 @@ soft_core = [
     "experiment design thinking",
     "data intuition",
     "technical communication",
+    "team collaboration",
+    "ability to work independently",
+    "willingness to learn",
+    "continuous learning",
 ]
 soft_leadership = [
     "leadership",
@@ -789,6 +841,10 @@ soft_leadership = [
     "requirements analysis",
     "kanban",
     "agile",
+    "influencing skills",
+    "mentoring junior staff",
+    "driving data-driven decisions",
+    "ownership and accountability",
 ]
 domain_skills = [
     "crm",
@@ -896,6 +952,21 @@ domain_skills = [
     "talent development",
     "hr operations",
     "hr management",
+    "financial services",
+    "brokerage operations",
+    "fund settlement",
+    "reconciliation",
+    "private markets",
+    "blockchain",
+    "on-chain analytics",
+    "evm ecosystems",
+    "retail analytics",
+    "supermarket operations",
+    "public sector policy analysis",
+    "labour market analytics",
+    "insurance and membership analytics",
+    "small business fintech",
+    "invoicing and payments analytics",
 ]
 
 # Map each list name to (domain, level)
