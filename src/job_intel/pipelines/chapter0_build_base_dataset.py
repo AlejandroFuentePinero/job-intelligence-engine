@@ -19,6 +19,17 @@ from job_intel.features.text_cleaning import add_description_features
 from job_intel.features.domain import add_domain_from_lookup
 from job_intel.features.skill_extractor import extract_domain_level_flags
 
+DROP_COLUMNS = [
+    "Job Title",  # Only need the clean title to check for family and domain.
+    "job_title_for_skills",  # Already incorporated in title_plus_description if we want to check for skills
+    "job_title_raw",  # Intermediate strip of Job Title, not needed for checks
+    "Salary Estimate",  # Raw text; we trust the parsed salary features
+    "seniority_roman",  # Partial extraction from Roman numerals only
+    "seniority_title",  # Partial extraction from title only
+    "seniority_description",  # Partial extraction from description only
+    "state_hq",  # Noisy; we keep only the role location
+]
+
 
 def load_raw_jobs() -> pd.DataFrame:
     """Load raw Data Analyst and Data Scientist job CSVs and add a role_source column."""
@@ -39,7 +50,7 @@ def load_raw_jobs() -> pd.DataFrame:
     da["role_source"] = "data_analyst"
     ds["role_source"] = "data_scientist"
 
-    df = pd.concat([da, ds], axis=0, ignore_index=True)
+    df = pd.concat([ds, da], axis=0, ignore_index=True)
 
     # ----
     # EXTRA ADDED: Input true NAs
@@ -130,24 +141,44 @@ def add_skill_features(df: pd.DataFrame) -> pd.DataFrame:
     Use the existing skill_extractor to create skill flag columns.
 
     Assumes:
-        - df has 'job_title_base' and 'job_description_clean'.
+        - df has 'job_title_raw' and 'job_description_clean'.
         - job_intel.features.skill_extractor.extract_domain_level_flags(text)
           returns a dict of {skill_name: 0/1 or bool}.
     """
     df = df.copy()
 
     missing_cols = [
-        c for c in ["job_title_base", "job_description_clean"] if c not in df.columns
+        c for c in ["job_title_raw", "job_description_clean"] if c not in df.columns
     ]
     if missing_cols:
         raise ValueError(
             f"add_skill_features: missing required columns: {missing_cols}"
         )
 
-    df["title_plus_description"] = (
-        df["job_title_base"].astype(str) + " " + df["job_description_clean"].astype(str)
+    # 1) Build a *skills-friendly* title:
+    #    - start from RAW title
+    #    - lowercase
+    #    - normalise separators and basic punctuation
+    #    - DO NOT strip skills/noise_terms or seniority words
+    df["job_title_for_skills"] = (
+        df["job_title_raw"]
+        .fillna("")
+        .str.lower()
+        # basic separators → space
+        .str.replace(r"[-/|\\,]", " ", regex=True)
+        .str.replace(r"[()\[\]{}]", " ", regex=True)
+        # other punctuation → space (keep word chars, whitespace, + . # for things like c++ / .net)
+        .str.replace(r"[^\w\s+.#]", " ", regex=True)
     )
 
+    # 2) Combine this with the cleaned description
+    df["title_plus_description"] = (
+        df["job_title_for_skills"].astype(str)
+        + " "
+        + df["job_description_clean"].astype(str)
+    )
+
+    # 3) Extract skill flags
     df["skill_flags"] = df["title_plus_description"].apply(extract_domain_level_flags)
     features_df = pd.DataFrame(df["skill_flags"].tolist())
 
@@ -239,6 +270,32 @@ def build_chapter0_base_dataset(
     df = add_skill_features(df)
     if verbose:
         print("Added skill flag features.")
+
+    # -------------------------------------------------
+    # NEW BLOCK: NA handling (rows + Industry/Sector/Size)
+    # -------------------------------------------------
+    # 1) Drop rows with no description AND no salary
+    if "job_description_clean" in df.columns and "sal_mean" in df.columns:
+        mask_drop = df["job_description_clean"].isna() & df["sal_mean"].isna()
+        n_drop = int(mask_drop.sum())
+        if n_drop > 0 and verbose:
+            print(f"Dropping {n_drop} rows with no description AND no salary.")
+        df = df[~mask_drop].copy()
+
+    # 2) Fill missing Industry / Sector /Size with 'Unknown'
+    if "Industry" in df.columns:
+        df["Industry"] = df["Industry"].fillna("Unknown")
+    if "Sector" in df.columns:
+        df["Sector"] = df["Sector"].fillna("Unknown")
+    if "Size" in df.columns:
+        df["Size"] = df["Size"].fillna("Unknown")
+    # -------------------------------------------------
+
+    # Final column pruning
+    drop_cols = [c for c in DROP_COLUMNS if c in df.columns]
+    if drop_cols and verbose:
+        print(f"Dropping columns: {drop_cols}")
+    df = df.drop(columns=drop_cols)
 
     # Save (CSV only)
     if save:

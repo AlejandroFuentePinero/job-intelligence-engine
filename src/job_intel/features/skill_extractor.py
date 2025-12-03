@@ -8,6 +8,19 @@ for list_name, (domain, level) in skills_taxonomy.LIST_META.items():
     tokens = getattr(skills_taxonomy, list_name)
     TAXA_LEVEL_LISTS.setdefault((domain, level), tokens)
 
+"""
+The output will look something like this:
+
+    This is the master lookup; the foundation of the extractor
+
+{
+    ("core_programming", "basic"): ["python", "java", "sql", ...],
+    ("core_programming", "intermediate"): ["javascript", "c++", ...],
+    ("machine_learning", "intermediate"): ["pytorch", "tensorflow", ...],
+    ...
+}
+
+"""
 
 ALLOWED_SHORT_TOKENS = {"r"}  # maybe "c" later if we decide
 
@@ -25,6 +38,14 @@ def token_in_text(token: str, text: str) -> bool:
 
     pattern = rf"\b{re.escape(token)}\b"
     return re.search(pattern, text) is not None
+
+
+"""
+
+This function decides whether the word in the diccionary exist in the
+text we are extracting skills from
+
+"""
 
 
 def extract_domain_level_flags(text: str) -> dict:
@@ -53,6 +74,14 @@ def extract_domain_level_flags(text: str) -> dict:
                 break  # stop at first hit for this bucket
 
     return features
+
+
+"""
+This loops over the map above.
+    - Searches whether the token in each domain, level exist in the text
+    - If True, then we add a 1 to the feature dictionary. This will become the multi hot key later
+
+"""
 
 
 def explain_matches(text: str):

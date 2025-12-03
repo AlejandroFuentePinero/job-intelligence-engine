@@ -980,11 +980,12 @@ def combine_seniority(desc_val: str, title_val: str) -> str:
     Combine description-based and title-based seniority.
     Prefer description if not 'unknown', otherwise use title.
     """
-    if desc_val and desc_val != "unknown":
+    if desc_val != "unknown":
         return desc_val
-    if title_val and title_val != "unknown":
+    elif title_val != "unknown":
         return title_val
-    return "unknown"
+    else:
+        return "unknown"
 
 
 # ---------------------------------------------------------------------
