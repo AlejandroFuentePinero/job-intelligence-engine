@@ -7,6 +7,14 @@ from typing import Optional, Tuple
 import re
 import pandas as pd
 
+# Retrieve the function from the seniority.py file
+from job_intel.features.seniority import (
+    detect_seniority_from_title,
+    detect_seniority_from_description,
+    combine_seniority,
+)
+
+
 # ---------------------------------------------------------------------
 # 1. CONSTANTS / WORD LISTS
 # ---------------------------------------------------------------------
@@ -812,44 +820,6 @@ seniority_pattern = r"\b(" + "|".join(re.escape(t) for t in seniority_tokens) + 
 # ---------------------------------------------------------------------
 
 
-def detect_seniority(text: str) -> str:
-    """
-    Detect seniority from a free-text string (title or description).
-    Returns one of:
-        'principal', 'lead', 'senior', 'manager', 'mid',
-        'junior', 'executive', 'assistant', 'staff', 'supervisor',
-        or 'unknown' if nothing matches.
-    """
-    if not isinstance(text, str):
-        return "unknown"
-
-    x = text.lower()
-
-    # The order below is copied from your notebook logic
-    if any(k in x for k in principal):
-        return "principal"
-    if any(k in x for k in lead):
-        return "lead"
-    if any(k in x for k in senior):
-        return "senior"
-    if any(k in x for k in manager):
-        return "manager"
-    if any(k in x for k in mid):
-        return "mid"
-    if any(k in x for k in junior):
-        return "junior"
-    if any(k in x for k in executive):
-        return "executive"
-    if any(k in x for k in assistant):
-        return "assistant"
-    if any(k in x for k in staff):
-        return "staff"
-    if any(k in x for k in supervisor):
-        return "supervisor"
-
-    return "unknown"
-
-
 def clean_job_title(text: str) -> Tuple[Optional[str], Optional[str]]:
     """
     Clean a raw job title:
@@ -975,19 +945,6 @@ def collapse_family(family_str: str) -> str:
         return "other"
 
 
-def combine_seniority(desc_val: str, title_val: str) -> str:
-    """
-    Combine description-based and title-based seniority.
-    Prefer description if not 'unknown', otherwise use title.
-    """
-    if desc_val != "unknown":
-        return desc_val
-    elif title_val != "unknown":
-        return title_val
-    else:
-        return "unknown"
-
-
 # ---------------------------------------------------------------------
 # 3. PUBLIC ENTRYPOINT FOR PIPELINES
 # ---------------------------------------------------------------------
@@ -1027,7 +984,7 @@ def add_title_features(
         lambda row: (
             row["seniority_roman"]
             if row["seniority_roman"] is not None
-            else detect_seniority(row["job_title_raw"])
+            else detect_seniority_from_title(row["job_title_raw"])
         ),
         axis=1,
     )
@@ -1035,7 +992,7 @@ def add_title_features(
     # optional description-based seniority (Notebook 02 logic)
     if description_col is not None:
         df["seniority_description"] = (
-            df[description_col].fillna("").apply(detect_seniority)
+            df[description_col].fillna("").apply(detect_seniority_from_description)
         )
         df["seniority_combined"] = df.apply(
             lambda row: combine_seniority(

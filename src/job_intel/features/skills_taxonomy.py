@@ -425,6 +425,7 @@ analytics_stats_intermediate = [
     "statistical analysis",
     "statistical methods",
     "cause-effect analysis",
+    "anova",
 ]
 analytics_stats_advanced = [
     "sample size calculation",
@@ -694,6 +695,7 @@ productivity_workflow_intermediate = [
     "uat",
     "remote collaboration tools",
     "ai-assisted development",
+    "jira",
 ]
 productivity_workflow_advanced = [
     "business process optimisation",
