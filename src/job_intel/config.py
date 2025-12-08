@@ -27,3 +27,8 @@ INTERIM_NORM_TITLE = INTERIM_DATA_DIR / "03_job_titles_cleaned_domain_and_family
 # Chapter 0 processed dataset
 CH0_PROCESSED_JOBS_FILE = PROCESSED_DATA_DIR / "jobs_ch0.csv"
 CH0_DOMAIN_LOOKUP_FILE = INTERIM_DATA_DIR / "domain_lookup_ch0.csv"
+
+# Chapter 1 Model datasets
+
+CH1_PROCESSED_SALARY_MODEL_DF = PROCESSED_DATA_DIR / "salary_model_dfv01.csv"
+CH1_PROCESSED_SALARY_MODEL_PCA_DF = PROCESSED_DATA_DIR / "salary_model_dfv02_pca.csv"

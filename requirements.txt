@@ -11,3 +11,4 @@ re
 sentence_transformers
 sklearn
 nltk
+xgboost

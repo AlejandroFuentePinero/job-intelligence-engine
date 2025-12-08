@@ -10,16 +10,28 @@ import re
 
 principal = [
     r"\bprincipal\b",
+    r"\bstaff\b",
 ]
+
 
 executive = [
     r"\bchief\b",
     r"\bchief [a-z]+ officer\b",
+    r"\bceo\b",
+    r"\bcfo\b",
+    r"\bcoo\b",
+    r"\bcto\b",
+    r"\bcmo\b",
+    r"\bcdo\b",
+    r"\bcso\b",  # chief strategy, security, science, etc. – still exec
     r"\bvice president\b",
-    r"\bsvp\b",
     r"\bvp\b",
+    r"\bsvp\b",
     r"\bexecutive\b",
+    r"\bexecutive director\b",
+    r"\bmanaging director\b",
 ]
+
 
 assistant = [
     r"\bassistant\b",
@@ -33,26 +45,35 @@ supervisor = [
 lead = [
     r"\bteam lead\b",
     r"\btech lead\b",
-    r"\blead\b",  # safe: exact word, avoids 'leading', 'leadership'
+    r"\btechnical lead\b",
+    r"\bchapter lead\b",
+    r"\bpractice lead\b",
+    r"\blead\b",
     r"\bcoordinator\b",
 ]
+
 
 senior = [
     r"\bsenior\b",
     r"\bsr\b",
     r"\bsr\.\b",
+    r"\bsnr\b",
+    r"\bsnr\.\b",
 ]
+
 
 manager = [
     r"\bmanager\b",
+    r"\bmanagers\b",
     r"\bdirector\b",
     r"\bhead of\b",
     r"\bhead[- ]?[\w ]*department\b",
     r"\bofficer\b",
     r"\bavp\b",
-    # We intentionally DO NOT add raw "\bhead\b" or "\bvice\b"
-    # to avoid massive over-trigger from "ahead", "advice", etc.
+    r"\bpeople manager\b",
+    r"\bline manager\b",
 ]
+
 
 mid = [
     r"\bmid[- ]?level\b",
@@ -61,6 +82,7 @@ mid = [
     r"\bmid\b",
     r"\bmid level\b",
 ]
+
 
 junior = [
     r"\bjunior\b",
