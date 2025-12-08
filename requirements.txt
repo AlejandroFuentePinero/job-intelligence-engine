@@ -6,9 +6,6 @@ seaborn
 jupyter
 notebook
 joblib
-collections
-re
-sentence_transformers
-sklearn
 nltk
 xgboost
+sentence_transformers

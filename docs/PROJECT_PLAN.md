@@ -144,24 +144,8 @@ A separate embedding is redundant and confusing.
 Competitiveness is naturally computed from job-level scores.  
 A standalone model duplicates logic and dilutes narrative clarity.
 
-### ❌ Hiring Intensity as a Modelling Component
-**Why:**  
-Meaningless without temporal data.  
-Better treated as a simple descriptive dashboard panel only.
-
 ### ❌ Job Density Maps as Core Analysis
 **Why:**  
 Descriptive but not decision-driving.  
 Unnecessary for the individual-focused narrative.
-
-### ❌ Industry Opportunity Gap as a Predictive Model
-**Why:**  
-Without skill supply/demand temporal data, it can be misleading.  
-Works best as a visualization, not as a model.
-
-### ❌ Any Kind of Forecasting
-**Why:**  
-The dataset lacks timestamps.  
-Forecasting would be statistically dishonest and misleading.
-
 ---
