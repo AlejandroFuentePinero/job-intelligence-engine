@@ -46,7 +46,7 @@
   *Purpose:* Reveal system-level drivers of salary and skill demand.
 
 ### Stretch
-- **Quantile Regression for Salary Uncertainty**  
+- **Quantile Regression for Salary Uncertainty**  ⛔️
 - **Skill Value Ranking (city/sector/title-specific)**
 
 ---
