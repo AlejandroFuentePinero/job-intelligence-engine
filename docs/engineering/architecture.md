@@ -222,5 +222,67 @@ metrics = evaluate_salary_model(X_train, y_train, X_test, y_test)
 print(metrics)
 ```
 
-This evaluation layer ensures consistent data integrity checks 
-and stable model performance throughout the project lifecycle.
+---
+
+## 7.3 Chapter 1 — Skill Model Evaluation
+
+**File:** `skill_model_eval.py`  
+**Purpose:** Evaluate each LightGBM skill-requirement model and summarise performance, calibration, and feature importance.
+
+**Responsibilities:**
+- Auto-load the correct skill model from `models/{skill_name}_model.pkl`
+- Select the appropriate feature set for each target skill
+- Compute:
+  - prevalence (train/test)
+  - ROC AUC (train/test)
+  - PR AUC (train/test)
+  - Brier score (test)
+- Produce diagnostic plots:
+  - ROC curve  
+  - Precision–Recall curve  
+  - Calibration curve  
+  - Top feature importances
+- Return:
+  - metrics dictionary  
+  - tidy variable-importance DataFrame for aggregation
+
+**Usage Example:**
+```python
+from job_intel.evaluation.skill_model_eval import evaluate_skill_model
+
+metrics, var_imp = evaluate_skill_model(
+    response_name="core_programming__basic",
+    X_train=X_train,
+    y_train=y_train,
+    X_test=X_test,
+    y_test=y_test,
+    model=None,
+    show_plots=False,
+)
+
+## 7.4 Chapter 1 — Skill Probability Matrix Builder
+
+**File:** `skill_prob_matrix.py`  
+**Purpose:** Generate the full **job × skill probability matrix** by applying all trained LightGBM skill-requirement models to the processed job dataset.
+
+**Responsibilities:**
+- Load the processed Chapter 1 modelling dataset  
+- For each of the 27 skill groups:
+  - load the fitted model (`models/{skill}_model.pkl`)
+  - select the correct feature set (all features except the target skill)
+  - compute predicted probabilities for every job  
+- Assemble predictions into a unified probability matrix  
+  - columns: `{skill}_prob`  
+  - index: job rows  
+- Optionally save the matrix to `data/processed/skill_prob_matrix.csv`
+
+**Output:**  
+A dense probability representation of skill demand for every job, used in downstream components (job–skill embeddings, competitiveness modelling, recommendations, and user positioning).
+
+**Usage Example:**
+```python
+from job_intel.models.skill_prob_matrix import build_skill_probability_matrix
+prob_mat = build_skill_probability_matrix(jobs_df=df)
+
+
+

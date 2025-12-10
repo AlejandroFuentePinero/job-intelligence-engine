@@ -33,7 +33,7 @@
   *Model:* XGBoost / LightGBM  
   *Purpose:* Predict salary from title, skills, industry, geography, and company traits.
 
-- **Skill Requirement Models**  
+- **Skill Requirement Models**  ✅
   *Model:* Logistic regression or GBMs (per skill)  
   *Purpose:* Probability each skill is required for a job.
 

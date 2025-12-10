@@ -9,3 +9,4 @@ joblib
 nltk
 xgboost
 sentence_transformers
+lightgbm

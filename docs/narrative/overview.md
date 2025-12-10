@@ -32,7 +32,8 @@ Everything produced in Chapter 0 forms the fixed foundation for all downstream a
 
 ---
 
-# Chapter 1 — Salary Response Model (Narrative)
+# Chapter 1
+# Salary Response Model
 
 Chapter 1 begins the analytical phase of the project by modelling salary as a function of job attributes and skill patterns.
 
@@ -54,6 +55,77 @@ The model is wrapped in a clean prediction interface that will support:
 - job embeddings  
 - recommendation systems  
 - competitiveness scoring  
+
+
+---
+
+# 1.4 Skill Requirement Models & Probability Matrix
+
+Following the Salary Response Model, Chapter 1 adds a second analytical layer:  
+**estimating the probability that each of the 27 curated skill groups is required for a given job**.  
+This component provides the foundation for understanding labour-market skill structure and powers multiple downstream chapters.
+
+---
+
+## Skill Requirement Models (27 binary classifiers)
+
+Each skill group is modelled using a dedicated LightGBM binary classifier.  
+For a given target skill, the model uses the following predictors:
+
+- Company attributes (state, sector, size, ownership)  
+- Role attributes (seniority, enriched title representation)  
+- The remaining 26 skill indicators  
+
+Each model estimates:
+
+**P(skill_k = 1 | job features)**
+
+This setup captures how job attributes jointly influence the likelihood of a skill being required.  
+All models are evaluated consistently using ROC AUC, PR AUC, Brier score, calibration plots, and feature importance analysis.
+
+---
+
+## Evaluation Summary
+
+Across the 27 skill models, evaluation metrics were strong and stable:
+
+- **ROC AUC values** were consistently high, reflecting strong ranking performance across all skill groups.  
+- **PR AUC values** aligned closely with skill prevalence, performing particularly well for moderate-frequency skills and remaining appropriate for rarer ones.  
+- **Brier scores** indicated well-calibrated probability estimates, with error levels consistent with professional-grade binary classifiers.
+
+Feature importance distributions further showed coherent patterns:  
+company-level attributes (state, sector) and enriched title signals contributed meaningfully, while co-occurring skills provided much of the predictive structure.  
+This confirms that the system is learning real, interpretable relationships between job attributes and skill requirements.
+
+---
+
+## Skill Probability Matrix
+
+Once all models are trained, their outputs are assembled into a full job × skill probability matrix.  
+For every job in the dataset, the system computes:
+
+**P(skill_k = required | job attributes)**
+
+This matrix provides a continuous, smoothed representation of skill demand, correcting for noise and sparsity in the raw 0/1 indicators.  
+It becomes the **canonical skill layer** for future chapters, enabling:
+
+- job and skill embeddings  
+- skill-demand landscapes  
+- competency clustering  
+- personalised upskilling recommendations  
+- labour-market heatmaps  
+- downstream explainability analyses  
+
+The matrix is constructed deterministically from the stored models, ensuring reproducibility and consistency across analysis stages.
+
+---
+
+## Conclusion
+
+The skill requirement models and the resulting probability matrix complete the second modelling pillar of Chapter 1.  
+They offer a statistically sound, interpretable, and reusable representation of the labour-market skill structure, forming the analytical bridge to all subsequent chapters of the Job Intelligence Engine.
+
+
 
 ---
 

@@ -169,6 +169,95 @@ The Salary Response Model provides a stable and interpretable estimate of salary
 
 ---
 
+# **1.4 Skill Requirement Models & Probability Matrix**
+
+## **Methodology**
+To characterise the skill requirements underlying each job, Chapter 1 trains **27 independent LightGBM binary classifiers**, one per curated skill group. Each model estimates:
+
+\[
+P(\text{skill}_k = 1 \mid \text{job attributes})
+\]
+
+using the following predictors:
+
+- **Company attributes:** state, sector, size, ownership  
+- **Role attributes:** enriched title representation (`title_rich_code`), seniority  
+- **Remaining 26 skill indicators:** providing contextual co-occurrence information  
+
+Models were evaluated using **ROC AUC**, **PR AUC**, **Brier score**, **calibration curves**, and **feature importance**.  
+Model artefacts were saved and later used to construct a full **job × skill probability matrix**, which replaces sparse binary skill indicators with smooth, continuous estimates of skill demand.
+
+These models are *not* used for independent prediction but rather as a **collective inference engine** for estimating skill probabilities across all jobs.
+
+---
+
+## **Results**
+
+### **Overall Model Quality**
+Across the 27 skill classifiers, predictive performance was consistently strong:
+
+- **ROC AUC:** Typically **0.88–0.95** (min ≈ 0.80, max = 1.00)  
+- **PR AUC:** Mean **0.75**, median **0.77**, with many skills in the **0.85–0.95** range  
+- **Brier scores:** Concentrated around **0.06–0.12**, indicating well-calibrated probability outputs  
+
+These values are well above industry norms for imbalanced skill-prediction tasks, where PR AUC values of **0.60–0.75** are common.
+
+### **Skill-Level Insights**
+Performance varied in a pattern that aligns with the underlying data:
+
+- **High-prevalence skills** (e.g., core programming, BI basics, soft skills) achieved **PR AUC ≈ 0.90–1.00**, reflecting very strong separability and highly reliable probability ranking.  
+- **Moderate-prevalence skills** (e.g., analytics intermediate, cloud intermediate, ML basic/intermediate) scored **PR AUC ≈ 0.70–0.85**, consistent with stable, well-learned signals.  
+- **Low-prevalence “advanced” categories** produced **lower PR AUC values (≈ 0.35–0.55)** — an expected outcome driven by sparsity rather than modelling limitations.
+
+#### **Feature Importance
+Feature-importance profiles showed structured and interpretable patterns:  
+**title**, **state**, and **sector** consistently contributed the strongest signals, while co-occurring skills provided rich contextual information.
+
+In addition to model-performance metrics, each skill classifier provides a **feature-importance profile** summarising how strongly different predictors contribute to the model’s decisions.
+
+These values are **not measures of model quality**. They instead describe **how much each predictor helps the model reduce loss** (LightGBM uses split-gain–based importance). Larger values indicate more influential predictors.
+
+Across the 27 models:
+
+- **Enriched job title (`title_rich_code`)**, **state**, and **sector** consistently showed strong influence.  
+- **Co-occurring skills** also contributed meaningful information — especially within related domains (e.g., analytics → ML, cloud → data engineering).  
+- **Advanced/rare skills** relied more heavily on contextual predictors due to sparse positive examples.  
+- **Company size** and **ownership** contributed moderately but consistently across models.
+
+These importance values help explain *why* the models produce certain probability patterns, but they are **not indicators of model accuracy**. Only ROC AUC, PR AUC, and Brier score reflect performance.
+
+
+### **Probability Matrix**
+All models were applied to the full job dataset, generating a **6,162 × 27 continuous probability matrix**.  
+The matrix displayed:
+
+- clear separation between jobs that truly require a skill vs. those that do not  
+- realistic probability gradients instead of binary jumps  
+- coherent cross-skill correlations reflecting functional areas (e.g., analytics ↔ ML ↔ programming)  
+- well-calibrated output consistent with Brier-score diagnostics  
+
+This matrix significantly enhances analytical flexibility by enabling ranking, weighting, clustering, and distance-based comparisons between jobs in later chapters.
+
+---
+
+## **Conclusions**
+The skill requirement modelling stage produced a **robust, high-performing inference layer** that transforms noisy binary indicators into probabilistic representations of skill demand.  
+With strong ROC AUC, PR AUC, and calibration performance across most skills, the resulting probability matrix is suitable for:
+
+- job embeddings  
+- skill-demand and co-occurrence modelling  
+- labour-market structure analysis  
+- personalised upskilling and recommendation tools  
+- fairness and competitiveness metrics  
+
+Importantly, the **probability matrix is the only required output** from this stage, and all artefacts (models + matrix builder) are now fully reusable, deterministic, and integrated into the project architecture.
+
+
+---
+
+
+---
+
 # Current Status & Next Steps
 
 ## Completed
