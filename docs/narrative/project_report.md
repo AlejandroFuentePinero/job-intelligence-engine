@@ -1,6 +1,6 @@
 # Job Intelligence Engine — Project Report  
 ## Chapters 0–1 (Technical Summary)
-
+Date: 2025-12-11
 ---
 
 # Chapter 0 — Data Acquisition, Cleaning & Feature Foundation
@@ -252,6 +252,97 @@ With strong ROC AUC, PR AUC, and calibration performance across most skills, the
 
 Importantly, the **probability matrix is the only required output** from this stage, and all artefacts (models + matrix builder) are now fully reusable, deterministic, and integrated into the project architecture.
 
+
+---
+
+# **1.5 Salary Fairness Analysis (Residual Diagnostics Across Categorical Job Attributes)**
+
+## **Methodology**
+
+Following the Salary Response Model, residuals were computed as:
+
+\[
+\text{residual} = \text{observed salary} - \text{predicted salary}
+\]
+
+These residuals quantify whether a job pays **above** or **below** what the model expects after adjusting for all predictors (job family, seniority, skills via PCA, sector, state, size, ownership).  
+Fairness was assessed by grouping residuals across six core categorical dimensions:
+
+- **State (location)**  
+- **Sector**  
+- **Job title family (enriched title representation)**  
+- **Company size**  
+- **Ownership type**  
+- **Seniority level**
+
+For each category, we computed:
+
+- Mean residual  
+- Median residual  
+- Record count  
+- Size-weighted residual mean  
+- Sorted bar plots (unweighted and weighted)
+
+Each category-specific summary was exported as an individual CSV file (e.g., `state_fairness.csv`, `sector_fairness.csv`), and all plots were saved in the reporting directory for interpretability.
+
+---
+
+## **Results**
+
+### **Location (State)**
+States exhibited clear structural differences even after controlling for job and skill attributes.  
+High-cost, high-demand markets such as California and New York showed **positive residuals**, indicating above-expectation pay. Several southern and midwestern states consistently displayed **negative deviations**, reflecting lower-than-expected compensation relative to their job mix.
+
+### **Sector**
+Sectors with rapid technological evolution and strong skill demands — notably **Information Technology**, **Biotech/Pharma**, and **Energy** — paid well above expectation.  
+Lower-margin or stable sectors such as **Education**, **Nonprofit**, **Food Services**, and **Business Services** showed substantial negative deviations.  
+This pattern reflects the premium associated with technical dynamism and innovation intensity.
+
+### **Job Family (Enriched Title)**
+A clear hierarchy emerged among data roles:
+
+- **ML/AI data scientists** showed the strongest positive deviations  
+- **General data scientists** and specialist scientist roles also overperformed expectations  
+- **Data engineers** clustered near neutral  
+- **Data analysts** consistently underperformed expectations across domains  
+
+This structure aligns with broad labour-market trends in technical depth and market scarcity.
+
+### **Company Size**
+Large organisations (**10,000+ employees**) systematically paid above model expectations.  
+Medium-sized companies were near neutral to mildly positive, while smaller companies underpaid relative to predictions.  
+This reflects stronger salary capacity and competitive pressure in larger firms.
+
+### **Ownership Type**
+**Public companies** displayed strong positive deviations, followed by **government roles** with moderate premiums.  
+**Private-sector roles** underperformed expectations, and **nonprofits** consistently exhibited the lowest salary residuals.  
+Ownership structure is therefore a major determinant of compensation behaviour.
+
+### **Seniority**
+Residuals aligned cleanly with responsibility level:
+
+- **Principal**, **manager**, and **senior** roles paid above expectation  
+- **Mid-level**, **lead**, and **junior** roles paid below expectation  
+- **Assistant/executive** roles hovered near neutrality  
+
+This confirms that hierarchical position drives systematic pay differences beyond what is captured by title and skills alone.
+
+---
+
+## **Conclusions**
+
+The fairness analysis provides a transparent, model-adjusted view of compensation behaviour across major job attributes.  
+Across all six dimensions, consistent structural patterns emerged:
+
+- Competitive, skill-intensive sectors and large organisations pay above expectation  
+- Analyst-level roles, smaller companies, and nonprofit organisations underpay  
+- Salary deviations follow coherent geographic, sectoral, and organisational gradients  
+- Seniority and job family strongly influence unexplained salary variation  
+- Positive residuals cluster around high-skill, high-demand, and innovation-driven job types  
+
+These insights form a critical interpretability layer for the Job Intelligence Engine, validating model behaviour and providing a foundation for upcoming components — including SHAP/PDP/ICE explainability, competitiveness scoring, and recommendation design.
+
+---
 
 ---
 

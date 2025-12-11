@@ -20,9 +20,9 @@
   *Purpose:* Convert job descriptions into multi-hot skill vectors.
 
 ### Stretch
-- **NER Skill Extraction (spaCy / transformer)** ⏭️ 
+- **NER Skill Extraction (spaCy / transformer)** ⏭️ (END OF PROJECT IMPROVEMENT)
 - **Domain-Specific Embedding Fine-Tuning (SBERT)** ✅
-- **Advanced Clustering / Hierarchical Titles / Multi-Label Titles** (Optional sophistication, Only valuable once the system has a functional baseline) ⏭️ 
+- **Advanced Clustering / Hierarchical Titles / Multi-Label Titles** (Optional sophistication, Only valuable once the system has a functional baseline) ⏭️ (END OF PROJECT IMPROVEMENT)
 
 ---
 
@@ -37,7 +37,7 @@
   *Model:* Logistic regression or GBMs (per skill)  
   *Purpose:* Probability each skill is required for a job.
 
-- **Salary Fairness Analysis**  
+- **Salary Fairness Analysis**  ✅
   *Model:* residual analysis  
   *Purpose:* Identify over/underpaying cities, sectors, and job families.
 
@@ -45,9 +45,11 @@
   *Tools:* SHAP, PDP, ICE  
   *Purpose:* Reveal system-level drivers of salary and skill demand.
 
-### Stretch
-- **Quantile Regression for Salary Uncertainty**  ⛔️
 - **Skill Value Ranking (city/sector/title-specific)**
+
+### Stretch
+- **Quantile Regression for Salary Uncertainty**  ⛔️ (NOT NEEDED - SALARY MODEL QUITE UNCERTAIN ALREADY)
+
 
 ---
 

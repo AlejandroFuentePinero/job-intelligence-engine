@@ -1,6 +1,6 @@
 # Job Intelligence Engine — Project Overview  
 Narrative summary of Chapter 0 and the Salary Response Model of Chapter 1  
-Date: 2025-12-09
+Date: 2025-12-11
 
 The Job Intelligence Engine converts unstructured job postings into a structured analytical system.  
 Its goal is to understand how job titles, skills, industries, and companies shape the labour market, beginning with salary prediction.  
@@ -55,6 +55,29 @@ The model is wrapped in a clean prediction interface that will support:
 - job embeddings  
 - recommendation systems  
 - competitiveness scoring  
+
+---
+
+# 1.3 Salary Fairness Analysis
+
+A key interpretability component of Chapter 1 is the fairness analysis, which examines how salary residuals vary across major categorical job attributes.  
+Using the fitted Salary Response Model, residuals (observed minus predicted salary) are summarised for each category within:
+
+- Location (state)  
+- Sector  
+- Job title (enriched title representation)  
+- Company size  
+- Ownership type  
+- Seniority level  
+
+For every feature, we compute mean residuals, median residuals, counts, and size-weighted residual means.  
+These summaries reveal which groups tend to pay above or below model expectations once all other variables have been accounted for.  
+Bar plots provide a visual comparison, and each feature-level table is exported as a separate CSV for modular analysis.  
+
+The fairness results serve as a descriptive diagnostic of structural pay patterns:  
+they highlight consistent over- and under-payment trends across the market, informed by the model’s learned structure rather than raw salary averages.
+
+---
 
 
 ---
