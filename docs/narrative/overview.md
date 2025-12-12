@@ -149,6 +149,19 @@ The skill requirement models and the resulting probability matrix complete the s
 They offer a statistically sound, interpretable, and reusable representation of the labour-market skill structure, forming the analytical bridge to all subsequent chapters of the Job Intelligence Engine.
 
 
+---
+
+# 1.2 Salary Model Explainability (SHAP)
+
+In addition to predictive accuracy and fairness diagnostics, Chapter 1 includes a dedicated explainability analysis using SHAP (SHapley Additive exPlanations) to understand how the Salary Response Model constructs its predictions.
+
+SHAP decomposes each predicted salary into additive contributions from individual features, revealing which job attributes systematically increase or decrease predicted pay. This analysis shows that salary predictions are driven primarily by **structural labour-market factors**—notably enriched job title, geographic location, sector, and company size—while skills influence salary largely through **threshold and gatekeeping effects** rather than smooth marginal gains.
+
+The first skill principal components capture baseline technical requirements that prevent strong salary penalties when met, whereas later components contribute little incremental information once role structure is accounted for. Several categorical variables, such as seniority, exhibit near-zero SHAP impact, indicating that their effects are already absorbed by higher-resolution features like title richness and skill composition.
+
+Importantly, the SHAP analysis complements the fairness analysis by addressing a different question: it explains **how the model values jobs in the market**, while fairness analysis evaluates **whether observed salaries systematically deviate from those expectations**. Together, these components provide a coherent and interpretable view of both salary structure and equity within the Job Intelligence Engine.
+
+---
 
 ---
 

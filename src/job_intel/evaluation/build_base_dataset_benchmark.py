@@ -106,7 +106,7 @@ def benchmark_ch0_dataset(show_plots: bool = True) -> pd.DataFrame:
     """
 
     # Lazy import to avoid circular dep on import
-    from job_intel.pipelines.chapter0_build_base_dataset import (
+    from src.job_intel.pipelines.chapter0_build_base_dataset import (
         build_chapter0_base_dataset,
     )
 

@@ -8,7 +8,7 @@ import re
 import pandas as pd
 
 # Retrieve the function from the seniority.py file
-from job_intel.features.seniority import (
+from src.job_intel.features.seniority import (
     detect_seniority_from_title,
     detect_seniority_from_description,
     combine_seniority,

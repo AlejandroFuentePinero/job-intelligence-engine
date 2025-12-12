@@ -346,6 +346,121 @@ These insights form a critical interpretability layer for the Job Intelligence E
 
 ---
 
+# **1.6 Salary Model Explainability (SHAP Analysis)**
+
+## **Overview**
+To complement predictive performance and residual-based fairness diagnostics, Chapter 1 includes a comprehensive explainability analysis using **SHAP (SHapley Additive exPlanations)**.  
+This component explains **how the Salary Response Model constructs its predictions**, decomposing each predicted salary into additive contributions from individual job attributes and skill dimensions.
+
+Whereas the fairness analysis examines *deviations from model expectations* (residuals), SHAP focuses on *the internal valuation logic of the model itself*. Together, these approaches provide a complete interpretability framework: one describing **market valuation mechanisms**, the other identifying **systematic departures from those valuations**.
+
+---
+
+## **Methodology**
+
+SHAP values were computed for the final Salary Response Model (XGBoost v4) using the full training dataset.  
+For each observation, SHAP assigns a signed contribution to every predictor such that the sum of all feature contributions equals the model’s predicted salary relative to a baseline expectation.
+
+The analysis covered all **16 predictors** used by the model:
+
+- **10 skill principal components** derived from PCA  
+- **6 categorical job attributes**:  
+  company size, sector, state, ownership, enriched job title, and seniority  
+
+Both **global** (aggregate importance) and **local** (feature-wise dependence) analyses were conducted.  
+All plots were generated deterministically and saved to the project’s reporting directory for reproducibility.
+
+---
+
+## **Global SHAP Results**
+
+Global SHAP importance revealed that **structural labour-market features dominate salary predictions**.  
+Enriched job title, geographic location (state), sector, and company size consistently exhibited the largest absolute SHAP values, indicating that they account for the majority of explainable salary variation.
+
+Skill composition, represented through PCA components, played a **secondary but structured role**.  
+The first few components captured baseline technical requirements that prevent strong salary penalties when unmet, while later components contributed little incremental information.  
+Several predictors (including seniority and multiple skill PCs) showed near-zero global SHAP impact, indicating redundancy rather than irrelevance.
+
+Overall, the global SHAP profile confirms that the model primarily learns **market structure and role positioning**, with skills shaping outcomes within those structures rather than defining them outright.
+
+---
+
+## **Local SHAP Interpretation — Skill Components**
+
+### **Skill_PC1**
+PC1 captures foundational technical infrastructure skills (pipelines, databases, core programming, cloud).  
+Its SHAP dependence exhibits a strong **threshold effect**, where low values incur a large salary penalty, but contributions flatten once a baseline is reached.  
+This component functions as a **gatekeeper**, ensuring minimum technical competence rather than differentiating high salaries.
+
+### **Skill_PC2**
+PC2 loads on analytical, BI, and softer quantitative skills.  
+Higher values are associated with **negative SHAP contributions**, reflecting a shift toward analyst-oriented roles with systematically lower pay.  
+This component captures **role-type divergence**, not skill deficiency.
+
+### **Skill_PC3**
+PC3 is dominated by ML/AI and advanced modelling skills.  
+Its SHAP values show discrete positive jumps rather than smooth gradients, indicating that ML intensity is rewarded once it crosses identifiable thresholds.  
+This reflects market recognition of specialised modelling roles.
+
+### **Skill_PC4**
+PC4 mixes workflow, coordination, and intermediate infrastructure skills.  
+Its SHAP pattern is bidirectional, with modest penalties at low values and limited premiums at higher values.  
+This suggests contextual value dependent on accompanying technical depth.
+
+### **Skill_PC5 – Skill_PC10**
+These components exhibit **near-zero or highly localised SHAP effects**.  
+They capture niche or redundant variation that does not systematically influence salary once higher-order structure is accounted for.  
+For interpretation purposes, they can be treated as non-influential.
+
+---
+
+## **Local SHAP Interpretation — Categorical Attributes**
+
+### **Job Title (Enriched Representation)**
+Job title is the **single strongest categorical driver** of salary predictions.  
+ML- and AI-explicit titles receive large positive contributions, while analyst-oriented and generic titles are strongly penalised.  
+Titles act as compressed signals of responsibility, specialisation, and market positioning.
+
+### **State (Location)**
+Geographic location exerts extremely large effects, with California and New York showing substantial salary premiums and most other states incurring penalties.  
+The magnitude of these effects exceeds those of individual skill components.  
+State captures persistent regional wage regimes rather than marginal contextual variation.
+
+### **Sector**
+Sector displays one of the widest SHAP spreads among predictors.  
+Technology- and innovation-intensive sectors command strong premiums, while education, nonprofit, and service-oriented sectors show deep penalties.  
+This reflects industry-level pay norms independent of role composition.
+
+### **Company Size**
+Company size exhibits a clear monotonic pattern: large organisations provide salary premiums, while small firms impose penalties.  
+The asymmetry of this effect suggests institutional pay capacity rather than skill differences.  
+Size acts as a structural salary scaler.
+
+### **Ownership**
+Ownership type contributes modest but interpretable effects.  
+Nonprofit organisations consistently impose a strong salary penalty, while public, private, and government roles cluster near neutrality.  
+Ownership primarily reflects institutional compensation constraints.
+
+### **Seniority**
+Seniority shows **near-zero SHAP contribution** once other features are included.  
+Its influence is fully absorbed by enriched job title and skill composition, rendering it redundant in the presence of higher-resolution predictors.  
+This indicates successful feature hierarchisation rather than model omission.
+
+---
+
+## **Conclusions**
+
+The SHAP analysis demonstrates that salary predictions in the Job Intelligence Engine are governed primarily by **structural labour-market mechanisms** rather than fine-grained skill variation.  
+Skills matter, but largely through threshold effects that enable access to higher-paying role classes rather than through continuous marginal returns.
+
+Crucially, SHAP explains *how the market prices jobs*, not whether those prices are equitable.  
+When paired with residual-based fairness analysis, the system cleanly separates **market valuation** from **potential inequity**, avoiding conceptual conflation.
+
+This explainability layer provides transparency, interpretability, and theoretical grounding for all downstream components of the Job Intelligence Engine, including competitiveness scoring, job recommendations, and career-path simulation.
+
+---
+
+
 
 ---
 

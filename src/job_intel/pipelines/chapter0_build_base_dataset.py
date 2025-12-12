@@ -7,17 +7,17 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 
-from job_intel.config import (
+from src.job_intel.config import (
     RAW_DA_JOBS_FILE,
     RAW_DS_JOBS_FILE,
     CH0_PROCESSED_JOBS_FILE,
     CH0_DOMAIN_LOOKUP_FILE,
 )
-from job_intel.features.titles import add_title_features
-from job_intel.features.salary import add_salary_features
-from job_intel.features.text_cleaning import add_description_features
-from job_intel.features.domain import add_domain_from_lookup
-from job_intel.features.skill_extractor import extract_domain_level_flags
+from src.job_intel.features.titles import add_title_features
+from src.job_intel.features.salary import add_salary_features
+from src.job_intel.features.text_cleaning import add_description_features
+from src.job_intel.features.domain import add_domain_from_lookup
+from src.job_intel.features.skill_extractor import extract_domain_level_flags
 
 DROP_COLUMNS = [
     "Job Title",  # Only need the clean title to check for family and domain.
