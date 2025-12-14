@@ -1,6 +1,6 @@
 # Job Intelligence Engine — Project Overview  
 Narrative summary of Chapter 0 and the Salary Response Model of Chapter 1  
-Date: 2025-12-11
+Date: 2025-12-14
 
 The Job Intelligence Engine converts unstructured job postings into a structured analytical system.  
 Its goal is to understand how job titles, skills, industries, and companies shape the labour market, beginning with salary prediction.  
@@ -151,17 +151,19 @@ They offer a statistically sound, interpretable, and reusable representation of 
 
 ---
 
-# 1.2 Salary Model Explainability (SHAP)
 
-In addition to predictive accuracy and fairness diagnostics, Chapter 1 includes a dedicated explainability analysis using SHAP (SHapley Additive exPlanations) to understand how the Salary Response Model constructs its predictions.
+# 1.2 Salary Model Explainability (SHAP, PDP & ICE)
 
-SHAP decomposes each predicted salary into additive contributions from individual features, revealing which job attributes systematically increase or decrease predicted pay. This analysis shows that salary predictions are driven primarily by **structural labour-market factors**—notably enriched job title, geographic location, sector, and company size—while skills influence salary largely through **threshold and gatekeeping effects** rather than smooth marginal gains.
+In addition to predictive accuracy and fairness diagnostics, Chapter 1 includes a dedicated explainability analysis to understand how the Salary Response Model constructs its predictions. Three complementary tools are used: **SHAP** for feature attribution, **Partial Dependence Plots (PDP)** for average marginal response shapes, and **Individual Conditional Expectation (ICE)** for assessing heterogeneity around those averages.
 
-The first skill principal components capture baseline technical requirements that prevent strong salary penalties when met, whereas later components contribute little incremental information once role structure is accounted for. Several categorical variables, such as seniority, exhibit near-zero SHAP impact, indicating that their effects are already absorbed by higher-resolution features like title richness and skill composition.
+SHAP (SHapley Additive exPlanations) decomposes each predicted salary into additive contributions from individual features, revealing which job attributes systematically increase or decrease predicted pay. The SHAP analysis shows that salary predictions are driven primarily by **structural labour-market factors**—notably enriched job title, geographic location, sector, and company characteristics—while skill composition influences predictions mainly through **threshold-like effects** rather than smooth marginal gains. Several categorical variables, such as explicit seniority encoding, exhibit near-zero SHAP impact, indicating that their information is largely absorbed by higher-resolution features such as enriched title representation and aggregated skill structure.
 
-Importantly, the SHAP analysis complements the fairness analysis by addressing a different question: it explains **how the model values jobs in the market**, while fairness analysis evaluates **whether observed salaries systematically deviate from those expectations**. Together, these components provide a coherent and interpretable view of both salary structure and equity within the Job Intelligence Engine.
+To complement SHAP, PDPs are used to characterise the **average functional relationship** between selected continuous skill dimensions and predicted salary. PDPs are computed by fixing a skill principal component to a sequence of values within its central empirical range and averaging model predictions across all observed job contexts. The resulting curves exhibit stepwise behaviour and saturation effects, consistent with the split-based structure of the XGBoost model and closely aligned with the dependence patterns observed in SHAP analyses.
 
----
+ICE analysis extends this perspective by examining **job-level response trajectories** around the PDP averages. Using a subsample of jobs, ICE curves are computed by varying a single skill component across the same grid of values while holding all other job attributes fixed at their observed levels. By centring predictions relative to a baseline skill value, ICE isolates the marginal effect of skill variation and removes dominant baseline salary differences across jobs. The resulting curves show limited divergence and largely parallel trajectories, indicating minimal interaction-driven heterogeneity and confirming that PDPs provide a faithful summary of the model’s global behaviour.
+
+Taken together, SHAP, PDP, and ICE provide a coherent and internally consistent explanation of the Salary Response Model. SHAP identifies **which features matter and in which direction**, PDPs describe **how predicted salary changes on average** as skill dimensions vary, and ICE validates that these average relationships are **stable across job contexts**. All three analyses are explicitly descriptive, characterising model-implied labour-market structure rather than making causal claims about individual skills or roles.
+
 
 ---
 

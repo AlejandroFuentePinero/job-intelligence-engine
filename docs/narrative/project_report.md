@@ -459,6 +459,62 @@ When paired with residual-based fairness analysis, the system cleanly separates 
 This explainability layer provides transparency, interpretability, and theoretical grounding for all downstream components of the Job Intelligence Engine, including competitiveness scoring, job recommendations, and career-path simulation.
 
 ---
+# **1.7 Salary Model Explainability (Partial Dependence & ICE Analysis)**
+
+## **Overview**
+Following SHAP-based attribution, Chapter 1 adds **Partial Dependence Plots (PDP)** and **Individual Conditional Expectation (ICE)** as complementary explainability tools.  
+Whereas SHAP identifies *which features contribute to predictions and in which direction*, PDP and ICE characterise **how the model responds to changes in selected features**, both on average and at the individual-job level.
+
+This analysis is explicitly scoped as a **shape and stability diagnostic**, not a reassessment of feature importance or a test of causal effects.
+
+---
+
+## **Methodology**
+
+PDP and ICE analyses were conducted for the **continuous skill PCA components** that exhibited non-negligible signal in the SHAP analysis:  
+`skill_PC1`, `skill_PC2`, `skill_PC3`, and `skill_PC8`.
+
+For each component, a grid of values was defined over the **central empirical support** of the data (5th–95th percentile), using 25 evenly spaced points.
+
+### **Partial Dependence Plots (PDP)**
+At each grid value \(v\), the target component was fixed to \(v\) across all observations, while all other model inputs (categorical attributes and remaining skill components) were left unchanged. The trained Salary Response Model was then used to generate predictions for this counterfactual dataset, and the **mean predicted salary** across all observations was recorded:
+
+\[
+\text{PDP}_j(v) = \mathbb{E}_{X_{-j}}\big[f(v, X_{-j})\big]
+\]
+
+This estimates the model’s **average marginal response** to variation in a single skill dimension, marginalising over the observed distribution of all other job attributes.
+
+### **Individual Conditional Expectation (ICE)**
+ICE analysis extends PDP by retaining **job-level prediction trajectories** rather than averaging them.  
+Using a random subsample of jobs, predictions were generated for each job across the same grid of values, holding all non-target features fixed at their observed values.
+
+To improve interpretability, ICE curves were **centred relative to a baseline skill value** (the grid value closest to zero for each PCA), expressing results as changes in predicted salary. This removes dominant baseline salary differences across jobs and isolates the marginal effect of skill variation.
+
+Categorical PDPs and ICE curves were intentionally excluded. For high-cardinality categorical variables, counterfactual averaging produces unrealistic feature combinations and offers limited additional insight. Categorical effects are instead examined through **SHAP attribution** and **residual-based fairness diagnostics**.
+
+---
+
+## **Results**
+
+### **Average Effects (PDP)**
+Across all evaluated skill components, PDP curves exhibit **piecewise-constant behaviour with discrete jumps and plateau regions**, consistent with the split-based structure of tree ensemble models such as XGBoost. The observed PDP shapes align closely with the dependence patterns identified in SHAP plots, indicating that the average marginal responses reflect the same underlying model structure.
+
+- **Skill_PC1** shows a pronounced penalty at low values followed by rapid recovery and saturation, consistent with a baseline technical gatekeeping effect.
+- **Skill_PC2** displays an overall downward shift in predicted salary across much of its range, reflecting movement toward lower-paying role regimes.
+- **Skill_PC3** exhibits stepwise increases in predicted salary, indicating threshold-based recognition of modelling and ML depth.
+- **Skill_PC8** remains largely flat across most of its empirical range, with changes appearing only near the edges of support, suggesting limited average marginal influence.
+
+### **Heterogeneity and Stability (ICE)**
+Centered ICE curves show **limited divergence and largely parallel trajectories** across jobs for all evaluated components. This indicates minimal interaction-driven heterogeneity and confirms that the PDP curves provide a faithful summary of the model’s global behaviour. Where deviations occur, they are concentrated near the extremes of the empirical support, reflecting sparsity rather than systematic instability.
+
+---
+
+## **Conclusions (PDP & ICE)**
+
+PDP and ICE analyses together demonstrate that skill-related effects in the Salary Response Model operate primarily through **threshold and saturation dynamics**, with limited job-specific heterogeneity once structural attributes are accounted for. PDPs clarify the *average form* of these effects, while ICE validates their **stability across job contexts**.
+
+Taken together with SHAP, this explainability suite provides a coherent and internally consistent account of salary formation in the model, grounding downstream analyses—such as skill value ranking, competitiveness scoring, and recommendation design—in transparent, well-validated model behaviour.
 
 
 

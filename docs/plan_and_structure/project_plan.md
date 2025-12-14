@@ -11,44 +11,44 @@
 # CHAPTER 0 — Foundations (Preprocessing & Taxonomy)
 
 ### Core
-- **Semantic Job Title Normalization** ✅
+- ✅ **Semantic Job Title Normalization**
   *Models:* Sentence Transformers (SBERT/MiniLM) + clustering + rule-based seniority detection  
   *Purpose:* Convert messy job titles to a structured taxonomy (role + seniority).
 
-- **Skill Extraction Pipeline**  ✅
+- ✅ **Skill Extraction Pipeline**
   *Models:* regex/dictionary-based parsing  
   *Purpose:* Convert job descriptions into multi-hot skill vectors.
 
 ### Stretch
-- **NER Skill Extraction (spaCy / transformer)** ⏭️ (END OF PROJECT IMPROVEMENT)
-- **Domain-Specific Embedding Fine-Tuning (SBERT)** ✅
-- **Advanced Clustering / Hierarchical Titles / Multi-Label Titles** (Optional sophistication, Only valuable once the system has a functional baseline) ⏭️ (END OF PROJECT IMPROVEMENT)
+- ⏭️ **NER Skill Extraction (spaCy / transformer)** (END OF PROJECT IMPROVEMENT)
+- ✅ **Domain-Specific Embedding Fine-Tuning (SBERT)**
+- ⏭️ **Advanced Clustering / Hierarchical Titles / Multi-Label Titles** (Optional sophistication, Only valuable once the system has a functional baseline) (END OF PROJECT IMPROVEMENT)
 
 ---
 
 # CHAPTER 1 — System Mechanics (Salary, Skill Demand, Fairness)
 
 ### Core
-- **Salary Response Model**  ✅
+- ✅ **Salary Response Model**
   *Model:* XGBoost / LightGBM  
   *Purpose:* Predict salary from title, skills, industry, geography, and company traits.
 
-- **Skill Requirement Models**  ✅
+- ✅ **Skill Requirement Models**
   *Model:* Logistic regression or GBMs (per skill)  
   *Purpose:* Probability each skill is required for a job.
 
-- **Salary Fairness Analysis**  ✅
+- ✅ **Salary Fairness Analysis**
   *Model:* residual analysis  
   *Purpose:* Identify over/underpaying cities, sectors, and job families.
 
-- **Explainability Suite**  
+- ✅ **Explainability Suite**  
   *Tools:* SHAP, PDP, ICE  
   *Purpose:* Reveal system-level drivers of salary and skill demand.
 
 - **Skill Value Ranking (city/sector/title-specific)**
 
 ### Stretch
-- **Quantile Regression for Salary Uncertainty**  ⛔️ (NOT NEEDED - SALARY MODEL QUITE UNCERTAIN ALREADY)
+- ⛔️ **Quantile Regression for Salary Uncertainty**  (NOT NEEDED - SALARY MODEL QUITE UNCERTAIN ALREADY)
 
 
 ---

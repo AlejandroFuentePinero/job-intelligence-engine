@@ -1,5 +1,5 @@
 # Job Intelligence Engine — Progress Tracker  
-_Last updated: 2025-12-11_
+_Last updated: 2025-12-13_
 
 ---
 
@@ -97,9 +97,9 @@ _Last updated: 2025-12-11_
 ### Core Work
 - [x] SHAP global  
 - [x] SHAP dependence plots  
-- [ ] PDP plots  
-- [ ] ICE curves  
-- [ ] Add to project report and overview 
+- [x] PDP plots  
+- [x] ICE curves  
+- [x] Add to project report and overview 
 
 ### Pipelines / Architecture
 - No pipeline required (intentionally EDA-only)
