@@ -347,3 +347,34 @@ The skill requirement modelling stage yields two structured, reusable artefacts:
 Together, these outputs form the analytical backbone for Chapters 2–4, including embeddings, clustering, recommendation systems, and job–skill landscape modelling.
 
 ---
+# 7. Skill Value Index — Outputs (Chapter 1)
+
+This section documents the Global Skill Value Index derived from the Salary Response Model.
+
+---
+
+## A. Skill Value Index Table
+
+The Skill Value Index provides a standardised, model-implied measure of the association between individual skills and predicted salary.
+
+### File
+- `skill_value_index.csv`
+
+### Storage Location
+- `data/processed/`
+
+### Structure
+
+| Column | Type | Definition |
+|--------|------|------------|
+| `skill` | str | Skill identifier corresponding to Chapter 0 binary skill flags (e.g. `ml_ai__advanced`). |
+| `value` | float | Standardised global skill value score (z-score). |
+
+### Notes
+
+- Values are computed by back-projecting PCA component importance (from SHAP) onto individual skills using PCA loadings.  
+- Scores reflect **relative importance within the salary model**, not causal effects.  
+- The index is global (no sector, state, or title stratification).  
+- This table is an interpretability artefact and is **not used as an input** to downstream modelling pipelines.
+
+---

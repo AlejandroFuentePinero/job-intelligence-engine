@@ -165,6 +165,17 @@ ICE analysis extends this perspective by examining **job-level response trajecto
 Taken together, SHAP, PDP, and ICE provide a coherent and internally consistent explanation of the Salary Response Model. SHAP identifies **which features matter and in which direction**, PDPs describe **how predicted salary changes on average** as skill dimensions vary, and ICE validates that these average relationships are **stable across job contexts**. All three analyses are explicitly descriptive, characterising model-implied labour-market structure rather than making causal claims about individual skills or roles.
 
 
+# 1.5 Global Skill Value Index — Overview
+
+In addition to predicting salary and modelling skill demand, Chapter 1 includes a **global skill value analysis** to interpret how individual skills relate to predicted pay levels within the learned salary structure.  
+Rather than treating skills independently, the analysis leverages the model’s latent skill representation to assess how different skills contribute, in aggregate, to higher or lower salary predictions.
+
+The resulting Global Skill Value Index provides a **relative ranking of skills** based on their association with higher predicted salaries, conditional on job role, company characteristics, location, and overall skill composition.  
+This index is descriptive and model-implied: it reflects patterns learned by the salary model rather than causal effects or market prescriptions.
+
+The skill value analysis serves as an **interpretability bridge** between the salary model and later chapters, helping contextualise how the model values different skill signals while remaining intentionally lightweight and non-mechanical within the system.
+
+
 ---
 
 # How the Chapters Connect

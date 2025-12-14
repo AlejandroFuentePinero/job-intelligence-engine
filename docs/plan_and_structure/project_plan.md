@@ -45,10 +45,11 @@
   *Tools:* SHAP, PDP, ICE  
   *Purpose:* Reveal system-level drivers of salary and skill demand.
 
-- **Skill Value Ranking (city/sector/title-specific)**
+- ✅ **Skill Value Ranking (global)**
 
 ### Stretch
 - ⛔️ **Quantile Regression for Salary Uncertainty**  (NOT NEEDED - SALARY MODEL QUITE UNCERTAIN ALREADY)
+- ⏭️ **Skill Value Ranking (city/sector/title-specific)**
 
 
 ---

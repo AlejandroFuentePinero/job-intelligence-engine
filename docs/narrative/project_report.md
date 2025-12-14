@@ -518,6 +518,82 @@ Taken together with SHAP, this explainability suite provides a coherent and inte
 
 
 
+# **1.8 Global Skill Value Index (Model-Implied Skill Ranking)**
+
+## **Overview**
+To complement salary prediction, fairness diagnostics, and explainability, Chapter 1 produces a **Global Skill Value Index**: a descriptive ranking of individual skills based on how strongly they are associated with higher predicted salaries **within the fitted Salary Response Model**. This component is explicitly non-causal and is intended as an interpretability artefact rather than a downstream modelling dependency.
+
+---
+
+## **Methodology**
+Skills enter the Salary Response Model through a latent representation: the 27 binary skill indicators are compressed into **10 PCA components** (`skill_PC1` … `skill_PC10`). To recover an interpretable skill-level signal, we combine:
+
+1. **PCA loadings**, which quantify how strongly each original skill contributes to each skill component, and  
+2. **SHAP-derived component influence**, which quantifies the average direction and magnitude with which each PCA component contributes to salary predictions.
+
+For each PCA component, we compute a signed component weight from SHAP values (mean signed contribution combined with mean absolute magnitude). Skill-level values are then obtained by **back-projecting** these component weights through the PCA loading matrix and summing contributions across all components. Finally, the resulting skill scores are standardised into a z-scored index for interpretability.
+
+The final output is exported as `skill_value_index.csv` and stored in `data/processed/`.
+
+---
+
+## **Results**
+The resulting index provides a coherent global ranking across the 27 aggregated skill groups. Skills associated with specialised technical depth and modelling capability receive positive scores, while skills that primarily characterise lower-paying role regimes or non-specialised requirements receive neutral to negative scores. Importantly, the ranking reflects the model’s learned structure after controlling for job title, location, sector, company attributes, and the full latent skill composition.
+
+Because the signal is computed from PCA components, the index captures **aggregate skill influence across multiple latent axes** rather than attributing salary effects to isolated binary indicators. This yields a stable, interpretable summary of how the salary model values skills in the dataset.
+
+---
+
+## **Conclusions**
+The Global Skill Value Index provides a defensible, model-consistent interpretation of skill value in the labour market represented by the dataset. It should be interpreted as a descriptive summary of the salary model’s learned valuation logic, not as evidence of causal returns to specific skills. The index is included as an interpretability artefact for Chapter 1 and may be referenced in later chapters, but it is not required for downstream pipelines.
+
+---
+
+# Chapter 1 — Closure & Scope Boundary
+
+## Chapter 1 Synthesis
+
+Chapter 1 establishes the **mechanical core** of the Job Intelligence Engine.  
+Building on the structured data foundation from Chapter 0, this chapter models how salary and skill requirements emerge from the interaction between job attributes, company characteristics, location, and latent skill structure.
+
+The chapter delivers four primary analytical components:
+1. A **Salary Response Model** that predicts expected salary conditional on job and company attributes.  
+2. A **Skill PCA representation** that compresses sparse, correlated skill indicators into a stable latent space.  
+3. A set of **Skill Requirement Models** producing a continuous job × skill probability matrix.  
+4. A comprehensive **interpretability layer**, including residual-based fairness diagnostics and model explainability (SHAP, PDP, ICE).
+
+In addition, Chapter 1 includes a **Global Skill Value Index** as an interpretive artefact summarising how individual skills are associated with predicted salary within the fitted model. This index is explicitly descriptive and is not a mechanical dependency for downstream chapters.
+
+## Explicit Scope Boundary
+
+Chapter 1 is intentionally limited to **system mechanics and diagnostics**.  
+It does **not** perform individual optimisation, career guidance, or recommendation logic.  
+Context-specific skill valuation (e.g. by city, sector, or role), fairness-adjusted skill recommendations, and decision-oriented trade-offs are **out of scope** at this stage and are deferred to later chapters where user positioning and objectives are defined.
+
+With this boundary enforced, Chapter 1 provides a stable, interpretable, and reusable foundation for all subsequent modelling work in the Job Intelligence Engine.
+
+---
+
+# Chapter 1 → Chapter 2 Data Contract
+
+This section defines the **guaranteed outputs** from Chapter 1 that downstream chapters are allowed to consume.  
+Only the artefacts listed below are considered stable dependencies.
+
+---
+
+## Guaranteed Artefacts
+
+1. Processed Job Dataset  
+2. Salary Response Model 
+3. Skill PCA Transformer
+4. Skill Requirement Models
+5. Skill Probability Matrix
+6. Salary Residuals 
+
+**Chapter 1 is now closed.**
+
+
+
 ---
 
 # Current Status & Next Steps

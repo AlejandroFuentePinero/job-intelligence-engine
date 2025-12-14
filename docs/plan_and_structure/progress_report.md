@@ -1,11 +1,15 @@
-# Job Intelligence Engine — Progress Tracker  
-_Last updated: 2025-12-13_
+# Job Intelligence Engine — Progress Tracker (STEERING DOCUMENT)
+_Last updated: 2025-12-15_
+
+> This document is the **authoritative steering and sanity-check document**.
+> It reflects what is required, what is optional, and what must be translated
+> from notebooks into production `src/` code.
 
 ---
 
 # OVERALL PROJECT PROGRESS
-`[######................] 30%`  
-**~30% complete**
+`[#######..............] 35%`  
+**~35% complete**
 
 ---
 
@@ -14,7 +18,7 @@ _Last updated: 2025-12-13_
 **Progress:** 100%  
 `[####################] 100%`
 
-### Core Work
+### Core Work (LOCKED)
 - [x] Clean raw data  
 - [x] Title normalisation  
 - [x] Seniority extraction  
@@ -25,160 +29,169 @@ _Last updated: 2025-12-13_
 - [x] Documentation complete  
 
 ### Pipelines / Architecture
-- [x] **Chapter 0 Processing Pipeline** (raw → engineered data)  
-- [x] Title module  
-- [x] Skill extractor  
-- [x] Salary parser  
-- [x] Domain lookup
-- [x] Seniority parser
-- [x] Text cleaning helper
-- [x] Skill taxonomy builder
-- [x] Processing pipeline benchmark tester
+- [x] **Chapter 0 Processing Pipeline** (raw → engineered data)
+- [x] `titles.py`
+- [x] `seniority.py`
+- [x] `skills.py`
+- [x] `salary_parser.py`
+- [x] `taxonomy_builder.py`
 
 ---
 
-# Chapter 1 — System Mechanics  
-**Progress:** ~90%  
-`[##################..] 90%`
+# Chapter 1 — System Mechanics (CORE)
+
+**Progress:** 100%  
+`[####################] 100%`
+
+> Chapter 1 produces **mechanical, reusable signals** consumed downstream.
+> No user-level optimisation or decision logic occurs here.
 
 ---
 
-## 1.1 Salary Modelling
+## 1.1 Salary Response Model
 
 ### Core Work
 - [x] Feature engineering  
-- [x] PCA (10 components)  
+- [x] Skill dimensionality reduction via PCA (10 components)  
 - [x] Train salary model (XGBoost v4)  
-- [x] Evaluation + diagnostics  
+- [x] Evaluation & diagnostics  
 - [x] Documentation added  
 
 ### Pipelines / Architecture
-- [x] PCA transformer  
-- [x] Salary predictor  
-- [x] Salary model evaluator  
+- [x] `pca_transformer.py`
+- [x] `salary_model.py`
+- [x] `salary_evaluator.py`
 - [x] **Salary Modelling Pipeline**  
-  (features → PCA → model → predictions → residuals)
+  (features → PCA → prediction → residuals)
 
 ---
 
 ## 1.2 Skill Requirement Models
 
 ### Core Work
-- [x] Train 27 LightGBM models  
+- [x] Train 27 skill models  
 - [x] Evaluation metrics  
 - [x] Skill probability matrix  
-- [x] Save evaluation + matrix  
-- [x] Documented  
+- [x] Save outputs  
+- [x] Documentation added  
 
 ### Pipelines / Architecture
-- [x] Skill model evaluator  
-- [x] Probability matrix builder  
-- [x] **Skill Requirement Pipeline**  
-  (binary flags → 27 models → probability matrix)
+- [x] `skill_models.py`
+- [x] `skill_matrix_builder.py`
+- [x] **Skill Requirement Pipeline**
 
 ---
 
-## 1.3 Salary Fairness Analysis
+## 1.3 Salary Fairness Analysis (DIAGNOSTIC)
 
 ### Core Work
 - [x] Residuals computed  
-- [x] Fairness tables (state, sector, size, ownership, seniority, family)  
-- [x] Weighted + unweighted plots  
-- [x] Interpretations written  
-- [x] Documentation updated  
+- [x] Group summaries (state, sector, size, ownership, seniority)  
+- [x] Diagnostic plots  
+- [x] Interpretation written  
 
 ### Pipelines / Architecture
-- No pipeline required (intentionally EDA-only)
+- **No pipeline required**  
+  (one-off diagnostic aggregation from salary model residuals)
 
 ---
 
-## 1.4 Explainability Suite — CURRENT
+## 1.4 Explainability Suite (INTERPRETIVE)
 
 ### Core Work
-- [x] SHAP global  
+- [x] SHAP global importance  
 - [x] SHAP dependence plots  
-- [x] PDP plots  
-- [x] ICE curves  
-- [x] Add to project report and overview 
+- [x] PDP  
+- [x] ICE  
+- [x] Integrated into report  
 
 ### Pipelines / Architecture
-- No pipeline required (intentionally EDA-only)
+- **No pipeline required**  
+  (explainability derived directly from trained salary model)
 
 ---
 
-## 1.5 Skill Value Ranking — UPCOMING
+## 1.5 Skill Value (INTERPRETIVE)
 
 ### Core Work
-- [ ] Define ranking logic (SHAP × fairness × skills)  
-- [ ] Produce sector/title/state tables  
-- [ ] Documentation added  
+- [x] Derive Global Skill Value Index  
+      (SHAP × PCA back-projection → skill-level signal)
+- [x] Save `skill_value_index.csv`
+- [x] Documentation paragraph (short, defensive)
 
 ### Pipelines / Architecture
-- [ ] Skill value ranking utility  
-- [ ] **Skill Value Ranking Pipeline**  
-  (SHAP + fairness + PCA → ranking tables)
+- **No pipeline required**  
+  (static interpretive artefact; not consumed downstream)
 
 ---
 
-## 1.6 Chapter 1 Consolidation  
-- [ ] Documentation consistency pass  
-- [ ] Finalise all saved artefacts  
-- [x] Pipeline and model validations
-- [ ] Define Chapter 1 → Chapter 2 data contract  
-      (list & schema of saved outputs used downstream)  
-- [x] Simple Chapter 1 regression test  
-      (run salary + skill pipelines, check metrics/shapes)  
-- [ ] Ensure env/requirements updated (xgboost, lightgbm, shap)  
-- [ ] (Optional) Chapter 1 Unified Pipeline wrapper  
-- [ ] Update progress tracker  
-- [ ] Close chapter
+## 1.6 Chapter 1 Consolidation (REQUIRED)
 
+### Core Work
+- [x] Documentation consistency pass  
+- [x] Pipeline validation checks  
+- [x] Define **Chapter 1 → Chapter 2 data contract**
+- [x] List guaranteed saved artefacts + schemas  
+- [x] Update `requirements.txt`  
+- [x] Close Chapter 1  
+
+### Pipelines / Architecture
+- **No new pipeline required**  
+  (validation and contract definition only)
 
 ---
 
-# Chapter 2 — Hidden Structure (Embeddings & Graphs)
+# Chapter 2 — Hidden Structure (REQUIRED)
 
 **Progress:** 0%  
 `[....................] 0%`
 
-### Core Work  
-- [ ] Job–skill bipartite graph  
-- [ ] Node2Vec embeddings  
-- [ ] Job clustering  
+### Core Work
+- [ ] Build job–skill bipartite graph  
+- [ ] Train Node2Vec embeddings  
+- [ ] Job family clustering  
 - [ ] Skill co-occurrence network  
 
 ### Pipelines / Architecture
-- [ ] Graph builder  
-- [ ] Node2Vec trainer  
-- [ ] Embedding loader  
-- [ ] Clustering utilities  
+- [ ] `graph_builder.py`
+- [ ] `node2vec_trainer.py`
+- [ ] `embedding_loader.py`
+- [ ] `job_clusterer.py`
 - [ ] **Embedding Pipeline**  
-  (graph → Node2Vec → embeddings → clustering)
+  (graph → embeddings → clustering)
+
+### Notebook → SRC Translation
+- [ ] Finalise graph notebook  
+- [ ] Translate to `src/job_intel/graphs/`  
+- [ ] Add regression tests (shapes, determinism)
 
 ---
 
-# Chapter 3 — Individual Positioning
+# Chapter 3 — Individual Positioning (REQUIRED)
 
 **Progress:** 0%  
 `[....................] 0%`
 
 ### Core Work
+- [ ] Project individual skill vector → PCA space  
 - [ ] Job Suitability Score  
 - [ ] Competitiveness Index  
 - [ ] Skill Gap Analysis  
 
 ### Pipelines / Architecture
-- [ ] Suitability scorer  
-- [ ] Competitiveness calculator  
-- [ ] Gap analysis tool  
-- [ ] **Suitability Pipeline**  
-  (user skills → embeddings → suitability)  
-- [ ] **Competitiveness Pipeline**  
-  (salary/fairness/skill rarity → difficulty metric)
+- [ ] `suitability.py`
+- [ ] `competitiveness.py`
+- [ ] `gap_analysis.py`
+- [ ] **Individual Positioning Pipeline**
+
+### Notebook → SRC Translation
+- [ ] Positioning notebook  
+- [ ] Translate to `src/job_intel/positioning/`  
+- [ ] Deterministic test cases
 
 ---
 
-# Chapter 4 — Recommender Engine
+# Chapter 4 — Recommender Engine (REQUIRED)
 
 **Progress:** 0%  
 `[....................] 0%`
@@ -188,6 +201,37 @@ _Last updated: 2025-12-13_
 - [ ] Upskilling recommender  
 
 ### Pipelines / Architecture
-- [ ] Recommender engine  
-- [ ] ROI calculator  
-- [ ] Simulation util
+- [ ] `job_recommender.py`
+- [ ] `upskilling_recommender.py`
+- [ ] `roi_estimator.py`
+- [ ] **Recommendation Pipeline**
+
+### Notebook → SRC Translation
+- [ ] Recommendation notebook  
+- [ ] Translate to `src/job_intel/recommenders/`  
+- [ ] End-to-end recommender tests
+
+---
+
+# Chapter 5 — Insights & Dashboards (OPTIONAL)
+
+**Progress:** 0%  
+`[....................] 0%`
+
+### Core Work
+- [ ] Salary landscape dashboard  
+- [ ] Skill ecosystem visualisation  
+- [ ] Geographic summaries  
+
+### Pipelines / Architecture
+- **No pipeline required**  
+  (visualisation layer only)
+
+---
+
+# LOCKED PROJECT GUARANTEES
+
+- Every module explicitly states pipeline status  
+- Notebook → `src/` translation is tracked where required  
+- Optional work cannot silently become required  
+- This document is the single source of truth for scope and progress
