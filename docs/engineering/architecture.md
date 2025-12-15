@@ -1,5 +1,5 @@
 # Job Intelligence Engine — System Architecture
-Date: 2025-12-12
+Date: 2025-12-15
 
 This file contains the updated architecture for the project.
 
@@ -75,6 +75,23 @@ Outputs multi-hot skill flags.
 PCA correctness is verified by confirming that the salary model (XGBoost v4) reproduces the exact metrics obtained in the exploratory notebook.  
 Identical metrics guarantee that PCA ordering, scaling, and component structure are consistent with the original modelling workflow.
 
+## Chapter 2 Architecture — Hidden Structure (Graphs & Ecosystems)
+
+### 3.8 Job–Skill Bipartite Graph
+**Module:** `features/graph_job_skill.py`  
+Outputs:
+- Weighted bipartite graph linking `job_id` nodes to 27 skill-group nodes.
+- Edge weights representing predicted skill–job probabilities.
+This feature transforms Chapter 1 skill probability outputs into a relational graph structure used as the foundation for Chapter 2 embedding, clustering, and ecosystem analyses.
+
+### 3.9 Node2Vec Embedding Loader
+**Module:** `features/embedding_loader.py`  
+Outputs:
+- `job_emb`: job embedding table (index = `job_id`, columns = `emb_0` … `emb_{d-1}`).
+- `skill_emb`: skill embedding table (index = skill name, columns = `emb_0` … `emb_{d-1}`).
+
+This utility provides a consistent, validated interface for loading persisted Node2Vec embeddings for downstream Chapter 2 clustering and analysis.
+
 ---
 
 # 4. Evaluation modules
@@ -101,15 +118,28 @@ Compares Chapter 0 dataset to benchmark.
 
 # 5. Model modules
 
-### 5.1 Salary Model Predictor
+### 5.1 Titles SBERT + Clustering
+**File:** `models/sbert_clustering_training_titles.py`  
+Function:  
+- Train SBERT embeddings for unique job titles and cluster them using KMeans to produce a deterministic title → domain lookup table consumed by the Chapter 0 pipeline.
+
+
+### 5.2 Salary Model Predictor
 **File:** `models/salary_predictor.py`
 Function:  
 - Predict salary for new records.
 
-### 5.2 Skill Probability Builder
+### 5.3 Skill Probability Builder
 **File:** `models/skill_prob_matrix.py`
 Function:  
 - Predict skill probability for each data entry.
+
+### 5.4 Node2Vec Embedding Trainer
+**File:** `models/node2vec_trainer.py`  
+Functions:  
+- Train Node2Vec embeddings from the Chapter 2 job–skill bipartite graph.  
+- Extract and return job and skill embedding tables (jobs × d, skills × d).  
+- Optionally run a lightweight stability diagnostic (nearest-neighbour overlap) and persist embeddings + metadata as reusable artefacts.
 
 ---
 
@@ -124,7 +154,12 @@ Steps:
 4. Build final Chapter 0 dataset.  
 5. Save: `data/processed/ch0_processed_jobs.csv`.
 
-### 6.2 Salary Modelling Pipeline  
+### 6.2 Run model
+**File:** `pipelines/chapter1_models.py`
+Function: takes Salary Modelling Pipeline and Skill Requirement Pipeline and runs one of both of them. It links chapter 0 and chapter 2 directly through a unified model pipeline
+
+
+### 6.2a Salary Modelling Pipeline  
 **File:** `pipelines/salary_model_pipeline.py`  
 Steps:  
 1. Build Chapter 0 dataset  
@@ -134,7 +169,7 @@ Steps:
 5. Optional evaluation  
 6. Optional save artefacts  
 
-### 6.3 Skill Requirement Pipeline  
+### 6.2b Skill Requirement Pipeline  
 **File:** `pipelines/skill_model_pipeline.py`  
 Steps:  
 1. Build Chapter 0 dataset  
@@ -174,6 +209,9 @@ RAW CSVs
 - Evaluation tables and plots 
    - `skill_model_evaluation_results.csv`
    - `{feature}_fairness.csv` Fairness analyses outputs
+- `job_embeddings_node2vec_v01.csv` node2vec embeddings
+- `skill_embeddings_node2vec_v01.csv` node2vec embeddings
+- `job_skill_bipartite_thres0_5.gpickle` graph
 
 ---
 
@@ -181,3 +219,4 @@ RAW CSVs
 Provide a reproducible system for extracting job structure, modelling salary, inferring skill requirements, and preparing downstream semantic modelling (Chapters 2–5).
 
 ---
+

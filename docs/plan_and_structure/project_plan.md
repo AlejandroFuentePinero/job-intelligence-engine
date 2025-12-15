@@ -8,7 +8,7 @@
 
 ---
 
-# CHAPTER 0 — Foundations (Preprocessing & Taxonomy)
+# ✅✅ CHAPTER 0 — Foundations (Preprocessing & Taxonomy)
 
 ### Core
 - ✅ **Semantic Job Title Normalization**
@@ -26,7 +26,7 @@
 
 ---
 
-# CHAPTER 1 — System Mechanics (Salary, Skill Demand, Fairness)
+# ✅✅ CHAPTER 1 — System Mechanics (Salary, Skill Demand, Fairness)
 
 ### Core
 - ✅ **Salary Response Model**
@@ -57,7 +57,7 @@
 # CHAPTER 2 — Hidden Structure (Graphs, Clusters, Ecosystems)
 
 ### Core
-- **Job–Skill Bipartite Graph**  
+- ✅ **Job–Skill Bipartite Graph**  
   *Model:* Node2Vec  
   *Purpose:* Learn embeddings capturing job/skill relationships.
 
@@ -69,8 +69,8 @@
   *Purpose:* Identify skill bundles and gateway skills.
 
 ### Stretch
-- **Contrastive Job Embeddings (Siamese SBERT)**  
-- **Industry Specialization Maps (clustered skill vectors)**
+- ⛔️ **Contrastive Job Embeddings (Siamese SBERT)**  
+- ⏭️ **Industry Specialization Maps (clustered skill vectors)**
 
 ---
 

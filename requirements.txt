@@ -11,3 +11,6 @@ xgboost
 sentence_transformers
 lightgbm
 shap
+NetworkX
+pickle
+node2vec

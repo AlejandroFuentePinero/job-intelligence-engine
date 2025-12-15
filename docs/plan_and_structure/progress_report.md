@@ -136,8 +136,7 @@ _Last updated: 2025-12-15_
 - [x] Close Chapter 1  
 
 ### Pipelines / Architecture
-- **No new pipeline required**  
-  (validation and contract definition only)
+- [x] Pipeline to run both model pipelines 
 
 ---
 
@@ -147,22 +146,20 @@ _Last updated: 2025-12-15_
 `[....................] 0%`
 
 ### Core Work
-- [ ] Build job–skill bipartite graph  
-- [ ] Train Node2Vec embeddings  
+- [x] Build job–skill bipartite graph  
+- [x] Train Node2Vec embeddings  
 - [ ] Job family clustering  
-- [ ] Skill co-occurrence network  
+- [ ] Skill co-occurrence network
+- [ ] Industry Specialization Maps (clustered skill vectors)
+
 
 ### Pipelines / Architecture
-- [ ] `graph_builder.py`
-- [ ] `node2vec_trainer.py`
-- [ ] `embedding_loader.py`
+- [x] `graph_builder.py`
+- [x] `node2vec_trainer.py`
+- [x] `embedding_loader.py`
 - [ ] `job_clusterer.py`
 - [ ] **Embedding Pipeline**  
   (graph → embeddings → clustering)
-
-### Notebook → SRC Translation
-- [ ] Finalise graph notebook  
-- [ ] Translate to `src/job_intel/graphs/`  
 - [ ] Add regression tests (shapes, determinism)
 
 ---
