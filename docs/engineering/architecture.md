@@ -92,6 +92,29 @@ Outputs:
 
 This utility provides a consistent, validated interface for loading persisted Node2Vec embeddings for downstream Chapter 2 clustering and analysis.
 
+### 3.10 Job families clustering
+**Module:** `features/job_families_clustering.py`  
+Outputs:
+- `km_jobs_df`: job clusters table (index = `job_id`, columns = `job family`).
+
+This utility provides a consistent, validated interface for fitting a KMean clustering to the embeddings produced by node2vec.
+
+### 3.11 Skill Ecosystem Structure
+**Module:** `features/skill_embedding_similarity.py`  
+Outputs:
+- `top_5_skill_neighbours`: top neighbour table (columns = `skill_1`, `skill_2`, `similarity`).
+
+This utility provides a consistent, validated interface for building the skill similarity matrix.
+
+### 3.12 Skill Specialisation Map
+**Module:** `features/skill_specialisation_map.py`  
+Outputs:
+- `{group_col}_skill_specialisation.csv`: skill specialisation table (columns = `{group_col}`, `individual skill family column`*27).
+
+This utility provides a consistent, validated interface for building the skill specialisation map.
+
+
+
 ---
 
 # 4. Evaluation modules
@@ -122,7 +145,6 @@ Compares Chapter 0 dataset to benchmark.
 **File:** `models/sbert_clustering_training_titles.py`  
 Function:  
 - Train SBERT embeddings for unique job titles and cluster them using KMeans to produce a deterministic title → domain lookup table consumed by the Chapter 0 pipeline.
-
 
 ### 5.2 Salary Model Predictor
 **File:** `models/salary_predictor.py`
@@ -158,7 +180,6 @@ Steps:
 **File:** `pipelines/chapter1_models.py`
 Function: takes Salary Modelling Pipeline and Skill Requirement Pipeline and runs one of both of them. It links chapter 0 and chapter 2 directly through a unified model pipeline
 
-
 ### 6.2a Salary Modelling Pipeline  
 **File:** `pipelines/salary_model_pipeline.py`  
 Steps:  
@@ -178,6 +199,18 @@ Steps:
 4. Evaluate  
 5. Save models  
 6. Generate skill probability matrix  
+
+### 6.3 Hidden Structures Pipeline  
+**File:** `pipelines/chapter2_hidden_structures.py`  
+
+This pipeline converts the Chapter 1 job × skill probability layer into a relational representation of the labour market.  
+It first builds a weighted job–skill bipartite graph (jobs and skills as node types; probabilities as edge weights), then learns Node2Vec embeddings that place both jobs and skills into a shared geometric space capturing co-occurrence and latent similarity.
+
+From these embeddings, the pipeline produces two interpretable Chapter 2 artefacts:  
+(1) **job families**, obtained by L2-normalising job embeddings and clustering them with KMeans, and  
+(2) a **skill ecosystem edge list**, obtained by L2-normalising skill embeddings, computing cosine similarity via dot products, and retaining the top-*k* neighbours per skill to form a sparse undirected skill–skill network.
+
+All outputs are saved as versioned processed artefacts for reuse in downstream chapters (job-family aggregation, skill bundle analysis, and later recommendation logic).
 
 
 ---
@@ -212,6 +245,9 @@ RAW CSVs
 - `job_embeddings_node2vec_v01.csv` node2vec embeddings
 - `skill_embeddings_node2vec_v01.csv` node2vec embeddings
 - `job_skill_bipartite_thres0_5.gpickle` graph
+- `job_families_graph_embeddings.csv` clustering output chapter 2
+- `skill_similarity_edges_k5_embeddings.csv` skill–skill network derived from Node2Vec embeddings
+- `job_family_skill_specialisation.csv` canonical output of the “Industry / Job-Family Specialisation Map” module
 
 ---
 

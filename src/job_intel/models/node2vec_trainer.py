@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from pathlib import Path
 import json
-import pickle
 from typing import Iterable, Optional, Tuple
 
 import networkx as nx

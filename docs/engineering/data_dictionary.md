@@ -1,6 +1,6 @@
 # Job Intelligence Engine — Data Dictionary  
 Verified against jobs_ch0.csv  
-Date: 2025-12-11
+Date: 2025-12-16
 
 ---
 
@@ -376,5 +376,126 @@ The Skill Value Index provides a standardised, model-implied measure of the asso
 - Scores reflect **relative importance within the salary model**, not causal effects.  
 - The index is global (no sector, state, or title stratification).  
 - This table is an interpretability artefact and is **not used as an input** to downstream modelling pipelines.
+---
+
+
+# 8. Hidden Structure — Outputs (Chapter 2)
+
+This section documents the structural artefacts produced in Chapter 2. These outputs convert Chapter 1’s tabular job + skill-probability signals into graph-based representations, embeddings, job families, and skill ecosystem summaries.
+
+---
+
+## A. Job–Skill Bipartite Graph (Artefact)
+
+A weighted bipartite graph where:
+- **Job nodes** represent individual job records (`job_id`)
+- **Skill nodes** represent skill groups (27 skill probabilities)
+- **Edges** exist when `P(skill | job) ≥ threshold`
+- **Edge weights** equal `P(skill | job)` (continuous in [0, 1])
+
+### File (optional)
+- `models/job_skill_bipartite_thres{threshold}.pkl`
+
+### Notes
+- Used as the canonical structure for Node2Vec embedding training.
+- Identifiers are stable and designed to join back to the Chapter 1 modelling dataframe via `job_id`.
+
+---
+
+## B. Node2Vec Embeddings (Jobs and Skills)
+
+Node embeddings learned from random walks over the bipartite graph.
+
+### Outputs
+- **Job embeddings:** one vector per `job_id`
+- **Skill embeddings:** one vector per skill node (skill group)
+
+### Structure (conceptual)
+| Field | Type | Definition |
+|------|------|------------|
+| `job_id` | int | Stable job identifier (joins to Chapter 1 modelling dataframe). |
+| `embedding_dim_*` | float | Embedding vector components (e.g., 64 dimensions). |
+
+| Field | Type | Definition |
+|------|------|------------|
+| `skill_id` | str | Skill identifier (e.g., `ml_ai__advanced_prob`). |
+| `embedding_dim_*` | float | Embedding vector components (e.g., 64 dimensions). |
+
+### Notes
+- Embeddings are latent features capturing graph neighbourhood structure.
+- These vectors are **not directly interpretable**; they are inputs to clustering and similarity analysis.
+
+---
+
+## C. Job Families (Cluster Assignments)
+
+Unsupervised job ecosystem labels created by clustering job embeddings (KMeans on L2-normalised vectors).
+
+### File
+- `data/processed/job_families_graph_embeddings.csv`
+
+### Structure
+| Column | Type | Definition |
+|--------|------|------------|
+| `job_id` | int | Stable job identifier. |
+| `job_family_id` | int | Cluster label representing latent job ecosystem membership. |
+
+### Notes
+- Every job receives exactly one job family assignment (complete partition).
+- Job families are provisional structural constructs intended for aggregation and navigation.
+
+---
+
+## D. Skill Similarity Edges (Skill Ecosystem Graph)
+
+Undirected edge list connecting each skill to its top-*k* nearest neighbouring skills in embedding space.
+
+### File
+- `data/processed/skill_similarity_edges_k5_embeddings.csv`
+
+### Structure
+| Column | Type | Definition |
+|--------|------|------------|
+| `skill_1` | str | Skill identifier (lexicographically smaller of the pair). |
+| `skill_2` | str | Skill identifier (lexicographically larger of the pair). |
+| `similarity` | float | Cosine similarity between skill embeddings (after L2-normalisation). |
+
+### Notes
+- Constructed by: cosine similarity matrix → top-*k* neighbours per skill → deduplicate to undirected edges.
+- Provides the backbone for skill bundle discovery and gateway-skill interpretation.
+
+---
+
+## E. Skill Specialisation Maps (Lift vs Global Mean)
+
+Skill ecosystem summaries computed by group (e.g., sector, title, seniority) showing relative skill over/under-representation.
+
+Each map is computed as:
+
+\[
+\text{lift}_{g,s} = \overline{P(s \mid g)} - \overline{P(s)}
+\]
+
+where \( g \) is a group category and \( s \) is a skill probability column.
+
+### Files
+- `data/processed/sector_skill_specialisation.csv`
+- `data/processed/title_skill_specialisation.csv`
+- `data/processed/seniority_skill_specialisation.csv`
+- `data/processed/ownership_skill_specialisation.csv`
+- `data/processed/state_skill_specialisation.csv`
+- `data/processed/company_size_skill_specialisation.csv`
+- `data/processed/title_condensed_skill_specialisation.csv`
+
+### Structure
+| Field | Type | Definition |
+|------|------|------------|
+| `<group_label>` (index) | str | Group category label (e.g., sector name, title name). |
+| `*_prob` | float | Lift value for a given skill: (group mean − global mean). |
+
+### Notes
+- Positive values indicate skills over-represented in the group relative to the market baseline.
+- Negative values indicate skills under-represented in the group.
+- These are interpretability artefacts supporting ecosystem analysis; they are not model inputs.
 
 ---

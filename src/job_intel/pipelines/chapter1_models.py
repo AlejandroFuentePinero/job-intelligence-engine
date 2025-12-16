@@ -17,7 +17,7 @@ Notes
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from src.job_intel.pipelines.salary_model_pipeline import run_salary_pipeline
 from src.job_intel.pipelines.skill_model_pipeline import run_skill_pipeline
@@ -33,23 +33,21 @@ def run_chapter1_models(
     """
     Run Chapter 1 pipelines (salary and/or skill) and return their outputs.
 
-    Parameters
-    ----------
-    salary : bool
-        If True, run the salary modelling pipeline.
-    skill : bool
-        If True, run the skill-requirement modelling pipeline.
-    do_eval : bool
-        If True, run evaluation steps (where supported by the pipeline).
-    show_plots_eval : bool
-        If True, display evaluation plots (where supported).
-    save_model : bool
-        If True, persist fitted artefacts (models, matrices, etc.) to disk.
-
     Returns
     -------
     dict
-        {"salary": <salary_pipeline_output_or_None>, "skill": <skill_pipeline_output_or_None>}
+        {
+          "salary": {
+              "model": <XGBRegressor>,
+              "metrics": <dict|None>,
+              "pca": <PCA>,
+              "df": <pd.DataFrame>   # includes job_id for Chapter 2 entrypoint
+          } | None,
+          "skill": {
+              "results_df": <pd.DataFrame>,
+              "prob_mat": <pd.DataFrame | np.ndarray>
+          } | None
+        }
     """
     if not salary and not skill:
         raise ValueError("Select at least one of salary=True or skill=True.")
@@ -58,16 +56,28 @@ def run_chapter1_models(
 
     # Run salary first (safe default ordering).
     if salary:
-        out["salary"] = run_salary_pipeline(
+        model, metrics, pca, df_ch1 = run_salary_pipeline(
             do_eval=do_eval,
             show_plots_eval=show_plots_eval,
             save_model=save_model,
         )
 
+        out["salary"] = {
+            "model": model,
+            "metrics": metrics,
+            "pca": pca,
+            "df": df_ch1,
+        }
+
     if skill:
-        out["skill"] = run_skill_pipeline(
+        results_df, prob_mat = run_skill_pipeline(
             show_plots_eval=show_plots_eval,
             save_model=save_model,
         )
+
+        out["skill"] = {
+            "results_df": results_df,
+            "prob_mat": prob_mat,
+        }
 
     return out

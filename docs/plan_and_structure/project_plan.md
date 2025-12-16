@@ -54,23 +54,23 @@
 
 ---
 
-# CHAPTER 2 — Hidden Structure (Graphs, Clusters, Ecosystems)
+# ✅✅ CHAPTER 2 — Hidden Structure (Graphs, Clusters, Ecosystems)
 
 ### Core
 - ✅ **Job–Skill Bipartite Graph**  
   *Model:* Node2Vec  
   *Purpose:* Learn embeddings capturing job/skill relationships.
 
-- **Job Family Clustering**  
+- ✅ **Job Family Clustering**  
   *Model:* KMeans / HDBSCAN  
   *Purpose:* Identify latent job ecosystems ("job families").
 
-- **Skill Co-Occurrence Network**  
+- ✅ **Skill Co-Occurrence Network**  
   *Purpose:* Identify skill bundles and gateway skills.
 
 ### Stretch
 - ⛔️ **Contrastive Job Embeddings (Siamese SBERT)**  
-- ⏭️ **Industry Specialization Maps (clustered skill vectors)**
+- ✅ **Industry Specialization Maps (clustered skill vectors)**
 
 ---
 
@@ -90,7 +90,7 @@
 - **Skill Rarity Integration (inverse frequency)**  
 - **Skill Difficulty Integration (O*NET)**  
 - **Suitability Sensitivity Analysis**  
-- **City-Level Competitiveness Aggregation**
+- **State-Level Competitiveness Aggregation**
 
 ---
 

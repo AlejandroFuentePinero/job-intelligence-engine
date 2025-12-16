@@ -193,6 +193,9 @@ def run_salary_pipeline(
 
     print("✅ Training salary model DONE.")
 
+    # Dont forget to add index for chapter 2
+    df_ch1["job_id"] = range(len(df_ch1))
+
     # ------------------------------------------------------------------
     # 5.1 Optional save model + PCA + training data snapshot
     # ------------------------------------------------------------------
@@ -206,7 +209,9 @@ def run_salary_pipeline(
         joblib.dump(best_model, MODELS_DIR / "salary_model_v4.pkl")
         print("Salary model saved.")
 
-        df_ch1.to_csv(PROCESSED_DATA_DIR / "salary_model_dfv02_pca.csv", index=False)
+        df_ch1.to_csv(
+            PROCESSED_DATA_DIR / "salary_model_dfv03_pca_jobid.csv", index=False
+        )
         print("Clean model data saved.")
 
         print("✅ All models and data saved DONE.")
@@ -234,4 +239,4 @@ def run_salary_pipeline(
 
     print("✅ PIPELINE RUN SUCCESSFULLY.")
 
-    return best_model, metrics, pca
+    return best_model, metrics, pca, df_ch1

@@ -8,12 +8,12 @@ _Last updated: 2025-12-15_
 ---
 
 # OVERALL PROJECT PROGRESS
-`[#######..............] 35%`  
-**~35% complete**
+[#########.............] 45%
+~45% complete
 
 ---
 
-# Chapter 0 — Foundations (Preprocessing & Taxonomy)
+# ✅ Chapter 0 — Foundations (Preprocessing & Taxonomy)
 
 **Progress:** 100%  
 `[####################] 100%`
@@ -38,7 +38,7 @@ _Last updated: 2025-12-15_
 
 ---
 
-# Chapter 1 — System Mechanics (CORE)
+# ✅ Chapter 1 — System Mechanics (CORE)
 
 **Progress:** 100%  
 `[####################] 100%`
@@ -140,27 +140,29 @@ _Last updated: 2025-12-15_
 
 ---
 
-# Chapter 2 — Hidden Structure (REQUIRED)
+# ✅ Chapter 2 — Hidden Structure (REQUIRED)
 
-**Progress:** 0%  
-`[....................] 0%`
+**Progress:** 100%  
+`[####################] 100%`
 
 ### Core Work
 - [x] Build job–skill bipartite graph  
 - [x] Train Node2Vec embeddings  
-- [ ] Job family clustering  
-- [ ] Skill co-occurrence network
-- [ ] Industry Specialization Maps (clustered skill vectors)
+- [x] Job family clustering  
+- [x] Skill co-occurrence network
+- [x] Industry Specialization Maps (clustered skill vectors)
+- [x] Documentation
 
 
 ### Pipelines / Architecture
 - [x] `graph_builder.py`
 - [x] `node2vec_trainer.py`
 - [x] `embedding_loader.py`
-- [ ] `job_clusterer.py`
-- [ ] **Embedding Pipeline**  
+- [x] `job_clusterer.py`
+- [x] `skill_embedding_similarity.py`
+- [x] **Embedding Pipeline**  
   (graph → embeddings → clustering)
-- [ ] Add regression tests (shapes, determinism)
+- [x] Add regression tests (shapes, determinism)
 
 ---
 
@@ -174,17 +176,15 @@ _Last updated: 2025-12-15_
 - [ ] Job Suitability Score  
 - [ ] Competitiveness Index  
 - [ ] Skill Gap Analysis  
+- [ ] Documentation
 
 ### Pipelines / Architecture
 - [ ] `suitability.py`
 - [ ] `competitiveness.py`
 - [ ] `gap_analysis.py`
 - [ ] **Individual Positioning Pipeline**
-
-### Notebook → SRC Translation
-- [ ] Positioning notebook  
-- [ ] Translate to `src/job_intel/positioning/`  
 - [ ] Deterministic test cases
+
 
 ---
 
@@ -202,10 +202,6 @@ _Last updated: 2025-12-15_
 - [ ] `upskilling_recommender.py`
 - [ ] `roi_estimator.py`
 - [ ] **Recommendation Pipeline**
-
-### Notebook → SRC Translation
-- [ ] Recommendation notebook  
-- [ ] Translate to `src/job_intel/recommenders/`  
 - [ ] End-to-end recommender tests
 
 ---

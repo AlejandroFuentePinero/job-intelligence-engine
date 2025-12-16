@@ -593,23 +593,151 @@ Only the artefacts listed below are considered stable dependencies.
 **Chapter 1 is now closed.**
 
 
+# Chapter 2 — Hidden Structure (Graphs, Embeddings & Skill Ecosystems)
+
+## Overview
+
+Chapter 2 transforms the Job Intelligence Engine from feature-based modelling into **explicit structural discovery**.  
+Rather than analysing how individual predictors influence outcomes (Chapter 1), this chapter asks how jobs and skills are organised *relative to one another* across the labour market.
+
+Using the outputs of Chapter 1—most importantly the job × skill probability matrix—Chapter 2 constructs a relational representation of the market as a graph. From this graph, continuous embeddings are learned, interpretable job families are inferred, and skill ecosystems and specialisation patterns are extracted. The result is a reusable structural layer that supports ecosystem analysis, aggregation, and downstream recommendation logic.
 
 ---
 
-# Current Status & Next Steps
+## 2.1 Job–Skill Bipartite Graph
 
-## Completed
-- Full Chapter 0 data foundation  
-- PCA-based skill dimensionality reduction  
-- Salary Response Model v4  
-- Evaluation and benchmark tools  
+### Methodology
 
-## Next Steps (Chapter 1)
-- Per-skill logistic requirement models  
-- Salary fairness residual analysis  
-- SHAP, PDP, and ICE explainability suite  
+The labour market is represented as a **weighted bipartite graph** with two node types:
+
+- **Job nodes**, one per `job_id`
+- **Skill nodes**, one per skill group in the project taxonomy
+
+Edges connect jobs to skills, with edge weights equal to the model-estimated probability that a given skill is required for a job (from Chapter 1’s skill requirement models). A probability threshold is applied to remove negligible connections while preserving continuous signal.
+
+This approach replaces sparse binary indicators with a smooth, denoised representation of skill demand. Stable identifiers (`job_id`, skill names) are preserved throughout to ensure all graph-derived outputs can be joined back to the canonical modelling dataset.
+
+### Results
+
+The bipartite graph explicitly encodes shared skill neighbourhoods between jobs and shared job contexts between skills. Jobs are no longer independent rows but positions within a network of skill relationships.
+
+### Conclusions
+
+The job–skill graph establishes the structural backbone of Chapter 2. It converts tabular outputs into a relational object suitable for embedding methods and ecosystem-level analysis.
 
 ---
 
-# Summary
-Chapters 0 and 1 lay the foundational analytical structures of the Job Intelligence Engine, including a robust data pipeline, structured feature definitions, and the first predictive models. These components enable the subsequent modelling of skill demand, job similarities, labour-market competitiveness, and personalised career recommendations.
+## 2.2 Node2Vec Embeddings (Jobs and Skills)
+
+### Methodology
+
+Node2Vec is applied to the weighted bipartite graph to learn low-dimensional embeddings for both job and skill nodes. Random walks sample local and higher-order graph structure, and a skip-gram objective maps nodes with similar connectivity patterns to nearby positions in vector space.
+
+Embeddings are exported as versioned artefacts to ensure reproducibility and controlled iteration.
+
+### Results
+
+The resulting embeddings form a **continuous geometric representation** of the labour market:
+
+- Jobs requiring similar constellations of skills cluster naturally in embedding space.
+- Skills that co-occur across similar job contexts are embedded nearby.
+
+These vectors replace high-dimensional co-occurrence patterns with compact representations suitable for clustering, similarity search, and ecosystem analysis.
+
+### Conclusions
+
+Node2Vec embeddings provide a noise-tolerant, reusable latent space capturing relational similarity across jobs and skills. They form the foundation for all subsequent structural inference in Chapter 2.
+
+---
+
+## 2.3 Job Family Discovery (Clustering Job Embeddings)
+
+### Methodology
+
+To convert embedding geometry into an interpretable structural artefact, job embeddings are clustered to infer **latent job families**. Prior to clustering, embeddings are L2-normalised so that Euclidean distance reflects directional similarity rather than magnitude.
+
+KMeans is used to guarantee full assignment coverage—every `job_id` receives exactly one `job_family_id`. The number of clusters is selected using the silhouette score as a stability heuristic. The silhouette curve exhibits a broad plateau rather than a sharp optimum, indicating continuous structure rather than discrete separability. A value of *k = 20* is selected as a pragmatic balance between resolution and interpretability.
+
+### Results
+
+Each job is assigned to a single job family, producing a stable mapping (`job_id → job_family_id`) that can be joined to all downstream datasets. These families represent **job ecosystems**—groups of roles that share similar skill contexts, regardless of title noise or sector labels.
+
+### Conclusions
+
+Job family clustering produces the core interpretable output of Chapter 2. These families are unsupervised and provisional by design: they are intended as a structural navigation layer rather than a definitive taxonomy.
+
+---
+
+## 2.4 Skill Embeddings and Skill Ecosystems
+
+### Methodology
+
+While job embeddings are clustered, skill embeddings are treated differently. Skills are inherently overlapping and relational, so they are retained in continuous space rather than forced into hard clusters.
+
+Skill embeddings are used to:
+- Construct **skill similarity graphs** based on nearest-neighbour relationships
+- Identify bundles of skills that tend to co-occur across jobs
+- Highlight potential gateway or bridging skills that connect otherwise distinct job ecosystems
+
+### Results
+
+Skill similarity structures reveal coherent bundles (e.g. analytics + BI, ML + pipelines) and identify skills that act as connectors across multiple job families.
+
+### Conclusions
+
+Retaining skills in continuous embedding space preserves the richness of skill relationships and enables ecosystem-level reasoning that would be lost under hard clustering.
+
+---
+
+## 2.5 Skill Specialisation Maps (Lift-Based Analysis)
+
+### Methodology
+
+To interpret how skills are distributed across the market, **skill specialisation maps** are constructed. For each categorical variable (job family, sector, title, seniority, ownership, state, company size), the mean skill probability within each group is computed and compared to the global mean.
+
+Specialisation is defined as **lift**:
+
+\[
+\text{skill\_lift}_{g,s} = \bar{P}(s \mid g) - \bar{P}(s)
+\]
+
+Positive values indicate over-representation, negative values under-representation, and near-zero values generic usage.
+
+Heatmaps are used to visualise these patterns consistently across groupings.
+
+### Results
+
+Skill specialisation maps reveal:
+
+- **Sectoral structure**: strong differentiation in ML, pipelines, and cloud skills across industries.
+- **Title-driven signal**: job titles provide the clearest and strongest skill specialisation patterns.
+- **Seniority gradients**: advanced skills and leadership skills increase systematically with seniority.
+- **Ownership and size effects**: weaker but interpretable secondary patterns.
+- **Geographic variation**: modest signal relative to sector and title, suggesting location is not a primary driver of skill composition.
+
+### Conclusions
+
+Skill specialisation maps provide the primary interpretability layer for Chapter 2. They connect abstract embeddings back to human-interpretable labour-market structure and confirm that sector and job type dominate skill demand patterns.
+
+---
+
+## 2.6 Chapter 2 Outputs and Role in the System
+
+By the end of Chapter 2, the Job Intelligence Engine has produced:
+
+- A probability-weighted **job–skill bipartite graph**
+- **Node2Vec embeddings** for jobs and skills
+- A stable **job family mapping** (`job_id → job_family_id`)
+- **Skill similarity networks**
+- **Skill specialisation maps** across key categorical dimensions
+
+These artefacts define a reusable **structural layer** that bridges feature-based modelling (Chapter 1) and downstream applications. Rather than imposing premature taxonomies or optimisation objectives, Chapter 2 focuses on revealing how the market is organised.
+
+This structural foundation supports future modules including:
+- Ecosystem-aware recommendation systems
+- Skill pathway and upskilling analysis
+- Industry and domain specialisation summaries
+- Competitiveness and transition modelling
+
+The emphasis throughout Chapter 2 is on **discovering structure, not enforcing labels**—providing a faithful, data-driven map of how jobs and skills relate within the labour market.
+

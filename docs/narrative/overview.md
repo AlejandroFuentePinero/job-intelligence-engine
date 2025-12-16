@@ -1,6 +1,6 @@
 # Job Intelligence Engine — Project Overview  
 Narrative summary of Chapter 0 and the Salary Response Model of Chapter 1  
-Date: 2025-12-14
+Date: 2025-12-16
 
 The Job Intelligence Engine converts unstructured job postings into a structured analytical system.  
 Its goal is to understand how job titles, skills, industries, and companies shape the labour market, beginning with salary prediction.  
@@ -176,13 +176,73 @@ This index is descriptive and model-implied: it reflects patterns learned by the
 The skill value analysis serves as an **interpretability bridge** between the salary model and later chapters, helping contextualise how the model values different skill signals while remaining intentionally lightweight and non-mechanical within the system.
 
 
+# Chapter 2 — Hidden Structure from Job–Skill Graphs  
+Narrative overview of graph construction, embeddings, job families, and skill ecosystems  
+Date: 2025-12-15
+
+Chapter 2 shifts the Job Intelligence Engine from feature-based modelling to **structural discovery**.  
+Rather than asking how individual variables influence outcomes, this chapter asks how jobs and skills are organised *relative to one another* within the labour market.  
+It does so by representing the market as a graph, learning embeddings from that graph, and converting those embeddings into interpretable structure.
+
 ---
 
-# How the Chapters Connect
+## From Tabular Features to Relational Structure
 
-- **Chapter 0** establishes a unified and structured representation of each job posting.  
-- **Chapter 1** begins modelling the underlying mechanics of that structured world by predicting salary.  
+The outputs of Chapter 1—clean job attributes and a continuous job × skill probability matrix—implicitly describe relationships between jobs and skills, but those relationships remain distributed across columns and models. Chapter 2 makes this structure explicit by reframing the system as a **job–skill bipartite graph**, where jobs and skills are treated as nodes and edges encode skill demand relationships.
 
-Subsequent chapters will build on this foundation to model skill requirements, identify under- and over-paying market segments, learn job embeddings, quantify career paths, and develop personalised job recommendations.
+This graph representation captures higher-order dependencies that are difficult to express in tabular form. Jobs are no longer defined only by their attributes, but by their position within a network of shared skill requirements. Likewise, skills are situated within the broader ecosystem of jobs that demand them.
 
-This overview captures the conceptual story behind all work completed so far, without technical details or implementation specifics.
+---
+
+## Learning Continuous Representations with Node2Vec
+
+To extract usable structure from the job–skill graph, Node2Vec is applied to learn low-dimensional vector embeddings for both jobs and skills. These embeddings encode each node’s neighbourhood and connectivity patterns within the graph, such that jobs requiring similar constellations of skills are embedded close together, and skills that tend to appear in similar job contexts occupy nearby positions.
+
+The resulting embeddings form a **continuous geometric representation** of the labour market. They are not categories or predictions, but a latent space that preserves relational similarity and supports multiple downstream analyses.
+
+---
+
+## From Embeddings to Interpretable Job Families
+
+While embeddings provide a powerful representation, they are not directly interpretable or reusable as system-level artefacts. To move from geometry to structure, job embeddings are clustered to identify **latent job families**—groups of jobs that occupy similar regions of the embedding space and therefore share comparable skill contexts.
+
+Job embeddings are first L2-normalised so that Euclidean distance reflects directional similarity rather than vector magnitude. KMeans clustering is then applied, with the number of clusters selected using the silhouette score as a stability heuristic. The silhouette curve exhibits a broad plateau rather than a sharp optimum, indicating that job structure is continuous rather than discretely separable. A value of *k = 20* is chosen as a pragmatic balance between resolution and interpretability.
+
+The output of this step is a single, stable artefact mapping each `job_id` to a `job_family_id`. These job families are unsupervised and provisional by design: they are not intended as a definitive taxonomy, but as a reusable structural layer that supports aggregation, comparison, and navigation across the job market.
+
+---
+
+## Skill Ecosystems and Connectivity Structure
+
+In contrast to jobs, skills are not clustered into discrete groups. Skills are inherently overlapping and relational, and forcing them into hard clusters would obscure important structure. Instead, skill embeddings are used to construct a **skill ecosystem network**.
+
+Skill embeddings are L2-normalised and compared using cosine similarity (via dot products). For each skill, only the top-*k* most similar neighbouring skills are retained, producing a sparse, undirected skill–skill network that captures the strongest associations in embedding space. Self-edges are removed and symmetric duplicates are collapsed to yield a clean edge list representation.
+
+This skill ecosystem highlights **skill bundles and co-occurrence structure**: which skills tend to appear together across jobs, which act as bridges between domains, and which occupy more specialised or peripheral positions. The resulting network is an interpretable structural artefact rather than a predictive model, designed to support exploration, visualisation, and downstream reasoning about skill relationships.
+
+---
+
+## Chapter 2 in Context
+
+By the end of this stage, the Job Intelligence Engine has progressed from:
+- raw postings (Chapter 0),  
+to feature-based modelling of salary and skill demand (Chapter 1),  
+to an explicit **structural representation of the labour market** (Chapter 2).
+
+Jobs are now embedded, clustered into families, and indexed within a learned latent structure.  
+Skills are embedded and organised into a sparse ecosystem capturing proximity and co-occurrence patterns.
+
+Together, these artefacts form the backbone for subsequent chapters, including industry and domain specialisation, competitiveness scoring, career path simulation, and personalised job and skill recommendations. The emphasis throughout Chapter 2 remains on **structural discovery rather than optimisation**: learning how the market is organised before attempting to navigate or optimise within it.
+
+---
+
+Chapter 2 shifts the Job Intelligence Engine from feature-based modelling to **structural discovery**.  
+Rather than analysing how individual variables influence outcomes, this chapter focuses on how jobs and skills are organised *relative to one another* within the labour market.
+
+The chapter reframes the outputs of Chapter 1 as a **relational system** by constructing a probability-weighted job–skill bipartite graph. Jobs and skills are treated as nodes, and edges encode model-implied skill demand. This representation makes higher-order structure explicit: jobs are defined by their position within a network of shared skill requirements, and skills are situated within the ecosystem of jobs that demand them.
+
+To extract latent structure from this graph, Node2Vec is applied to learn low-dimensional embeddings for both jobs and skills. These embeddings capture neighbourhood similarity and co-occurrence patterns, producing a continuous geometric representation of the labour market. Job embeddings are then clustered to infer **latent job families**—unsupervised job ecosystems that support aggregation, comparison, and navigation without imposing a predefined taxonomy.
+
+In parallel, skill embeddings are retained to model **skill ecosystems** rather than forcing skills into discrete clusters. Skill similarity graphs and group-level skill specialisation maps are constructed to identify skill bundles, gateway skills, and over- or under-representation patterns across sectors, titles, seniority levels, ownership types, locations, and job families.
+
+By the end of Chapter 2, the Job Intelligence Engine has progressed from tabular features to a reusable **structural layer**: a graph-derived representation of how jobs and skills relate across the market. This layer forms the backbone for subsequent chapters, enabling ecosystem analysis, specialisation summaries, and recommendation-oriented modules built on learned market structure rather than raw feature space.
