@@ -38,7 +38,7 @@ _Last updated: 2025-12-15_
 
 ---
 
-# ✅ Chapter 1 — System Mechanics (CORE)
+# ✅ Chapter 1 — System Mechanics
 
 **Progress:** 100%  
 `[####################] 100%`
@@ -82,7 +82,7 @@ _Last updated: 2025-12-15_
 
 ---
 
-## 1.3 Salary Fairness Analysis (DIAGNOSTIC)
+## 1.3 Salary Fairness Analysis
 
 ### Core Work
 - [x] Residuals computed  
@@ -96,7 +96,7 @@ _Last updated: 2025-12-15_
 
 ---
 
-## 1.4 Explainability Suite (INTERPRETIVE)
+## 1.4 Explainability Suite
 
 ### Core Work
 - [x] SHAP global importance  
@@ -111,7 +111,7 @@ _Last updated: 2025-12-15_
 
 ---
 
-## 1.5 Skill Value (INTERPRETIVE)
+## 1.5 Skill Value
 
 ### Core Work
 - [x] Derive Global Skill Value Index  
@@ -125,7 +125,7 @@ _Last updated: 2025-12-15_
 
 ---
 
-## 1.6 Chapter 1 Consolidation (REQUIRED)
+## 1.6 Chapter 1 Consolidation
 
 ### Core Work
 - [x] Documentation consistency pass  
@@ -140,7 +140,7 @@ _Last updated: 2025-12-15_
 
 ---
 
-# ✅ Chapter 2 — Hidden Structure (REQUIRED)
+# ✅ Chapter 2 — Hidden Structure
 
 **Progress:** 100%  
 `[####################] 100%`
@@ -166,29 +166,42 @@ _Last updated: 2025-12-15_
 
 ---
 
-# Chapter 3 — Individual Positioning (REQUIRED)
+# CHAPTER 3 — Individual Positioning
 
 **Progress:** 0%  
 `[....................] 0%`
 
-### Core Work
-- [ ] Project individual skill vector → PCA space  
-- [ ] Job Suitability Score  
-- [ ] Competitiveness Index  
-- [ ] Skill Gap Analysis  
-- [ ] Documentation
+---
 
-### Pipelines / Architecture
-- [ ] `suitability.py`
-- [ ] `competitiveness.py`
-- [ ] `gap_analysis.py`
-- [ ] **Individual Positioning Pipeline**
-- [ ] Deterministic test cases
-
+## Core Work
+- [ ] User profile schema  
+- [ ] Load artefacts + project user skill vector → PCA space  
+- [ ] Define suitability components + normalization  
+- [ ] Job suitability score  
+- [ ] Competitiveness index  
+- [ ] Skill gap analysis  
+- [ ] Skill rarity integration (inverse frequency)  
+- [ ] Suitability sensitivity analysis (frozen protocol)  
+- [ ] Public API (user → scored jobs)  
+- [ ] Documentation  
 
 ---
 
-# Chapter 4 — Recommender Engine (REQUIRED)
+## Pipelines / Architecture
+- [ ] `schemas.py` (UserProfile, validation, feature ordering)  
+- [ ] `artefacts.py` (load skill list, PCA transformer, salary model, embeddings, skill-prob matrix)  
+- [ ] `skill_rarity.py`  
+- [ ] `gap_analysis.py`  
+- [ ] `suitability.py`  
+- [ ] `competitiveness.py`  
+- [ ] `sensitivity.py`  
+- [ ] `positioning.py` (orchestration + public interface)  
+- [ ] Pipeline entrypoint (`pipelines/ch3_individual_positioning.py`)  
+- [ ] Deterministic tests (golden fixtures + invariance checks)  
+
+---
+
+# Chapter 4 — Recommender Engine
 
 **Progress:** 0%  
 `[....................] 0%`

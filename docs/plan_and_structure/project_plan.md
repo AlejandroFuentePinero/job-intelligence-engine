@@ -86,11 +86,14 @@
 - **Skill Gap Analysis**  
   *Purpose:* Identify missing skills and rank gaps by severity.
 
-### Stretch
 - **Skill Rarity Integration (inverse frequency)**  
-- **Skill Difficulty Integration (O*NET)**  
+
 - **Suitability Sensitivity Analysis**  
-- **State-Level Competitiveness Aggregation**
+
+### Stretch
+
+- ⏭️ **Skill Difficulty Integration (O*NET)** 
+- ⏭️ **State-Level Competitiveness Aggregation**
 
 ---
 
