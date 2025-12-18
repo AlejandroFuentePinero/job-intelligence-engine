@@ -173,6 +173,102 @@ Method:
 - Gap severity: `gap = mean_prob` if user lacks skill, else `0`.
 This produces a calibrated, probability-based gap ranking (preferred over binary flags).
 
+
+Produces calibrated, probability-based skill gaps.
+
+---
+
+### 3.18 Skill Rarity Weights
+**Module:** `features/skill_rarity.py`  
+**Function:** `compute_skill_rarity_weights(profile, skill_prob_matrix)`
+
+Outputs:
+- `rarity_weight`: inverse global prevalence per skill.
+- `weight_norm`: mean-normalised rarity weights aligned to canonical skill order.
+
+Responsibilities:
+- Compute global skill prevalence across the job landscape.
+- Invert prevalence so rare skills receive higher weights.
+- Normalise weights for numerical stability.
+- Align weights exactly to the 27-skill user vector.
+
+Used to upweight missing *rare* skills in competitiveness scoring.
+
+---
+
+### 3.19 Candidate Competitiveness Index
+**Module:** `features/candidate_competitiveness.py`  
+**Function:** `add_competitiveness(profile, candidates_df, skill_prob_matrix, w_missing, w_salary)`
+
+Adds to `candidates_df`:
+- `expected_missing`
+- `expected_missing_norm`
+- `salary_pct`
+- `competitiveness_index`
+
+Method:
+- Compute expected missing skill burden via dot product of:
+- job-level skill probabilities
+- user missing-skill indicator
+- Optionally apply rarity weighting.
+- Compute salary percentile within candidate set.
+- Aggregate into a barrier-to-entry metric.
+
+Competitiveness reflects **difficulty of access**, not desirability.
+
+---
+
+### 3.20 Competitiveness Sensitivity Analysis
+**Module:** `features/competitiveness_sensitivity.py`  
+**Function:** `compute_competitiveness_sensitivity(candidates_df)`
+
+Outputs:
+- Sensitivity table with:
+- `w_skill`
+- `w_salary`
+- `spearman_rho_vs_baseline`
+
+Method:
+- Recompute competitiveness rankings across weight grid.
+- Compare each to baseline ranking via Spearman correlation.
+- Quantifies robustness to weighting assumptions.
+
+---
+
+### 3.21 Suitability Sensitivity Analysis
+**Module:** `features/suitability_sensitivity.py`  
+**Function:** `compute_suitability_sensitivity(candidates_df)`
+
+Outputs:
+- Sensitivity table with:
+- `w_skill`
+- `w_salary`
+- `spearman_rho_vs_baseline`
+
+Method mirrors competitiveness sensitivity, applied to suitability rankings.
+
+---
+
+### 3.22 Chapter 3 Orchestrator (Public API)
+**Module:** `src/job_intel/positioning.py`  
+**Function:** `run_positioning()`
+
+Returns:
+- `profile`
+- `candidates_df`
+- `gap_df`
+- `suitability_sensitivity`
+- `competitiveness_sensitivity`
+
+Responsibilities:
+- Load artefacts.
+- Build user profile and candidate set.
+- Compute suitability and competitiveness.
+- Run sensitivity analyses.
+- Compute skill gaps.
+
+This is the **single public entrypoint** for Chapter 3.
+
 ---
 
 # 4. Evaluation modules
@@ -273,15 +369,13 @@ All outputs are saved as versioned processed artefacts for reuse in downstream c
 ### 6.4 Individual Positioning Pipeline (Chapter 3)
 **File:** `pipelines/ch3_individual_positioning.py`
 
-This pipeline is the runnable wrapper around the Chapter 3 library entrypoint (`src/job_intel/positioning.py`).  
-It provides a reproducible “press play” interface to:
-- load artefacts,
-- construct a user profile,
-- filter candidates,
-- score suitability,
-- compute skill gaps,
-- and persist outputs (ranked jobs + gap table) for inspection or downstream use.
+Runnable wrapper around `run_positioning()`.
 
+Provides a reproducible execution path to:
+- rank jobs,
+- compute skill gaps,
+- evaluate robustness,
+- persist outputs for inspection or downstream use.
 ---
 
 # 7. Schemas
@@ -323,3 +417,10 @@ All Chapter 3 pipelines must consume the UserProfile output and must not re-impl
 - Chapter 3 artefacts (consumed inputs):
   - `data/processed/ch2_processed_df.csv` (jobs_df; modelling-ready table used for positioning)
   - `data/processed/skill_prob_matrix.csv` (job × `{skill}_prob` matrix used for calibrated gap analysis)
+  - `expected_missing`
+  - `expected_missing_norm`
+  - `salary_pct`
+  - `competitiveness_index`
+  - `suitability_sensitivity`
+  - `competitiveness_sensitivity`
+---

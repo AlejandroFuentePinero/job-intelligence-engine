@@ -3,6 +3,8 @@
 import pandas as pd
 from typing import Dict, Any
 
+from src.job_intel.features.skill_rarity import compute_skill_rarity_weights
+
 
 def add_competitiveness(
     profile: Dict[str, Any],
@@ -10,20 +12,21 @@ def add_competitiveness(
     skill_prob_matrix: pd.DataFrame,
     w_missing: float = 0.5,
     w_salary: float = 0.5,
+    use_rarity: bool = True,
 ) -> pd.DataFrame:
     """
     Add a competitiveness index to candidate jobs.
 
     Competitiveness captures barrier-to-entry using:
-    - Expected missing skill requirements
+    - Expected missing skill requirements (optionally rarity-weighted)
     - Salary percentile within the candidate set
 
     Higher values indicate harder-to-access jobs.
     """
 
-    # --- 1) user missing-skill indicator (shape: 27,) ---
+    # --- 1) user missing-skill indicator ---
     user_vec = profile["derived"]["skill_vector"].iloc[0].to_numpy()  # 0/1
-    missing_vec = 1 - user_vec  # 1 where user lacks skill
+    missing_vec = 1 - user_vec
 
     skill_cols = profile["derived"]["skill_vector"].columns.tolist()
     prob_cols = [f"{s}_prob" for s in skill_cols]
@@ -39,8 +42,19 @@ def add_competitiveness(
     )
 
     # --- 3) expected missingness ---
-    expected_missing = probs.to_numpy() @ missing_vec
-    expected_missing_norm = expected_missing / len(skill_cols)
+    if use_rarity:
+        rarity_weights = compute_skill_rarity_weights(
+            skill_prob_matrix=skill_prob_matrix,
+            skill_cols=skill_cols,
+        )
+        w_vec = rarity_weights.to_numpy()
+
+        expected_missing = (probs.to_numpy() * w_vec) @ missing_vec
+        expected_missing_norm = expected_missing / len(skill_cols)
+
+    else:
+        expected_missing = probs.to_numpy() @ missing_vec
+        expected_missing_norm = expected_missing / len(skill_cols)
 
     out = candidates_df.copy()
     out["expected_missing"] = expected_missing

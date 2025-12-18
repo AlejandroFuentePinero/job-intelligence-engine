@@ -74,7 +74,7 @@
 
 ---
 
-# CHAPTER 3 — Individual Positioning (Suitability, Competitiveness, Gaps)
+# ✅✅ CHAPTER 3 — Individual Positioning (Suitability, Competitiveness, Gaps)
 
 ### Core
 - ✅ **Job Suitability Score**  
@@ -86,9 +86,9 @@
 - ✅ **Skill Gap Analysis**  
   *Purpose:* Identify missing skills and rank gaps by severity.
 
-- **Skill Rarity Integration (inverse frequency)**  
+- ✅ **Skill Rarity Integration (inverse frequency)**  
 
-- **Suitability Sensitivity Analysis**  
+- ✅ **Suitability Sensitivity Analysis**  
 
 ### Stretch
 

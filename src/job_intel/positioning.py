@@ -13,6 +13,12 @@ from src.job_intel.features.candidate_suitability import (
     add_suitability,
 )
 from src.job_intel.features.candidate_competitiveness import add_competitiveness
+from src.job_intel.features.competitiveness_sensitivity import (
+    compute_competitiveness_sensitivity,
+)
+from src.job_intel.features.suitability_sensitivity import (
+    compute_suitability_sensitivity,
+)
 
 
 def run_positioning(
@@ -27,14 +33,18 @@ def run_positioning(
     w_salary: float = 0.3,
     top_k_gaps: int = 10,
     return_top_n_jobs: Optional[int] = 10,
-) -> Tuple[Dict[str, Any], pd.DataFrame, pd.DataFrame]:
+    run_sensitivity: bool = False,
+) -> Tuple[
+    Dict[str, Any], pd.DataFrame, pd.DataFrame, Optional[Dict[str, pd.DataFrame]]
+]:
     """
     Chapter 3 public API.
 
-    Given user inputs, returns:
+    Returns:
       - profile: validated UserProfile dict
-      - candidates_df: ranked jobs with suitability scores
+      - candidates_df: ranked jobs with suitability + competitiveness scores
       - gap_df: user-level skill gap diagnostics
+      - sensitivity_out: dict of sensitivity tables (or None)
     """
 
     # --- load artefacts ---
@@ -58,9 +68,22 @@ def run_positioning(
     candidates_df = add_suitability(profile, candidates_df, w_skill, w_salary)
 
     # --- competitiveness ---
-    candidates_df = add_competitiveness(profile, candidates_df, skill_prob_matrix)
+    candidates_df = add_competitiveness(
+        profile, candidates_df, skill_prob_matrix, use_rarity=True
+    )
 
-    # --- final ranking (primary sort = suitability; keep competitiveness as parallel axis) ---
+    # --- sensitivity analyses (optional) ---
+    sensitivity_out: Optional[Dict[str, pd.DataFrame]] = None
+    if run_sensitivity:
+        suit_sens_df = compute_suitability_sensitivity(candidates_df)
+        comp_sens_df = compute_competitiveness_sensitivity(candidates_df)
+
+        sensitivity_out = {
+            "suitability": suit_sens_df,
+            "competitiveness": comp_sens_df,
+        }
+
+    # --- final ranking (primary sort = suitability) ---
     candidates_df = candidates_df.sort_values("suitability", ascending=False)
 
     if return_top_n_jobs is not None:
@@ -72,8 +95,6 @@ def run_positioning(
         candidates_df,
         skill_prob_matrix,
         top_k=top_k_gaps,
-    )
+    ).sort_values("skill_gap", ascending=False)
 
-    gap_df = gap_df.sort_values("skill_gap", ascending=False)
-
-    return profile, candidates_df, gap_df
+    return profile, candidates_df, gap_df, sensitivity_out

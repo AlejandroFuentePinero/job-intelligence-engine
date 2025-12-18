@@ -165,27 +165,25 @@ _Last updated: 2025-12-15_
 - [x] Add regression tests (shapes, determinism)
 
 ---
-
 # CHAPTER 3 — Individual Positioning
 
-**Progress:** ~35%  
-`[███████.............] 35%`
+**Progress:** ~70%  
+`[██████████████......] 70%`
 
 ---
 
 ## Core Work
 - [x] **User profile schema**  
-- [x] **Candidate set construction** 
-- [x] **Suitability components (definition + normalization)**  
-  - [x] Skill match (PCA-space similarity)  
-  - [x] Salary alignment  
-- [x] **Job suitability score** 
-- [x] **Competitiveness index** 
+- [x] **Candidate set construction**  
+- [x] **Suitability components (definition + normalization)** 
+- [x] **Job suitability score**  
+- [x] **Competitiveness index**  
 - [x] **Skill gap analysis**  
 - [x] **Skill rarity integration (inverse frequency)**  
-- [ ] **Suitability sensitivity analysis** 
-- [x] **Public API** 
-- [ ] **Chapter 3 documentation**
+- [x] **Competitiveness sensitivity analysis**  
+- [x] **Suitability sensitivity analysis**  
+- [x] **Public API**  
+- [x] **Chapter 3 documentation**  
 
 ---
 
@@ -194,15 +192,15 @@ _Last updated: 2025-12-15_
 - [x] `user_profile_skill_processor.py`  
 - [x] `artefacts.py`  
 - [x] `candidate_selection.py`  
-- [x] `suitability_components.py`  
-- [x] `suitability.py`  
-- [ ] `skill_rarity.py`  
-- [x] `gap_analysis.py`  
-- [x] `competitiveness.py`  
-- [ ] `sensitivity.py`  
-- [x] `positioning.py` 
-- [x] Pipeline entrypoint `pipelines/ch3_individual_positioning.py`
-- [ ] Deterministic tests  
+- [x] `candidate_suitability.py`  
+- [x] `skill_rarity.py`  
+- [x] `candidate_competitiveness.py`  
+- [x] `candidate_skill_gap.py`  
+- [x] `competitiveness_sensitivity.py`  
+- [x] `suitability_sensitivity.py`  
+- [x] `positioning.py`  
+- [x] Pipeline entrypoint `pipelines/ch3_individual_positioning.py`  
+- [ ] **Deterministic tests**  
   *(golden fixtures, invariance checks, empty-set behavior)*
 
 ---
@@ -215,6 +213,7 @@ _Last updated: 2025-12-15_
 ### Core Work
 - [ ] Hybrid job recommender  
 - [ ] Upskilling recommender  
+- [ ] Salary prediction based on user?
 
 ### Pipelines / Architecture
 - [ ] `job_recommender.py`

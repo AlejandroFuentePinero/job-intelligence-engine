@@ -246,3 +246,114 @@ To extract latent structure from this graph, Node2Vec is applied to learn low-di
 In parallel, skill embeddings are retained to model **skill ecosystems** rather than forcing skills into discrete clusters. Skill similarity graphs and group-level skill specialisation maps are constructed to identify skill bundles, gateway skills, and over- or under-representation patterns across sectors, titles, seniority levels, ownership types, locations, and job families.
 
 By the end of Chapter 2, the Job Intelligence Engine has progressed from tabular features to a reusable **structural layer**: a graph-derived representation of how jobs and skills relate across the market. This layer forms the backbone for subsequent chapters, enabling ecosystem analysis, specialisation summaries, and recommendation-oriented modules built on learned market structure rather than raw feature space.
+
+# Chapter 3 — Individual Positioning  
+Narrative overview of user-level job ranking, skill gaps, and competitiveness  
+Date: 2025-12-18
+
+Chapter 3 introduces the **individual-facing layer** of the Job Intelligence Engine.  
+Where Chapters 0–2 focus on cleaning data, modelling labour-market structure, and discovering latent organisation, Chapter 3 asks a different question:
+
+**Given a specific user, how does the market look from their position?**
+
+This chapter reframes all upstream artefacts—skills, PCA space, salary structure, and skill-demand probabilities—around a single individual, producing ranked job recommendations, interpretable skill gaps, and diagnostics of access difficulty.
+
+---
+
+## Core Idea
+
+Jobs are not evaluated in isolation.  
+They are evaluated **relative to a user’s skills, preferences, and constraints**, using a fixed, deterministic market representation learned earlier in the project.
+
+Chapter 3 separates this evaluation into two complementary dimensions:
+
+- **Suitability** — *How well does this job match the user?*  
+- **Competitiveness** — *How hard would this job be for the user to access?*
+
+Both are computed transparently, using calibrated probabilities and explicit assumptions, rather than opaque end-to-end optimisation.
+
+---
+
+## User Profile as the Single Entry Point
+
+The chapter begins by formalising how a person enters the system through a **UserProfile schema**.  
+Free-text skill descriptions, location preferences, and role filters are validated, normalised, and projected into the **same 27-skill and PCA space** used by job models.
+
+This guarantees that all comparisons between users and jobs occur in a shared, coherent feature space, and that no downstream module reimplements user parsing logic.
+
+---
+
+## Candidate Set Construction
+
+Before scoring, the system applies **hard constraints** to define the feasible job set:
+- location,
+- sector,
+- enriched title,
+- job family.
+
+This step is intentionally strict and deterministic.  
+If constraints yield no candidates, the system fails loudly, forcing constraint revision rather than silently degrading recommendations.
+
+---
+
+## Suitability: Matching the User to Jobs
+
+Suitability measures **how well a job aligns with the user’s current profile**, not how prestigious or demanding it is.
+
+It combines:
+- **Skill similarity**, computed as cosine similarity between user and job representations in PCA skill space, and  
+- **Salary alignment**, formulated as a one-sided score that does not penalise jobs exceeding the user’s stated target.
+
+These components are normalised to a common scale and aggregated using explicit weights.  
+Suitability answers: *“If access were free, how good of a fit is this job?”*
+
+---
+
+## Skill Gap Analysis
+
+Suitability alone is insufficient without explanation.  
+To support actionable insight, Chapter 3 computes **probability-based skill gaps** using the skill probability matrix.
+
+Rather than relying on binary skill flags, the system estimates:
+> *How strongly each skill is required, on average, across the user’s top-K most suitable jobs.*
+
+Skills the user lacks are assigned gap severity proportional to their predicted importance, producing a ranked, calibrated gap profile that supports upskilling decisions and diagnostics.
+
+---
+
+## Competitiveness: Barrier-to-Entry Scoring
+
+Competitiveness captures **how difficult it is for the user to realistically access a job**, independent of desirability.
+
+It combines:
+1. **Expected missing skill burden**, computed as the probability-weighted sum of required skills the user lacks.  
+2. **Salary percentile**, measuring how demanding the job is relative to peers.
+
+To avoid treating all missing skills equally, the expected missingness is further **weighted by global skill rarity**.  
+Missing a rare, specialised skill counts more heavily than missing a ubiquitous one.
+
+Competitiveness answers: *“Even if this job is attractive, how hard would it be to get?”*
+
+---
+
+## Sensitivity Analysis
+
+Both suitability and competitiveness rely on explicit weighting assumptions.  
+Chapter 3 therefore includes **formal sensitivity analyses**, varying component weights across a grid and measuring ranking stability using Spearman rank correlation against a baseline configuration.
+
+This step does not optimise weights.  
+Instead, it **tests robustness**, identifying whether rankings are stable to reasonable modelling choices or highly sensitive to subjective assumptions.
+
+---
+
+## Chapter 3 in Context
+
+By the end of Chapter 3, the Job Intelligence Engine can:
+- position an individual within the learned labour-market structure,
+- rank jobs by fit and access difficulty,
+- quantify skill gaps probabilistically,
+- and validate robustness of rankings.
+
+This chapter completes the transition from **market-level modelling** to **user-level reasoning**, while remaining fully grounded in the deterministic, interpretable artefacts built in earlier stages.
+
+Subsequent chapters build on this positioning layer to explore salary prediction for individuals, recommendation systems, and dynamic career path simulation.

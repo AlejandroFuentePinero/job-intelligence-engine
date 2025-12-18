@@ -741,3 +741,255 @@ This structural foundation supports future modules including:
 
 The emphasis throughout Chapter 2 is on **discovering structure, not enforcing labels**—providing a faithful, data-driven map of how jobs and skills relate within the labour market.
 
+# Chapter 3 — Individual Positioning  
+## User-Centric Ranking, Competitiveness & Skill Gaps  
+Date: 2025-12-18
+
+---
+
+## Overview
+
+Chapter 3 introduces the **individual-facing analytical layer** of the Job Intelligence Engine.  
+Where Chapters 0–2 establish data foundations, predictive mechanics, and latent market structure, Chapter 3 answers a fundamentally different question:
+
+**How does the labour market look from the perspective of a specific individual?**
+
+This chapter operationalises all upstream artefacts—skill representations, PCA space, salary structure, skill-demand probabilities, and job-family structure—into a deterministic framework for **user-level positioning**. The outputs are not abstract summaries but concrete, interpretable diagnostics:
+
+- ranked job lists,
+- calibrated skill gaps,
+- competitiveness scores,
+- and robustness checks on modelling assumptions.
+
+Importantly, Chapter 3 does **not** optimise outcomes or prescribe decisions.  
+It provides a transparent, explainable representation of *fit* and *difficulty*, leaving decision-making to downstream systems or human interpretation.
+
+---
+
+## Conceptual Framing
+
+Chapter 3 decomposes individual positioning into two orthogonal dimensions:
+
+1. **Suitability** — *How well does a job align with the user’s current profile and preferences?*  
+2. **Competitiveness** — *How difficult would it be for the user to realistically access that job?*
+
+These dimensions are intentionally separated. A job can be highly suitable but extremely competitive, or accessible but poorly aligned. Collapsing these into a single score would obscure meaningful trade-offs.
+
+---
+
+## 3.1 User Profile Schema (Single Entry Point)
+
+### Methodology
+
+Chapter 3 introduces a formal **UserProfile schema**, implemented in `schemas.py`, which acts as the **sole entry point** for individual-level analysis. Raw user inputs may include:
+
+- free-text skill descriptions,
+- optional structured skill flags,
+- location preferences,
+- sector and title constraints,
+- salary targets,
+- weighting preferences.
+
+The schema performs the following steps deterministically:
+
+1. **Validation and normalisation** of raw inputs.  
+2. **Skill extraction** using the same taxonomy and extractor as Chapter 0.  
+3. **Construction of the canonical 27-skill binary vector**.  
+4. **Projection into the shared PCA skill space** using the stored PCA transformer from Chapter 1.  
+5. Assembly of a fixed-shape, model-ready profile object.
+
+### Results
+
+The resulting UserProfile is guaranteed to be compatible with all Chapter 3 modules and directly comparable to job representations produced earlier in the pipeline.
+
+### Conclusions
+
+Centralising user parsing ensures:
+- consistency across analyses,
+- no duplication of preprocessing logic,
+- and a strict separation between **data ingestion** and **analytical reasoning**.
+
+---
+
+## 3.2 Candidate Set Construction (Hard Constraints)
+
+### Methodology
+
+Before any scoring occurs, the system constructs a **candidate job set** by applying hard filters in a fixed, deterministic order:
+
+1. State (location)  
+2. Sector  
+3. Enriched job title  
+4. Job family  
+
+Filtering is intentionally strict. If the resulting candidate set is empty, the pipeline raises an explicit error rather than degrading silently.
+
+### Results
+
+The candidate set represents the **feasible market slice** for the user under their stated constraints.
+
+### Conclusions
+
+This step enforces conceptual clarity: suitability and competitiveness are evaluated **only among jobs the user is genuinely willing to consider**.
+
+---
+
+## 3.3 Suitability Modelling
+
+### Methodology
+
+Suitability measures *alignment*, not difficulty or prestige. It is constructed from two components:
+
+#### 1. Skill Match
+Skill match is computed as **cosine similarity** between the user’s PCA skill vector and each job’s PCA skill vector:
+
+\[
+\text{skill\_match} \in [-1, 1]
+\]
+
+This value is linearly mapped to \([0, 1]\) for aggregation purposes, preserving relative ordering.
+
+#### 2. Salary Alignment
+Salary alignment is formulated as a **one-sided score**:
+- Jobs meeting or exceeding the user’s target salary receive full credit.
+- Jobs below target are penalised proportionally.
+- Over-paying jobs are not penalised.
+
+This reflects realistic preference structure: exceeding expectations does not reduce suitability.
+
+#### Aggregation
+The final suitability score is a weighted sum of normalised components. Weights are explicit, user-configurable, and automatically normalised to sum to one.
+
+### Results
+
+Each candidate job receives:
+- raw and normalised skill match,
+- salary alignment score,
+- overall suitability score.
+
+### Conclusions
+
+Suitability answers the question:
+**“If access were free, how good of a fit is this job for the user?”**
+
+---
+
+## 3.4 Skill Gap Analysis (Probability-Based)
+
+### Methodology
+
+To explain suitability rankings and support actionable insight, Chapter 3 computes **skill gaps** using the job × skill probability matrix from Chapter 1.
+
+Procedure:
+1. Select the top-*K* most suitable jobs.  
+2. For each skill, compute the mean predicted probability across these jobs.  
+3. For skills the user lacks, define gap severity as this mean probability.  
+4. For skills the user already possesses, gap severity is zero.
+
+This produces a ranked gap table where magnitude reflects **expected importance**, not binary absence.
+
+### Results
+
+The output is a calibrated skill-gap profile highlighting which skills most strongly limit access to the user’s preferred jobs.
+
+### Conclusions
+
+This approach avoids brittle binary logic and produces **probabilistic, market-informed upskilling signals**.
+
+---
+
+## 3.5 Competitiveness Modelling
+
+### Methodology
+
+Competitiveness measures **barrier-to-entry**, independent of desirability. It combines three components:
+
+#### 1. Expected Missing Skill Burden
+For each job, the probability-weighted sum of skills the user lacks is computed:
+
+\[
+\mathbb{E}[\text{missing skills}] = \sum_{s \notin \text{user}} P(s \mid \text{job})
+\]
+
+#### 2. Skill Rarity Weighting
+Not all skills are equally substitutable. Missing a rare skill is more costly than missing a common one.  
+Expected missingness is therefore weighted by **inverse global skill frequency**, computed from the full probability matrix.
+
+#### 3. Salary Percentile
+Jobs demanding compensation far above market norms are intrinsically more competitive. Each job’s salary is mapped to its percentile within the candidate set.
+
+#### Aggregation
+The components are combined into a single competitiveness index using explicit, documented weights.
+
+### Results
+
+Each job receives:
+- expected missing skill burden,
+- rarity-adjusted burden,
+- salary percentile,
+- final competitiveness score.
+
+### Conclusions
+
+Competitiveness answers:
+**“How hard would it be for this user to access this job, regardless of fit?”**
+
+---
+
+## 3.6 Sensitivity Analysis (Robustness Diagnostics)
+
+### Methodology
+
+Suitability and competitiveness rely on explicit weighting assumptions.  
+To test robustness, Chapter 3 performs **systematic sensitivity analyses**:
+
+- Component weights are varied across a grid.
+- Rankings under each configuration are compared to the baseline using **Spearman rank correlation**.
+- Stability curves summarise how sensitive rankings are to modelling choices.
+
+### Results
+
+Sensitivity outputs identify:
+- regimes of stable rankings,
+- components that disproportionately influence outcomes,
+- and configurations where rankings become unstable.
+
+### Conclusions
+
+This step does not optimise weights.  
+It ensures that conclusions drawn from rankings are **robust rather than artefacts of arbitrary parameter choices**.
+
+---
+
+## 3.7 Outputs
+
+Chapter 3 produces the following artefacts:
+
+- Ranked candidate job list with suitability and competitiveness scores  
+- Skill gap table with calibrated severity values  
+- Sensitivity-analysis summaries for both suitability and competitiveness  
+
+All outputs are deterministic, reproducible, and fully explainable.
+
+---
+
+## Chapter 3 Synthesis
+
+Chapter 3 completes the transition from **market modelling** to **individual positioning**.  
+It does so without introducing opaque optimisation or recommendation heuristics.
+
+Key achievements:
+- A single, rigorous user-entry schema  
+- Explicit separation of fit and difficulty  
+- Probabilistic, market-informed skill gap diagnostics  
+- Robustness checks on all composite metrics  
+
+This chapter establishes a principled foundation for future work, including:
+- individual salary prediction,
+- personalised recommendations,
+- and dynamic career-path simulation.
+
+Chapter 3 is intentionally diagnostic, not prescriptive.  
+It tells the user **where they stand**, not **what they must do**.
+
+---
