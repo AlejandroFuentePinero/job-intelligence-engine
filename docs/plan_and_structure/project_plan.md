@@ -77,13 +77,13 @@
 # CHAPTER 3 — Individual Positioning (Suitability, Competitiveness, Gaps)
 
 ### Core
-- **Job Suitability Score**  
+- ✅ **Job Suitability Score**  
   *Purpose:* Quantify job fit for a user's profile (skills + embeddings + salary alignment).
 
 - **Job Competitiveness Index**  
   *Purpose:* Difficulty/barrier-to-entry using rarity, seniority, salary percentile, and requirements.
 
-- **Skill Gap Analysis**  
+- ✅ **Skill Gap Analysis**  
   *Purpose:* Identify missing skills and rank gaps by severity.
 
 - **Skill Rarity Integration (inverse frequency)**  

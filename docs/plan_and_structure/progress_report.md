@@ -168,36 +168,42 @@ _Last updated: 2025-12-15_
 
 # CHAPTER 3 — Individual Positioning
 
-**Progress:** 0%  
-`[....................] 0%`
+**Progress:** ~35%  
+`[███████.............] 35%`
 
 ---
 
 ## Core Work
-- [ ] User profile schema  
-- [ ] Load artefacts + project user skill vector → PCA space  
-- [ ] Define suitability components + normalization  
-- [ ] Job suitability score  
-- [ ] Competitiveness index  
-- [ ] Skill gap analysis  
-- [ ] Skill rarity integration (inverse frequency)  
-- [ ] Suitability sensitivity analysis (frozen protocol)  
-- [ ] Public API (user → scored jobs)  
-- [ ] Documentation  
+- [x] **User profile schema**  
+- [x] **Candidate set construction** 
+- [x] **Suitability components (definition + normalization)**  
+  - [x] Skill match (PCA-space similarity)  
+  - [x] Salary alignment  
+- [x] **Job suitability score** 
+- [x] **Competitiveness index** 
+- [x] **Skill gap analysis**  
+- [x] **Skill rarity integration (inverse frequency)**  
+- [ ] **Suitability sensitivity analysis** 
+- [x] **Public API** 
+- [ ] **Chapter 3 documentation**
 
 ---
 
 ## Pipelines / Architecture
-- [ ] `schemas.py` (UserProfile, validation, feature ordering)  
-- [ ] `artefacts.py` (load skill list, PCA transformer, salary model, embeddings, skill-prob matrix)  
+- [x] `schemas.py`  
+- [x] `user_profile_skill_processor.py`  
+- [x] `artefacts.py`  
+- [x] `candidate_selection.py`  
+- [x] `suitability_components.py`  
+- [x] `suitability.py`  
 - [ ] `skill_rarity.py`  
-- [ ] `gap_analysis.py`  
-- [ ] `suitability.py`  
-- [ ] `competitiveness.py`  
+- [x] `gap_analysis.py`  
+- [x] `competitiveness.py`  
 - [ ] `sensitivity.py`  
-- [ ] `positioning.py` (orchestration + public interface)  
-- [ ] Pipeline entrypoint (`pipelines/ch3_individual_positioning.py`)  
-- [ ] Deterministic tests (golden fixtures + invariance checks)  
+- [x] `positioning.py` 
+- [x] Pipeline entrypoint `pipelines/ch3_individual_positioning.py`
+- [ ] Deterministic tests  
+  *(golden fixtures, invariance checks, empty-set behavior)*
 
 ---
 

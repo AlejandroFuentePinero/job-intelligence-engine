@@ -1,5 +1,5 @@
 # Job Intelligence Engine — System Architecture
-Date: 2025-12-15
+Date: 2025-12-18
 
 This file contains the updated architecture for the project.
 
@@ -113,7 +113,65 @@ Outputs:
 
 This utility provides a consistent, validated interface for building the skill specialisation map.
 
+### 3.13 User Skill Processing
+**Module:** `userprofile_skill_processing.py`  
+Outputs:
+PCA axes derived from the user's skills. This utility provides a consistent user skill transformer needed to predict user aspiring salary.
 
+---
+
+## Chapter 3 Architecture — Individual Positioning (User → Ranked Jobs + Gaps)
+
+### 3.14 Chapter 3 Artefact Loader
+**Module:** `features/artefacts_ch3.py`  
+**Function:** `load_ch3_artefacts()`  
+Outputs:
+- `jobs_df`: Chapter 2 processed jobs table (modelling-ready; includes filters + skill PCs + salary fields).
+- `skill_prob_matrix`: Chapter 1 job × skill probability matrix (columns `job_id` + `{skill}_prob` for all skills).
+
+This loader centralises Chapter 3 dependencies and ensures consistent artefact sources across all positioning modules.
+
+### 3.15 Candidate Set Construction
+**Module:** `features/candidate_selection.py`  
+**Function:** `candidate_set_construction()`  
+Outputs:
+- `profile`: validated UserProfile dict (from `schemas.py`).
+- `candidates_df`: filtered job subset based on hard constraints.
+
+Responsibilities:
+- Build a UserProfile using `build_user_profile()`.
+- Apply hard filters in deterministic order:
+  1) `state`, 2) `Sector`, 3) `title_rich`, 4) `job_title_family`.
+- Enforce controlled failure when filters yield an empty set (raise ValueError).
+
+### 3.16 Candidate Suitability Components
+**Module:** `features/candidate_suitability.py`  
+Functions:
+- `add_skill_match(profile, candidates_df)`  
+  Adds:
+  - `skill_match_score` (raw cosine similarity in PCA space, [-1, 1])
+  - `skill_match_norm` (mapped to [0, 1] via `(s + 1) / 2`, used only for aggregation)
+- `add_salary_score(profile, candidates_df)`  
+  Adds:
+  - `salary_score` in [0, 1], one-sided target formulation (meeting/exceeding target does not reduce suitability)
+- `add_suitability(profile, candidates_df, w_skill, w_salary)`  
+  Adds:
+  - `suitability` as weighted sum of normalized components (weights auto-normalised to sum to 1)
+
+This module contains only component computation and does not load artefacts or perform candidate filtering.
+
+### 3.17 Candidate Skill Gap Analysis
+**Module:** `features/candidate_skill_gap.py`  
+**Function:** `compute_skill_gaps(profile, candidates_df, skill_prob_matrix, top_k)`  
+Output:
+- `gap_df`: user-level skill gap diagnostics (one row per skill)
+
+Method:
+- Take top-K jobs by suitability.
+- Join against `skill_prob_matrix` using `job_id`.
+- Compute mean probability per skill across top-K jobs.
+- Gap severity: `gap = mean_prob` if user lacks skill, else `0`.
+This produces a calibrated, probability-based gap ranking (preferred over binary flags).
 
 ---
 
@@ -212,25 +270,39 @@ From these embeddings, the pipeline produces two interpretable Chapter 2 artefac
 
 All outputs are saved as versioned processed artefacts for reuse in downstream chapters (job-family aggregation, skill bundle analysis, and later recommendation logic).
 
+### 6.4 Individual Positioning Pipeline (Chapter 3)
+**File:** `pipelines/ch3_individual_positioning.py`
+
+This pipeline is the runnable wrapper around the Chapter 3 library entrypoint (`src/job_intel/positioning.py`).  
+It provides a reproducible “press play” interface to:
+- load artefacts,
+- construct a user profile,
+- filter candidates,
+- score suitability,
+- compute skill gaps,
+- and persist outputs (ranked jobs + gap table) for inspection or downstream use.
 
 ---
 
-# 6. Data Flow Diagram (Text)
+# 7. Schemas
 
-RAW CSVs  
-→ Chapter 0 Pipeline  
-→ ch0_processed_jobs.csv  
-→ Salary Pipeline  
-   → PCA + XGBoost  
-   → salary_model_v4.pkl  
+## User Profile Schema (Entry Point)
 
-→ Skill Pipeline  
-   → 27 LGBM models  
-   → skill_prob_matrix.csv  
+Chapter 3 introduces a formal **UserProfile schema** that defines how an individual enters the Job Intelligence Engine.
+
+The schema is implemented in `src/job_intel/schemas.py` via `build_user_profile()` and acts as the **single entrypoint** for all downstream Chapter 3 logic (suitability, skill gaps, competitiveness, sensitivity analysis, and future APIs).
+
+**Responsibilities:**
+- Validate and normalize raw user inputs (skills text, location, preferences).
+- Reuse Chapter 0 skill extraction to produce the canonical 27-skill vector.
+- Project user skills into the shared PCA space used by job models.
+- Return a deterministic, model-ready payload with fixed shapes and semantics.
+
+All Chapter 3 pipelines must consume the UserProfile output and must not re-implement user parsing or preprocessing logic elsewhere.
 
 ---
 
-# 7. Artefacts
+# 8. Artefacts
 
 - `jobs_ch0.csv` Chapter 0 pipeline output
 - `skill_pca_v1.pkl` PCA model
@@ -248,11 +320,6 @@ RAW CSVs
 - `job_families_graph_embeddings.csv` clustering output chapter 2
 - `skill_similarity_edges_k5_embeddings.csv` skill–skill network derived from Node2Vec embeddings
 - `job_family_skill_specialisation.csv` canonical output of the “Industry / Job-Family Specialisation Map” module
-
----
-
-# 8. End-to-End Objective
-Provide a reproducible system for extracting job structure, modelling salary, inferring skill requirements, and preparing downstream semantic modelling (Chapters 2–5).
-
----
-
+- Chapter 3 artefacts (consumed inputs):
+  - `data/processed/ch2_processed_df.csv` (jobs_df; modelling-ready table used for positioning)
+  - `data/processed/skill_prob_matrix.csv` (job × `{skill}_prob` matrix used for calibrated gap analysis)

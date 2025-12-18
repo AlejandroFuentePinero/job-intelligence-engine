@@ -32,6 +32,7 @@ CH0_DOMAIN_LOOKUP_FILE = INTERIM_DATA_DIR / "domain_lookup_ch0.csv"
 
 CH1_PROCESSED_SALARY_MODEL_DF = PROCESSED_DATA_DIR / "salary_model_dfv01.csv"
 CH1_PROCESSED_SALARY_MODEL_PCA_DF = PROCESSED_DATA_DIR / "salary_model_dfv02_pca.csv"
+SKILL_PROB_MATRIX = PROCESSED_DATA_DIR / "skill_prob_matrix.csv"
 
 # Chapter 2 Dataset
 
