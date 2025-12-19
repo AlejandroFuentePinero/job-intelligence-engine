@@ -33,7 +33,7 @@ def run_positioning(
     w_salary: float = 0.3,
     top_k_gaps: int = 10,
     return_top_n_jobs: Optional[int] = 10,
-    run_sensitivity: bool = False,
+    run_sensitivity: bool = True,
 ) -> Tuple[
     Dict[str, Any], pd.DataFrame, pd.DataFrame, Optional[Dict[str, pd.DataFrame]]
 ]:

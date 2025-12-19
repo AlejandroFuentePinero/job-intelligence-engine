@@ -29,6 +29,7 @@ core_basic = [
     "api",
     "linux",
     "unix",
+    "ocaml",
 ]
 core_intermediate = [
     "scala",
@@ -818,6 +819,7 @@ soft_core = [
     "ability to work independently",
     "willingness to learn",
     "continuous learning",
+    "problem solver",
 ]
 soft_leadership = [
     "leadership",
@@ -969,6 +971,7 @@ domain_skills = [
     "insurance and membership analytics",
     "small business fintech",
     "invoicing and payments analytics",
+    "clinical laboratory science",
 ]
 
 # Map each list name to (domain, level)

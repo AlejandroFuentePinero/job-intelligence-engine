@@ -92,7 +92,7 @@
 
 ### Stretch
 
-- ⏭️ **Skill Difficulty Integration (O*NET)** 
+- ⛔️ **Skill Difficulty Integration (O*NET)** 
 - ⏭️ **State-Level Competitiveness Aggregation**
 
 ---

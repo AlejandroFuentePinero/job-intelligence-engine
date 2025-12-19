@@ -30,6 +30,7 @@ import networkx as nx
 
 from src.job_intel.models.skill_prob_matrix import build_skill_probability_matrix
 from src.job_intel.config import CH2_PROCESSED_DF, MODELS_DIR
+from src.job_intel.features.skills_pca import SKILL_COLS
 
 
 def build_job_skill_bipartite_graph(
@@ -64,7 +65,12 @@ def build_job_skill_bipartite_graph(
     # ------------------------------------------------------------------
     # Validate inputs
     # ------------------------------------------------------------------
-    if not (0.0 <= float(threshold) <= 1.0):
+    try:
+        threshold = float(threshold)
+    except (TypeError, ValueError):
+        raise ValueError(f"threshold must be a float in [0, 1]. Got {threshold!r}")
+
+    if not (0.0 <= threshold <= 1.0):
         raise ValueError(f"threshold must be in [0, 1]. Got threshold={threshold}")
 
     # ------------------------------------------------------------------
@@ -73,10 +79,8 @@ def build_job_skill_bipartite_graph(
     if df is not None:
         df = df.copy()
     else:
-        # Expect job_id to be a column in the saved artefact
         df = pd.read_csv(CH2_PROCESSED_DF)
 
-    # If job_id is a column, promote it to the index (Chapter 2 identifier boundary)
     if "job_id" in df.columns:
         if df["job_id"].isna().any():
             raise ValueError("job_id column contains NaNs.")
@@ -84,7 +88,6 @@ def build_job_skill_bipartite_graph(
             raise ValueError("job_id column contains duplicates.")
         df = df.set_index("job_id")
 
-    # If job_id is not a column, it must already be the index
     if df.index.name != "job_id":
         raise ValueError(
             "DataFrame must have job_id as index or as a column named 'job_id'. "
@@ -92,17 +95,42 @@ def build_job_skill_bipartite_graph(
         )
     if not df.index.is_unique:
         raise ValueError("job_id index must be unique.")
+    if df.index.hasnans:
+        raise ValueError("job_id index contains NaNs.")
+
+    # ------------------------------------------------------------------
+    # Chapter 2 eligibility: remove jobs with zero extracted skill flags
+    # (prevents isolated/degenerate nodes in the job–skill graph)
+    # ------------------------------------------------------------------
+    if len(SKILL_COLS) == 0:
+        raise ValueError("SKILL_COLS is empty; cannot filter zero-skill jobs.")
+
+    missing = [c for c in SKILL_COLS if c not in df.columns]
+    if missing:
+        raise KeyError(f"Missing skill columns in df: {missing}")
+
+    n_total = len(df)
+    mask = df[SKILL_COLS].sum(axis=1) > 0
+    df = df.loc[mask].copy()
+
+    n_kept = len(df)
+    n_dropped = n_total - n_kept
+    if n_kept == 0:
+        raise ValueError(
+            f"Eligibility filter removed all jobs: kept={n_kept}, dropped={n_dropped}, total={n_total}."
+        )
 
     # ------------------------------------------------------------------
     # Build skill probability matrix
     # ------------------------------------------------------------------
-    print("✅ Building the job probability matrix.")
+    print("✅ Building the skill probability matrix...")
     prob_mat = build_skill_probability_matrix(jobs_df=df)
-    print("✅ Job probability matrix built.")
+    print("✅ Skill probability matrix built.")
 
-    # Ensure alignment between dataframe and probability matrix
     if not prob_mat.index.equals(df.index):
-        raise ValueError("Index mismatch between dataframe and probability matrix.")
+        raise ValueError(
+            "Index mismatch between dataframe and skill probability matrix."
+        )
 
     # ------------------------------------------------------------------
     # Create empty bipartite graph
@@ -110,7 +138,6 @@ def build_job_skill_bipartite_graph(
     print("✅ Creating graph...")
     G = nx.Graph()
 
-    # Add job + skill nodes
     print("✅ Adding nodes...")
     G.add_nodes_from(prob_mat.index, bipartite="job")
     G.add_nodes_from(prob_mat.columns, bipartite="skill")
@@ -133,9 +160,6 @@ def build_job_skill_bipartite_graph(
 
     print(f"✅ Edges added. Total edges = {G.number_of_edges()}")
 
-    # ------------------------------------------------------------------
-    # Optional: persist graph to disk
-    # ------------------------------------------------------------------
     if save_graph_pickle:
         MODELS_DIR.mkdir(parents=True, exist_ok=True)
         graph_path = MODELS_DIR / f"job_skill_bipartite_thres{threshold}.pkl"

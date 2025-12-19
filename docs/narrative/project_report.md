@@ -993,3 +993,141 @@ Chapter 3 is intentionally diagnostic, not prescriptive.
 It tells the user **where they stand**, not **what they must do**.
 
 ---
+
+# Chapter 3 — Individual Positioning
+
+## Overview
+
+Chapter 3 introduces the first **user-facing analytical layer** of the Job Intelligence Engine.  
+Building on the structural and probabilistic artefacts produced in Chapters 0–2, this chapter reframes the system from a market-level analysis into an **individual positioning framework**.
+
+Rather than predicting outcomes or prescribing actions, Chapter 3 addresses a more fundamental question:
+
+Given a user’s current skill profile and constraints, how does the labour market position them relative to available jobs?
+
+To answer this, the chapter formalises three complementary concepts: **suitability**, **competitiveness**, and **skill gaps**.
+
+---
+
+## Core Contributions
+
+### Suitability Scoring (Opportunity Alignment)
+
+Suitability quantifies how well a job aligns with the user’s current profile.
+
+It combines two signals:
+- Skill alignment, measured as similarity between the user’s skills and job skill requirements in shared latent space  
+- Salary alignment, measured as whether the job meets or exceeds the user’s stated salary target  
+
+Suitability is explicitly user-centric:
+- Higher values indicate better alignment  
+- There is no penalty for exceeding salary expectations  
+- Scores are normalised to support ranking rather than absolute interpretation  
+
+Suitability answers the question:  
+**How well does this job fit the user right now?**
+
+---
+
+### Competitiveness Index (Barrier to Entry)
+
+Competitiveness captures how difficult a job is for the user to access, independent of how attractive it may be.
+
+It integrates two orthogonal barriers:
+- Expected missing skills, computed as the probability-weighted burden of skills the user lacks  
+- Salary percentile, reflecting how ambitious the job is relative to the candidate set  
+
+Skill missingness is computed using the job–skill probability matrix rather than binary indicators.  
+Rare skills contribute more strongly to the barrier via inverse-frequency weighting, ensuring that missing scarce skills are penalised more than missing ubiquitous ones.
+
+The final competitiveness index is normalised to a [0, 1] scale:
+- Higher values indicate greater barriers  
+- Competitiveness is a diagnostic signal, not an optimisation target  
+
+Competitiveness answers the question:  
+**How hard would this job be to obtain for the user?**
+
+---
+
+### Skill Gap Analysis (Actionable Deficits)
+
+Skill gap analysis identifies which missing skills most constrain the user’s access to their best-matching opportunities.
+
+The analysis:
+- Focuses on the user’s top-ranked jobs by suitability  
+- Computes the average probability that each skill is required across those jobs  
+- Assigns gap severity only to skills the user currently lacks  
+
+This produces a calibrated ranking of missing skills grounded in real job demand rather than raw frequency or generic curricula.
+
+Skill gaps answer the question:  
+**Which missing skills matter most for the jobs the user is already close to?**
+
+---
+
+### Sensitivity Analysis (Robustness Diagnostics)
+
+Chapter 3 includes sensitivity analyses to assess the stability of results under reasonable changes in weighting assumptions.
+
+Two dimensions are evaluated:
+- Suitability weighting between skill alignment and salary alignment  
+- Competitiveness weighting between skill barriers and salary barriers  
+
+Rank stability is assessed using rank-correlation metrics against baseline configurations.  
+Results show that rankings remain stable across plausible parameter ranges, indicating that conclusions are not driven by arbitrary weighting choices.
+
+---
+
+## System Integration
+
+All Chapter 3 logic is orchestrated through a single positioning pipeline that:
+- Loads validated artefacts from previous chapters  
+- Constructs a structured user profile  
+- Filters candidate jobs deterministically  
+- Computes suitability, competitiveness, and skill gaps  
+- Optionally evaluates robustness through sensitivity analysis  
+
+No component in Chapter 3 retrains models, mutates upstream artefacts, or duplicates preprocessing logic.  
+All outputs are deterministic and reproducible.
+
+---
+
+## Scope Boundary
+
+Chapter 3 is intentionally descriptive and diagnostic rather than prescriptive.
+
+It does not:
+- Predict individual salaries  
+- Optimise career trajectories  
+- Recommend specific actions or learning paths  
+- Model time, effort, or transition costs  
+
+All outputs are framed as **positioning signals**, not decisions.
+
+---
+
+## Role in the Job Intelligence Engine
+
+Chapter 3 completes the transition from market-level structure to individual-level positioning.
+
+It provides the analytical foundation required for subsequent chapters that will:
+- Estimate user-specific salary potential  
+- Simulate skill acquisition pathways  
+- Support recommendation and optimisation logic  
+- Integrate agentic decision-making systems  
+
+---
+
+## Chapter 3 Closure
+
+Chapter 3 establishes a coherent, interpretable, and reusable framework for mapping an individual into the labour-market structure learned by the Job Intelligence Engine.
+
+The chapter deliberately avoids premature optimisation, focusing instead on:
+- clarity of signals  
+- robustness of diagnostics  
+- alignment with learned market structure  
+
+With this chapter complete, the system is prepared to move from **positioning** to **decision support and recommendation**, which are addressed in subsequent chapters.
+
+**Chapter 3 is now closed.**
+

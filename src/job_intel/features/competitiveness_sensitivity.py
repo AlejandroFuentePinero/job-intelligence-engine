@@ -27,7 +27,7 @@ def compute_competitiveness_sensitivity(
     baseline_w_skill: float = 0.7,
     baseline_w_salary: float = 0.3,
     job_id_col: str = "job_id",
-    missing_col: str = "expected_missing_rarity_norm",
+    missing_col: str = "expected_missing_norm",
     salary_pct_col: str = "salary_pct",
 ) -> pd.DataFrame:
     """

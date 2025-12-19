@@ -31,6 +31,14 @@ def add_competitiveness(
     skill_cols = profile["derived"]["skill_vector"].columns.tolist()
     prob_cols = [f"{s}_prob" for s in skill_cols]
 
+    # Mismatch guard
+    missing_ids = set(candidates_df["job_id"]) - set(skill_prob_matrix["job_id"])
+    if missing_ids:
+        sample = list(missing_ids)[:5]
+        raise KeyError(
+            f"job_id mismatch: {len(missing_ids)} candidate job_ids missing from skill_prob_matrix. Example: {sample}"
+        )
+
     # --- 2) align skill-prob matrix to candidates ---
     probs = (
         skill_prob_matrix.loc[

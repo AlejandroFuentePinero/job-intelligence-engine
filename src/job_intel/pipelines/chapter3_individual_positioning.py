@@ -11,7 +11,7 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def main():
-    profile, jobs_df, gaps_df = run_positioning(
+    profile, jobs_df, gaps_df, sensitivity = run_positioning(
         skill_text=(
             "Python, SQL, machine learning, statistics, data analysis, "
             "scikit-learn, pandas, experimentation"

@@ -291,6 +291,38 @@ Outputs:
 **File:** `evaluation/build_base_dataset_benchmark.py`  
 Compares Chapter 0 dataset to benchmark.
 
+### 4.4 Chapter 3 Positioning Pipeline Evaluator
+**File:** `evaluation/chapter3_pipeline_eval.py`  
+**Purpose:** Engineering hardening and behavioural validation for the Chapter 3 user positioning pipeline.  
+
+**Checks / Outputs:**
+- **Determinism & Invariance**
+  - Repeatability across identical runs  
+  - Identical rankings, scores, gaps, and sensitivities  
+
+- **Boundary Conditions**
+  - Zero-candidate failure modes  
+  - Single-job candidate handling  
+  - Empty or minimal skill text  
+
+- **Artefact Integrity**
+  - Missing skill-probability columns  
+  - `job_id` mismatches across artefacts  
+
+- **Behavioural Sanity**
+  - Suitability response to `w_skill` and `salary_target`  
+  - Competitiveness response to adding/removing user skills  
+
+- **Sensitivity Integrity**
+  - Weight grid normalisation  
+  - Baseline uniqueness  
+  - Spearman ρ bounds and non-degeneracy  
+
+- **Smoke Tests**
+  - Required outputs and columns present  
+  - Valid score ranges  
+  - Correct ranking order  
+
 ---
 
 # 5. Model modules

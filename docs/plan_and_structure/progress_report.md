@@ -16,7 +16,7 @@ _Last updated: 2025-12-15_
 # ✅ Chapter 0 — Foundations (Preprocessing & Taxonomy)
 
 **Progress:** 100%  
-`[####################] 100%`
+`[████████████████████] 100%`
 
 ### Core Work (LOCKED)
 - [x] Clean raw data  
@@ -41,7 +41,7 @@ _Last updated: 2025-12-15_
 # ✅ Chapter 1 — System Mechanics
 
 **Progress:** 100%  
-`[####################] 100%`
+`[████████████████████] 100%`
 
 > Chapter 1 produces **mechanical, reusable signals** consumed downstream.
 > No user-level optimisation or decision logic occurs here.
@@ -143,7 +143,7 @@ _Last updated: 2025-12-15_
 # ✅ Chapter 2 — Hidden Structure
 
 **Progress:** 100%  
-`[####################] 100%`
+`[████████████████████] 100%`
 
 ### Core Work
 - [x] Build job–skill bipartite graph  
@@ -165,10 +165,10 @@ _Last updated: 2025-12-15_
 - [x] Add regression tests (shapes, determinism)
 
 ---
-# CHAPTER 3 — Individual Positioning
+# ✅ CHAPTER 3 — Individual Positioning
 
-**Progress:** ~70%  
-`[██████████████......] 70%`
+**Progress:** ~100%  
+`[████████████████████] 100%`
 
 ---
 
@@ -200,7 +200,7 @@ _Last updated: 2025-12-15_
 - [x] `suitability_sensitivity.py`  
 - [x] `positioning.py`  
 - [x] Pipeline entrypoint `pipelines/ch3_individual_positioning.py`  
-- [ ] **Deterministic tests**  
+- [x] **Deterministic tests**  
   *(golden fixtures, invariance checks, empty-set behavior)*
 
 ---
