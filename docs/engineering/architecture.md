@@ -269,6 +269,35 @@ Responsibilities:
 
 This is the **single public entrypoint** for Chapter 3.
 
+## Chapter 4 Architecture — Recommender Engine
+
+### 4.1 Chapter 4 Context Loader
+**Module:** `features/artefacts_ch4.py`  
+**Function:** `load_ch4_context()`  
+
+Outputs (dict):
+- `profile`: validated + derived UserProfile dict (from Chapter 3; includes `derived.skill_pcs`)
+- `candidates_df`: filtered + positioned job candidates (Chapter 3 output; contains suitability/competitiveness + encoded codes)
+- `gap_df`: user-level skill gap diagnostics (Chapter 3 output)
+- `sensitivity_out`: sensitivity outputs from Chapter 3 (or `None` if disabled)
+- `jobs_df`: refined, feature-complete jobs dataframe (from `load_ch3_artefacts()`)
+- `skill_prob_matrix`: job×skill probability matrix aligned to job_ids (from `load_ch3_artefacts()`)
+- `salary_model`: loaded salary model artefact (`salary_model_v4.pkl`)
+- `user_salary_model_features`: candidate-level salary design matrix (job/company codes + broadcasted user skill PCs)
+
+Responsibilities:
+- Call Chapter 3 public API (`run_positioning`) to produce the candidate universe and user-derived features.
+- Load aligned Chapter 3 artefacts (`jobs_df`, `skill_prob_matrix`) via `load_ch3_artefacts()` (no expensive Chapter 1 reruns).
+- Load the trained salary model artefact from `MODELS_DIR`.
+- Build salary prediction features by:
+  - selecting job/company categorical codes from `candidates_df` (`size_code`, `sector_code`, `state_code`, `ownership_code`, `seniority_code`, `title_rich_code`)
+  - broadcasting the user’s 1×10 `skill_PC*` vector across all candidate rows
+- Provide a single canonical “ready for Chapter 4” context payload for downstream recommenders.
+
+Notes:
+- `return_top_n_jobs` should be set to `None` for full-universe recommender engine runs; top-N trimming should occur at the final display layer.
+
+
 ---
 
 # 4. Evaluation modules
@@ -322,6 +351,31 @@ Compares Chapter 0 dataset to benchmark.
   - Required outputs and columns present  
   - Valid score ranges  
   - Correct ranking order  
+
+### 4.5 Chapter 4 Entry Point Evaluator
+**File:** `evaluation/chapter_4_entrypoint_eval.py`  
+**Purpose:** Minimal delta validation for the Chapter 4 context loader (`load_ch4_context`). Focuses only on new Chapter 4 risks (salary feature construction + artefact alignment), without duplicating Chapter 3 pipeline tests.
+
+**Checks / Outputs:**
+- **Salary Feature Matrix Integrity**
+  - Required salary-model feature columns present:
+    - `size_code`, `sector_code`, `state_code`, `ownership_code`, `seniority_code`, `title_rich_code`
+    - `skill_PC1` … `skill_PC10`
+  - Row count matches `candidates_df`
+  - No missing values in required columns
+
+- **PC Broadcasting Correctness**
+  - User `skill_PC*` values are constant across all candidate rows
+  - Values match `profile["derived"]["skill_pcs"]` within tolerance
+
+- **Salary Prediction Smoke Test**
+  - `salary_model.predict(X)` executes successfully
+  - Output length matches feature matrix rows
+  - Predictions contain no NaN/inf values
+
+- **Upskilling Alignment Prerequisite**
+  - Candidate `job_id` values are a subset of the `skill_prob_matrix` job universe
+
 
 ---
 
