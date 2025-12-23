@@ -207,8 +207,8 @@ _Last updated: 2025-12-15_
 
 # Chapter 4 — Recommender Engine
 
-**Progress:** 35%  
-`[███████.............] 35%`
+**Progress:** 45%  
+`[█████████...........] 45%`
 
 ## Core Work
 - [x] Define recommendation intents + scoring objectives (v1)
@@ -216,7 +216,7 @@ _Last updated: 2025-12-15_
 - [x] Chapter 4 context loader (wrapper) + salary feature construction (PC broadcast)
 - [x] Chapter 4 entrypoint evaluation (salary features + predict smoke + alignment)
 - [x] Hybrid job recommender (retrieve → rerank; 2 buckets)
-- [ ] Explanation layer (why job / why skill; per-bucket rationale)
+- [x] Explanation layer (why job / why skill; per-bucket rationale)
 - [ ] Upskilling recommender (unlock + market value + level-step guidance)
 - [ ] Skill “ROI-like” efficiency index (proxy-denominator; rename if needed)
 - [ ] Career simulation (what-if skill additions; deltas + re-rank)
@@ -229,12 +229,11 @@ _Last updated: 2025-12-15_
 - [x] `features/artefacts_ch4.py` (`load_ch4_context`)
 - [x] `evaluation/chapter_4_entrypoint_eval.py`
 - [x] `features/job_recommender.py` (retrieve + rerank + bucket outputs)
-- [x] `candidate_retrieval.py` (optional: keep retrieval separate/clean)
-- [ ] `recommendation_schema.py` (output contracts for jobs/skills/what-if/state)
-- [ ] `upskilling_recommender.py`
-- [ ] `skill_value_index.py` (or `roi_estimator.py` with proxy-caveat)
-- [ ] `career_simulator.py`
-- [ ] `cross_state_optimizer.py`
+- [x] `features/job_explanations.py` (`build_job_explanations`)
+- [ ] `features/upskilling_recommender.py`
+- [ ] `features/skill_value_index.py` (or `roi_estimator.py` with proxy-caveat)
+- [ ] `features/career_simulator.py`
+- [ ] `features/cross_state_optimizer.py`
 - [ ] `pipelines/chapter4_recommender_engine.py` (orchestrator)
 - [ ] `evaluation/ch4_invariants.py` (determinism, constraint-respect, alignment)
 - [ ] End-to-end recommender tests (fixtures + sanity checks)

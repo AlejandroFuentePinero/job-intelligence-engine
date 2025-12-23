@@ -430,13 +430,28 @@ This is not a causal claim about what the user “deserves”; it is a model-con
 
 ---
 
+## Explanation Layer (v1): Making Recommendations Inspectable
+
+Chapter 4 includes a lightweight explanator that augments the Top-N recommendations with deterministic, human-readable rationale:
+
+- **Why this bucket?** A sentence explaining whether the role is “best-now” or “stretch” based on `competitiveness_index` relative to `c_max`.  
+- **Why this rank?** A transparent score decomposition showing how `suitability` and the competitiveness penalty (`alpha`) combine into the final `score`.  
+- **Why this salary context?** A short comparison of `sal_mean` (market expected) versus `pred_sal` (user-conditioned), including the gap.
+
+To support skill interpretability without overfitting to noisy token-level extraction in v1, the explanator also adds:
+- **Skill-family coverage** per job (`covered_families`) and gaps (`missing_families`) inferred by thresholding job-family probabilities at `tau`.  
+- **Counts** (`n_covered_families`, `n_missing_families`) for quick scanning.
+
+This keeps the Chapter 4 output auditable and user-facing while reserving deeper token-level skill guidance for the upskilling module.
+
+---
+
 ## Chapter 4 Scope Boundary (Current)
 
 Chapter 4 v1 establishes a functional recommender loop and a stable context contract. It intentionally defers richer decision-support components to later iterations, including:
-- explanation narratives (“why this job” / “why these skills”)  
 - upskilling recommender and skill ROI-like indices  
 - what-if career simulation and cross-state optimisation  
 - persisted Chapter 4 artefacts for dashboards and reproducibility  
 - orchestrated pipelines and end-to-end invariants
 
-The current milestone is the first end-to-end recommendation output built directly on the project’s learned market structure: shortlistable jobs grouped by accessibility with a user-specific salary signal attached.
+The current milestone is the first end-to-end recommendation output built directly on the project’s learned market structure: shortlistable jobs grouped by accessibility with a user-specific salary signal and inspectable rationale attached.

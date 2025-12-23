@@ -1132,14 +1132,13 @@ With this chapter complete, the system is prepared to move from **positioning** 
 **Chapter 3 is now closed.**
 
 
-
 # Chapter 4 — Recommender Engine (v1)
 
 Date: 2025-12-23  
 ---
 
 ## Overview
-Chapter 4 begins the transition from **diagnostic positioning** (Chapter 3) to **actionable recommendation outputs**. The chapter reuses Chapter 3 as the canonical source of user-aligned candidates and derived skill features, then layers a lightweight recommender interface that (i) filters by suitability, (ii) separates opportunities into accessibility buckets via competitiveness, and (iii) attaches an individualized salary prediction signal based on the user’s skill profile.
+Chapter 4 begins the transition from **diagnostic positioning** (Chapter 3) to **actionable recommendation outputs**. The chapter reuses Chapter 3 as the canonical source of user-aligned candidates and derived skill features, then layers a lightweight recommender interface that (i) filters by suitability, (ii) separates opportunities into accessibility buckets via competitiveness, (iii) attaches an individualized salary prediction signal based on the user’s skill profile, and (iv) returns an inspectable explanation layer for the Top-N results.
 
 ---
 
@@ -1211,15 +1210,45 @@ Returns a structured result dict with:
 - `params`: key threshold and scoring parameters used
 
 ### Conclusions
-Chapter 4 now produces a first end-to-end recommender output: a shortlist of jobs organised by accessibility (best-now vs stretch), with individualized salary prediction signals attached to each recommended role.
+Chapter 4 produces a shortlist of jobs organised by accessibility (best-now vs stretch), with individualized salary prediction signals attached to each recommended role.
+
+---
+
+## 4.4 Job Explanations (v1: Inspectable Recommendations)
+**Module:** `features/job_explanations.py`  
+**Function:** `build_job_explanations(rec, tau=0.5, validate=True)`
+
+### Methodology
+- Consumes the `job_recommender()` payload (`rec`) and enriches the Top-N recommendation tables.
+- Adds deterministic rationale fields:
+  - `why_bucket`: bucket assignment rationale using `competitiveness_index` and `c_max`
+  - `why_rank`: explicit score decomposition using `suitability`, `competitiveness_index`, and `alpha`
+  - `salary_context`: interpretable comparison of `sal_mean` (market expected) vs `pred_sal` (user-conditioned), including the gap
+- Attaches Chapter 3 alignment diagnostics per job:
+  - merges `skill_match_norm` and `expected_missing_norm` from `rec["tables"]["candidate_jobs"]` by `job_id`
+- Adds interpretable skill-family coverage and missingness per recommended job:
+  - thresholds `skill_prob_matrix` at `tau` to infer required families
+  - compares against `profile["derived"]["skill_vector"]` to compute:
+    - `missing_families`, `covered_families`
+    - `n_missing_families`, `n_covered_families`
+- Includes lightweight validation (optional) to fail loudly if contracts break (keys/columns, numeric coercions, merged metrics).
+
+### Outputs
+Returns a dict with:
+- `tables`: `top_best_explained`, `top_stretch_explained`
+- `metric_glossary`: column-level definitions for interpretation and reporting
+- `meta`: `tau` used for requirement thresholding
+
+### Conclusions
+The explanation layer makes Chapter 4 recommendations auditable and user-facing without adding heavy downstream complexity. It provides transparent ranking logic, salary context, and interpretable skill-family coverage for each recommended role.
 
 ---
 
 ## Current Scope Boundary
-Chapter 4 v1 intentionally prioritises a minimal, working recommender loop. The following remain out of scope for the current closure point:
-- explanation layer (“why this job / why this skill” narratives)
+Chapter 4 v1 intentionally prioritises a minimal, working recommender loop with inspectable outputs. The following remain out of scope for the current closure point:
 - upskilling recommender and skill ROI-style indices
 - what-if career simulation and cross-state optimisation
 - orchestrator pipeline and full end-to-end recommender test suite
+- persistence of Chapter 4 artefacts for dashboards and reproducibility
 
-Chapter 4 is in active development, with a stable entrypoint and a functioning v1 job recommender now established.
+Chapter 4 is in active development, with a stable entrypoint, a functioning v1 job recommender, and an explanation layer now established.

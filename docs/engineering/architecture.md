@@ -339,6 +339,38 @@ Notes:
 - A “wildcard”/exploration bucket is intentionally omitted in v1; consider adding in v2 using Chapter 2 embeddings for adjacent-role discovery.
 - In productionised `src/` usage, printing should be controlled via a `verbose` flag (defaulting to `False`), but notebook workflows may keep it enabled.
 
+### 4.3 Job Explanations (v1)
+**Module:** `features/job_explanations.py`  
+**Function:** `build_job_explanations(rec, tau=0.5, validate=True)`
+
+Outputs (dict):
+- `tables`:
+  - `top_best_explained`: `top_best_now` with added explanation + skill-family fields
+  - `top_stretch_explained`: `top_stretch` with added explanation + skill-family fields
+- `metric_glossary`: dictionary defining each column/metric for deeper inspection
+- `meta`:
+  - `tau`: probability threshold used to convert `{family}_prob` into required/not-required for family lists
+
+Responsibilities:
+- Consume the `job_recommender()` payload (`rec`) and enrich the Top-N recommendation tables with human-readable rationale.
+- Add deterministic explanation strings:
+  - `why_bucket`: explains bucket assignment based on `competitiveness_index` relative to `c_max`
+  - `why_rank`: explains rank using the score decomposition with `alpha`
+  - `salary_context`: compares job-side `sal_mean` vs user-conditioned `pred_sal` and the gap
+- Attach Chapter 3 alignment metrics to each recommended job:
+  - merge `skill_match_norm` and `expected_missing_norm` from `rec["tables"]["candidate_jobs"]` by `job_id`
+- Provide interpretable skill-family coverage per job:
+  - threshold `rec["tables"]["skill_prob_matrix"]` at `tau` to infer required families
+  - compare against the user’s `profile["derived"]["skill_vector"]` to compute:
+    - `missing_families`, `covered_families`
+    - `n_missing_families`, `n_covered_families`
+- Run light in-function validation (`validate=True`) to fail loudly on broken contracts:
+  - required keys/columns present
+  - numeric coercions succeed for salary fields
+  - merged metrics are present and finite
+  - `missing_*` count columns match list lengths
+
+
 ---
 
 # 4. Evaluation modules

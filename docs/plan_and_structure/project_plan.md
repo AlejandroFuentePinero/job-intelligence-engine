@@ -100,7 +100,7 @@
 # CHAPTER 4 — Job Intelligence Engine (Recommendations & Optimization)
 
 ### Core
-- **Hybrid Job Recommender**  
+- ✅ **Hybrid Job Recommender**  
   *Purpose:* Recommend the top jobs for a user based on fit, realism, and opportunity.
 
 - **Upskilling Recommender**  
