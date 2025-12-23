@@ -297,6 +297,47 @@ Responsibilities:
 Notes:
 - `return_top_n_jobs` should be set to `None` for full-universe recommender engine runs; top-N trimming should occur at the final display layer.
 
+### 4.2 Hybrid Job Recommender (v1)
+**Module:** `features/job_recommender.py`  
+**Function:** `job_recommender()`
+
+Outputs (dict):
+- `params`: recommender knobs used in the run (e.g., `s_min_used`, `c_max`, `alpha`, `top_n_best`, `top_n_stretch`)
+- `counts`: candidate counts and per-bucket counts
+  - `candidate_jobs`, `best_now`, `stretch`
+- `warnings`: list of scarcity warnings (e.g., low bucket sizes)
+- `tables`:
+  - `candidate_jobs`: filtered + scored candidate set used for ranking
+  - `top_best_now`: top-N “best-now” recommendations
+  - `top_stretch`: top-N “stretch” recommendations
+- `salary_summary`: bucket-level salary comparison stats
+  - expected vs predicted mean salary per bucket, deltas, and `mean_sal_jump`
+
+Responsibilities:
+- Call the Chapter 4 context loader (`load_ch4_context`) to obtain:
+  - positioned candidate universe (`candidates_df`)
+  - salary model artefact
+  - aligned candidate-level salary design matrix (`user_salary_model_features`)
+- Attach salary predictions to each candidate row (row-wise aligned; no `job_id` merge assumed).
+- Apply suitability gating with fallback:
+  - filter by `s_min_base`; if < `n_target`, fall back to `s_min_floor`
+  - if still < `n_target`, raise `ValueError` (prompt user to relax constraints or switch to upskilling)
+- Split candidates into two competitiveness buckets:
+  - `best_now`: `competitiveness_index <= c_max`
+  - `stretch`: `competitiveness_index > c_max`
+- Compute rerank score within the eligible set:
+  - `score = suitability - alpha * competitiveness_index`
+- Produce deterministic rankings using stable tie-breakers:
+  - sort by `score` (desc), `suitability` (desc), `competitiveness_index` (asc), `job_id` (asc)
+- Return a structured payload suitable for:
+  - notebook inspection (tables)
+  - downstream explanation layer (bucket stats, warnings, score fields)
+  - later pipeline orchestration (Chapter 4 orchestrator)
+
+Notes:
+- This v1 recommender prioritises correctness and interpretability over exploration/diversity.
+- A “wildcard”/exploration bucket is intentionally omitted in v1; consider adding in v2 using Chapter 2 embeddings for adjacent-role discovery.
+- In productionised `src/` usage, printing should be controlled via a `verbose` flag (defaulting to `False`), but notebook workflows may keep it enabled.
 
 ---
 

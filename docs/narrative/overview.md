@@ -357,3 +357,86 @@ By the end of Chapter 3, the Job Intelligence Engine can:
 This chapter completes the transition from **market-level modelling** to **user-level reasoning**, while remaining fully grounded in the deterministic, interpretable artefacts built in earlier stages.
 
 Subsequent chapters build on this positioning layer to explore salary prediction for individuals, recommendation systems, and dynamic career path simulation.
+
+
+# Chapter 4 — Recommender Engine (v1)  
+Narrative overview of context loading, hybrid recommendation, and user-salary integration  
+Date: 2025-12-23
+
+Chapter 4 shifts the Job Intelligence Engine from **positioning** to **decision support**.  
+Where Chapter 3 tells a user where they stand (fit, difficulty, and gaps), Chapter 4 begins converting those diagnostics into **actionable outputs**: shortlists of jobs organised by accessibility, with an explicit signal about whether the user’s current skill profile is priced above or below the market expectations of those roles.
+
+---
+
+## From “Ranking” to “Recommendations”
+
+Chapter 3 already produces a structured candidate universe and two key signals:
+- **Suitability** (alignment with the user’s preferences and skills), and  
+- **Competitiveness** (barrier-to-entry given missing skill burden and salary ambition).
+
+Chapter 4 does not re-invent those constructs. Instead, it treats them as stable upstream inputs and adds a lightweight recommender layer that answers:
+
+- Which roles are the best opportunities **right now**?  
+- Which roles are plausible but require meaningful growth (**stretch**)?  
+- How do these opportunities compare to what the market would typically pay, versus what the user’s skills suggest they might command?
+
+---
+
+## A Single Canonical Context Payload
+
+To prevent fragile glue code across notebooks and modules, Chapter 4 introduces a **context loader** that acts as the standard entrypoint for all downstream recommenders. The loader:
+
+1. Calls the Chapter 3 positioning pipeline to generate the user profile and candidate set.  
+2. Loads the aligned Chapter 3 artefacts needed for explanation and skill reasoning.  
+3. Loads the persisted Salary Response Model from Chapter 1.  
+4. Constructs a candidate-level salary feature matrix by **broadcasting the user’s skill PCA vector** across all candidate rows while retaining each job’s categorical codes.
+
+The result is a single “ready-for-recommenders” payload: candidates + user-derived features + model artefacts, aligned by `job_id` and safe to consume across modules.
+
+---
+
+## Hybrid Job Recommendation: Retrieve → Bucket → Rerank
+
+The v1 recommender follows a pragmatic design that prioritises clarity and deterministic behaviour:
+
+### 1) Retrieve (Suitability Thresholding)
+A base suitability threshold selects jobs that are sufficiently aligned with the user.  
+If the candidate set becomes too small, the system falls back to a lower threshold rather than silently returning an unhelpful handful of jobs. If even the relaxed threshold fails, the system raises an explicit error, signalling that constraints are too strict.
+
+### 2) Bucket (Accessibility via Competitiveness)
+Candidate jobs are split into two accessibility buckets:
+- **Best-now**: roles that appear attainable given the user’s current profile  
+- **Stretch**: roles that remain aligned but carry substantially higher barriers
+
+If bucket sizes are too small, the engine produces warnings rather than injecting poor-fit jobs. This preserves recommendation integrity while still signalling that the user may need to relax constraints or focus on upskilling.
+
+### 3) Rerank (Within-Bucket Prioritisation)
+Within the eligible jobs, the engine computes a combined ranking score that rewards suitability while penalising competitiveness. This produces stable, user-facing shortlists that reflect “good fit” without ignoring access difficulty.
+
+---
+
+## User Salary Signal: “Market Expected” vs “Skill-Implied”
+
+A key addition in Chapter 4 is an individualized salary signal attached to each candidate job:
+
+- **Expected salary** comes from the job posting distribution/model features already present in the dataset.  
+- **Predicted salary** is produced by the Salary Response Model using the job’s categorical context plus the user’s broadcasted skill PCs.
+
+Comparing these creates a simple but interpretable diagnostic:
+- If predicted is below expected, the user may be under-aligned in skill pricing for that role class.  
+- If predicted is close to or above expected, the user’s profile is competitively priced relative to the role set.
+
+This is not a causal claim about what the user “deserves”; it is a model-consistent indicator of alignment between the user’s skill signal and the market structure captured in Chapter 1.
+
+---
+
+## Chapter 4 Scope Boundary (Current)
+
+Chapter 4 v1 establishes a functional recommender loop and a stable context contract. It intentionally defers richer decision-support components to later iterations, including:
+- explanation narratives (“why this job” / “why these skills”)  
+- upskilling recommender and skill ROI-like indices  
+- what-if career simulation and cross-state optimisation  
+- persisted Chapter 4 artefacts for dashboards and reproducibility  
+- orchestrated pipelines and end-to-end invariants
+
+The current milestone is the first end-to-end recommendation output built directly on the project’s learned market structure: shortlistable jobs grouped by accessibility with a user-specific salary signal attached.

@@ -207,29 +207,29 @@ _Last updated: 2025-12-15_
 
 # Chapter 4 — Recommender Engine
 
-**Progress:** 20%  
-`[████................] 20%`
+**Progress:** 35%  
+`[███████.............] 35%`
 
 ## Core Work
 - [x] Define recommendation intents + scoring objectives (v1)
 - [x] Candidate universe + filtering contract (canonical eligible jobs table)
 - [x] Chapter 4 context loader (wrapper) + salary feature construction (PC broadcast)
 - [x] Chapter 4 entrypoint evaluation (salary features + predict smoke + alignment)
-- [ ] Hybrid job recommender (retrieve → rerank; 3 buckets)
+- [x] Hybrid job recommender (retrieve → rerank; 2 buckets)
 - [ ] Explanation layer (why job / why skill; per-bucket rationale)
 - [ ] Upskilling recommender (unlock + market value + level-step guidance)
 - [ ] Skill “ROI-like” efficiency index (proxy-denominator; rename if needed)
 - [ ] Career simulation (what-if skill additions; deltas + re-rank)
 - [ ] Cross-State optimization (salary × competitiveness; min-N guardrails)
-- [ ] Salary prediction integration into outputs (use loaded model + features)
+- [x] Salary prediction integration into outputs (loaded model + attached `pred_sal` + salary summary)
 - [ ] Persist Chapter 4 artefacts (tables for dashboards + reproducibility)
 - [ ] Documentation (module docs + assumptions + limitations)
 
 ## Pipelines / Architecture
 - [x] `features/artefacts_ch4.py` (`load_ch4_context`)
 - [x] `evaluation/chapter_4_entrypoint_eval.py`
-- [ ] `job_recommender.py` (retrieval + rerank + bucket outputs)
-- [ ] `candidate_retrieval.py` (optional: keep retrieval separate/clean)
+- [x] `features/job_recommender.py` (retrieve + rerank + bucket outputs)
+- [x] `candidate_retrieval.py` (optional: keep retrieval separate/clean)
 - [ ] `recommendation_schema.py` (output contracts for jobs/skills/what-if/state)
 - [ ] `upskilling_recommender.py`
 - [ ] `skill_value_index.py` (or `roi_estimator.py` with proxy-caveat)

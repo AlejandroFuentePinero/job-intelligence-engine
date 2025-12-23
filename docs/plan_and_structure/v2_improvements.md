@@ -8,6 +8,7 @@
 - NER / transformer-based skill extraction (reduce reliance on pure dictionary/regex; improve recall/precision)
 - Domain-specific embedding fine-tuning for title/skill tokens (SBERT fine-tune) if clustering quality is a bottleneck
 - Stronger seniority detection rules (more robust to messy titles; consistent mapping across job families)
+- Entry point for additional data and potential international data (salary normalisation and currency translation)
 
 ## Chapter 1 — System Mechanics (Salary, Skill Demand, Fairness)
 - Revisit salary model by adding new info and/or changing objectives

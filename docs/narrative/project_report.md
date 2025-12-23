@@ -1131,3 +1131,95 @@ With this chapter complete, the system is prepared to move from **positioning** 
 
 **Chapter 3 is now closed.**
 
+
+
+# Chapter 4 — Recommender Engine (v1)
+
+Date: 2025-12-23  
+---
+
+## Overview
+Chapter 4 begins the transition from **diagnostic positioning** (Chapter 3) to **actionable recommendation outputs**. The chapter reuses Chapter 3 as the canonical source of user-aligned candidates and derived skill features, then layers a lightweight recommender interface that (i) filters by suitability, (ii) separates opportunities into accessibility buckets via competitiveness, and (iii) attaches an individualized salary prediction signal based on the user’s skill profile.
+
+---
+
+## 4.1 Chapter 4 Context Loader (Wrapper)
+**Module:** `features/artefacts_ch4.py`  
+**Function:** `load_ch4_context()`
+
+### Methodology
+- Calls Chapter 3 public API (`run_positioning`) to construct:
+  - `profile` (validated UserProfile + derived `skill_pcs`)
+  - `candidates_df` (hard-filtered job set with suitability + competitiveness + encoded categorical codes)
+  - `gap_df` and optional sensitivity outputs
+- Loads aligned Chapter 3 artefacts via `load_ch3_artefacts()`:
+  - `jobs_df` (refined full jobs table)
+  - `skill_prob_matrix` (job×skill probability matrix)
+- Loads the persisted salary model (`salary_model_v4.pkl`)
+- Constructs a salary design matrix for inference by:
+  - selecting job/company categorical codes from `candidates_df`
+  - broadcasting the user’s 1×10 PCA skill vector across all candidate rows
+  - returning a single “ready-for-Chapter-4” context payload
+
+### Outputs
+Returns a context dict containing:
+- `profile`, `candidates_df`, `gap_df`, `sensitivity_out`
+- `jobs_df`, `skill_prob_matrix`
+- `salary_model`
+- `user_salary_model_features` (candidate-level salary feature matrix with user PCs)
+
+### Conclusions
+This wrapper centralises all Chapter 4 dependencies while avoiding expensive reruns of Chapter 1. It establishes a reproducible and aligned input contract for downstream recommenders.
+
+---
+
+## 4.2 Chapter 4 Entrypoint Evaluation (Engineering Hardening)
+**File:** `evaluation/chapter_4_entrypoint_eval.py`
+
+### Methodology
+A focused evaluator validates the Chapter 4 entrypoint and salary-feature construction with checks covering:
+- artefact integrity and job_id alignment (jobs df vs skill matrix)
+- determinism / invariance under identical inputs
+- salary feature broadcasting shape + prediction smoke tests
+- NA / schema sanity checks for core outputs
+
+### Conclusions
+The evaluation confirms that the Chapter 4 context loader is stable, aligned, and produces prediction-ready salary features without silent failure modes.
+
+---
+
+## 4.3 Hybrid Job Recommender (v1: Retrieve → Rerank; 2 Buckets)
+**Module:** `features/job_recommender.py`  
+**Function:** `job_recommender()`
+
+### Methodology
+1) **Load context:** calls `load_ch4_context()` to obtain candidates + salary model + salary features.  
+2) **Attach salary predictions:** predicts `pred_sal` for candidate rows using the loaded salary model and user-broadcasted PCs.  
+3) **Retrieve:** applies a suitability threshold (base, with optional floor fallback if the candidate set is too small).  
+4) **Bucket:** splits jobs into two accessibility buckets using a competitiveness cutoff:
+   - `best_now` (≤ `C_max`)
+   - `stretch` (> `C_max`)
+   Warnings are raised when bucket sizes fall below minimums, rather than forcing unsuitable recommendations.  
+5) **Rerank:** computes a combined score `suitability - α * competitiveness_index` and sorts deterministically.  
+6) **Summarise:** returns tables for candidate jobs and top-N recommendations per bucket, plus salary comparison summaries (expected vs predicted).
+
+### Outputs
+Returns a structured result dict with:
+- `tables`: `candidate_jobs`, `top_best_now`, `top_stretch`
+- `counts`: bucket sizes and candidate counts
+- `salary_summary`: mean expected vs predicted salary and deltas
+- `params`: key threshold and scoring parameters used
+
+### Conclusions
+Chapter 4 now produces a first end-to-end recommender output: a shortlist of jobs organised by accessibility (best-now vs stretch), with individualized salary prediction signals attached to each recommended role.
+
+---
+
+## Current Scope Boundary
+Chapter 4 v1 intentionally prioritises a minimal, working recommender loop. The following remain out of scope for the current closure point:
+- explanation layer (“why this job / why this skill” narratives)
+- upskilling recommender and skill ROI-style indices
+- what-if career simulation and cross-state optimisation
+- orchestrator pipeline and full end-to-end recommender test suite
+
+Chapter 4 is in active development, with a stable entrypoint and a functioning v1 job recommender now established.
