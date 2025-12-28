@@ -204,7 +204,6 @@ _Last updated: 2025-12-15_
   *(golden fixtures, invariance checks, empty-set behavior)*
 
 ---
-
 # Chapter 4 — Recommender Engine
 
 **Progress:** 45%  
@@ -217,27 +216,26 @@ _Last updated: 2025-12-15_
 - [x] Chapter 4 entrypoint evaluation (salary features + predict smoke + alignment)
 - [x] Hybrid job recommender (retrieve → rerank; 2 buckets)
 - [x] Explanation layer (why job / why skill; per-bucket rationale)
-- [ ] Upskilling recommender (unlock + market value + level-step guidance)
-- [ ] Skill “ROI-like” efficiency index (proxy-denominator; rename if needed)
+- [ ] Upskilling recommender (counterfactual skill addition → stretch access)
+- [ ] Skill “ROI-like” efficiency index (positioning-gain proxy)
 - [ ] Career simulation (what-if skill additions; deltas + re-rank)
-- [ ] Cross-State optimization (salary × competitiveness; min-N guardrails)
-- [x] Salary prediction integration into outputs (loaded model + attached `pred_sal` + salary summary)
+- [ ] Cross-State optimization (salary × competitiveness; guardrails)
+- [x] Salary prediction integration (`pred_sal` + summaries)
 - [ ] Persist Chapter 4 artefacts (tables for dashboards + reproducibility)
 - [ ] Documentation (module docs + assumptions + limitations)
 
 ## Pipelines / Architecture
-- [x] `features/artefacts_ch4.py` (`load_ch4_context`)
+- [x] `features/artefacts_ch4.py`
 - [x] `evaluation/chapter_4_entrypoint_eval.py`
-- [x] `features/job_recommender.py` (retrieve + rerank + bucket outputs)
-- [x] `features/job_explanations.py` (`build_job_explanations`)
+- [x] `features/job_recommender.py`
+- [x] `features/job_explanations.py`
 - [ ] `features/upskilling_recommender.py`
-- [ ] `features/skill_value_index.py` (or `roi_estimator.py` with proxy-caveat)
+- [ ] `features/skill_value_index.py` (or `roi_estimator.py`)
 - [ ] `features/career_simulator.py`
 - [ ] `features/cross_state_optimizer.py`
-- [ ] `pipelines/chapter4_recommender_engine.py` (orchestrator)
-- [ ] `evaluation/ch4_invariants.py` (determinism, constraint-respect, alignment)
-- [ ] End-to-end recommender tests (fixtures + sanity checks)
-
+- [ ] `pipelines/chapter4_recommender_engine.py`
+- [ ] `evaluation/ch4_invariants.py`
+- [ ] End-to-end recommender tests
 
 ---
 
@@ -246,24 +244,53 @@ _Last updated: 2025-12-15_
 **Progress:** 0%  
 `[....................] 0%`
 
-### Core Work
-- [ ] Salary landscape dashboard  
-- [ ] Skill ecosystem visualisation  
-- [ ] Geographic summaries  
+## Core Work
+### Market Mechanics (Chapter 1 outputs)
+- [ ] Salary landscape dashboard
+- [ ] Fairness residual summaries
+- [ ] SHAP global importance
+- [ ] SHAP dependence plots
+- [ ] PDP / ICE panels
+- [ ] Global skill value ranking
 
-### Pipelines / Architecture
-- **No pipeline required**  
-  (visualisation layer only)
+### Market Structure (Chapter 2 outputs)
+- [ ] Job family explorer (latent clusters)
+- [ ] Skill ecosystem visualisation (co-occurrence)
+- [ ] Skill specialisation / lift views
+
+### User & Recommendation Context (Chapter 3–4 outputs)
+- [ ] User positioning summary
+- [ ] Recommendation views (`best_now`, `stretch`)
+- [ ] Upskilling plan views (counterfactual deltas; top 3)
+- [ ] Recommendation concentration / diversity diagnostics (under current constraints)
+- [ ] What-if / future-facing panels (visual only)
+
+### Macro Recommendation Layer (Chapter 2 → optional, shown in Chapter 5)
+- [ ] Macro vs micro framing (micro = constraint-defined market; macro = global exploration; opt-in)
+- [ ] Adjacent job families panel (3 closest families to dominant stretch family; 2–3 exemplar jobs each; hard caps)
+- [ ] Co-learning neighbours for upskilling (top 3 skills; 2–3 neighbours each; hard caps)
+
+## Pipelines / Architecture
+- **Lightweight deterministic assembly recommended** (no training; joins + top-k selection + caps)
+- [ ] `features/ch5_macro_layer.py` (name flexible; deterministic only)
+- [ ] Chapter 5 notebook(s) / dashboard assets
+- [ ] Chapter 5 reproducibility notes (data sources + joins + caps + assumptions)
+
 
 ---
 
-# Chapter 6 — Final steps
-- [ ] Add project to portolio
-- [ ] implement some V2 improvements 
+# Chapter 6 — Final Steps
+
+- [ ] Portfolio write-up
+- [ ] Project README consolidation
+- [ ] Explicit v2 improvement list
+- [ ] Final scope lock
+
+---
 
 # LOCKED PROJECT GUARANTEES
 
-- Every module explicitly states pipeline status  
-- Notebook → `src/` translation is tracked where required  
-- Optional work cannot silently become required  
+- Every module explicitly states pipeline status
+- Notebook → `src/` translation is tracked where required
+- Optional work cannot silently become required
 - This document is the single source of truth for scope and progress
