@@ -393,6 +393,38 @@ Validation / invariants:
 - Baseline join by `job_id` must succeed for all rows.
 - Fail loudly if stretch missing families exist but no tokens can be extracted (broken description/extractor plumbing).
 
+### 4.5 Career Simulation (What-If Skill Additions) (v2 / experimental)
+
+**Module:** `features/career_simulation.py`  
+**Function:** `career_simulation(...)`
+
+Outputs (dict):
+- `baseline_universe`: baseline scored universe (one row per `job_id`)
+- `scenario_jobs`: long table (`job_id × scenario`) with re-scored metrics for each scenario
+- `deltas`: long table with scenario rows merged to baseline metrics and delta columns:
+  - `delta_skill_match_norm`, `delta_suitability`, `delta_expected_missing_norm`,
+  - `delta_competitiveness_index`, `delta_score`,
+  - `bucket_movement` ∈ {`promoted`, `demoted`, `unchanged`}
+- `scenario_summary`: one row per scenario summarising impact and risk:
+  - `promotion_rate`, `demotion_rate`, mean delta scores (baseline-best vs baseline-stretch),
+  - `p10_delta_score_best` (tail-risk proxy), `passes_guardrail`
+- `top_unlocked_jobs`: top-*N* promoted jobs per scenario (stretch→best_now), ranked by `delta_score`
+- `scenario_meta`: scenario audit log (kept/skipped + reason + tokens used)
+
+Responsibilities:
+- Provide a user-driven **counterfactual simulator** for “what changes if I add these skills?” without introducing non-determinism.
+- **Freeze the candidate universe**: run baseline `job_recommender()` → take `scored_universe[['job_id']]` as `candidate_override_df` so all scenarios score the same jobs.
+- Run each user-defined scenario by injecting a small set of tokens into `skill_text`, then rerun `job_recommender(..., candidate_override_df=override_df)` to obtain scenario scores on the frozen universe.
+- Compute **per-job** and **per-scenario** deltas vs baseline and surface the subset of jobs that are unlocked (promoted to `best_now`).
+
+Validation / invariants:
+- Universe is invariant across scenarios (same size and, optionally, identical `job_id` set).
+- Baseline merge by `job_id` must succeed for all scenario rows (fail loudly on alignment breaks).
+- **No-op detection for v1 skill dictionary limits**: scenarios are skipped when injected tokens do not change the extracted user `skill_vector` (prevents meaningless simulations when tokens are out-of-vocabulary).
+- Scenario-level risk control via per-scenario demotion guardrail (`demotion_tol`), surfaced as `passes_guardrail` in `scenario_summary`.
+
+Notes:
+- This module is conceptually derived from the upskilling counterfactual loop but differs in purpose: it does **not** infer missing skills from stretch jobs or rank skills to learn; it accepts explicit user-defined scenarios and reports the counterfactual outcomes.
 
 
 ---

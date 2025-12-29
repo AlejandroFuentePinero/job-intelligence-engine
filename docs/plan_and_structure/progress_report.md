@@ -218,6 +218,7 @@ _Last updated: 2025-12-15_
 - [x] Explanation layer (why job / why skill; per-bucket rationale)
 - [x] Upskilling recommender (counterfactual skill addition → positioning gain on frozen universe)
 - [x] ROI proxy (v1): `upskill_impact_score` (promotion-rate + score-gain composite with demotion/tail penalties + guardrail)
+- [x] Career simulation for multiple skills
 - [ ] Persist Chapter 4 artefacts (tables for dashboards + reproducibility)
 - [ ] Documentation (module docs + assumptions + limitations)
 
@@ -227,6 +228,7 @@ _Last updated: 2025-12-15_
 - [x] `features/job_recommender.py`
 - [x] `features/job_explanations.py`
 - [x] `features/upskilling_recommender.py`
+- [x] `career_simulator.py`
 - [ ] `pipelines/chapter4_recommender_engine.py`
 - [ ] `evaluation/ch4_invariants.py`
 - [ ] End-to-end recommender tests

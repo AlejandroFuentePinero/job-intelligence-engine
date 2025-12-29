@@ -1271,6 +1271,43 @@ The upskilling module provides a quantitative “what to learn next” layer by 
 
 ---
 
+## 4.6 Career Simulation (v2 / optional: User-Defined What-If Scenarios)
+**Module:** `features/career_simulation.py`  
+**Function:** `career_simulation(...)`
+
+### Methodology
+- Runs a baseline `job_recommender()` call to obtain the constrained `scored_universe`, then **freezes** the job universe via `candidate_override_df` (`job_id`-only) so every scenario is directly comparable.
+- Accepts explicit user-defined scenarios (e.g., “add SQL + dbt”, “add AWS + Docker”) and, for each scenario:
+  - injects a small, deduplicated set of tokens into the user `skill_text`,
+  - reruns `job_recommender()` on the **same frozen universe**, and
+  - computes **per-job deltas** vs baseline (percentage-point deltas for bounded 0–1 metrics).
+- Produces both job-level and scenario-level diagnostics:
+  - `bucket_movement` (promoted / demoted / unchanged) based on `best_now` vs `stretch`,
+  - promotion and demotion rates,
+  - mean delta score on baseline-stretch jobs (upside) and baseline-best jobs (risk),
+  - a tail-risk proxy using the 10th percentile delta score among baseline-best jobs.
+- Includes explicit **no-op detection** aligned to v1’s curated dictionary constraint:
+  - scenarios are skipped when injected tokens do not change the extracted user `skill_vector` (prevents misleading “effects” from out-of-vocabulary tokens).
+- Supports a scenario-level guardrail (`demotion_tol`) to reject scenarios that materially harm baseline `best_now` opportunities.
+
+### Outputs
+Returns a dict with:
+- `baseline_universe`: baseline scored universe (one row per `job_id`)
+- `scenario_jobs`: long-table (job_id × scenario) containing scenario metrics
+- `deltas`: scenario rows merged to baseline metrics, with:
+  - `delta_skill_match_norm`, `delta_suitability`, `delta_expected_missing_norm`,
+  - `delta_competitiveness_index`, `delta_score`,
+  - `bucket_movement`
+- `scenario_summary`: scenario-level impact table (promotion/demotion rates, mean deltas, tail risk, `passes_guardrail`)
+- `top_unlocked_jobs`: top-*N* promoted jobs per scenario (stretch → best_now), ranked by `delta_score`
+- `scenario_meta`: scenario audit log (kept/skipped, reasons, tokens used)
+
+### Conclusions
+Career simulation exposes the same frozen-universe counterfactual machinery used by upskilling, but with user-defined scenarios instead of auto-derived missing families. It is deferred to v2 because its reliability depends on broader skill-token coverage and more robust skill normalisation; without that, many user-proposed tokens can become no-ops, reducing interpretability and portfolio value relative to the v1 upskilling module.
+
+---
+
+
 ## Current Scope Boundary
 Chapter 4 v1 intentionally prioritises a minimal, working recommender loop with inspectable outputs. The following remain out of scope for the current closure point:
 - upskilling recommender and skill ROI-style indices

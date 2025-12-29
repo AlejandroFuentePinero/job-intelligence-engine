@@ -358,7 +358,6 @@ This chapter completes the transition from **market-level modelling** to **user-
 
 Subsequent chapters build on this positioning layer to explore salary prediction for individuals, recommendation systems, and dynamic career path simulation.
 
-
 # Chapter 4 — Recommender Engine (v1)  
 Narrative overview of context loading, hybrid recommendation, explanations, and counterfactual upskilling  
 Date: 2025-12-29
@@ -410,7 +409,7 @@ The v1 recommender is deliberately simple and deterministic:
    Rank by `score = suitability - alpha * competitiveness_index` to favour fit while penalising barrier.
 
 4) **Scored universe (for counterfactuals)**  
-   In addition to the gated candidate set and Top-N tables, Chapter 4 produces a `scored_universe` table containing bucket + score for *all* candidate jobs under the user’s constraints. This is the stable substrate for upskilling deltas and downstream Chapter 5 reporting.
+   In addition to the gated candidate set and Top-N tables, Chapter 4 produces a `scored_universe` table containing bucket + score for *all* candidate jobs under the user’s constraints. This stable substrate supports counterfactual analysis (upskilling and optional career simulation) and downstream Chapter 5 reporting.
 
 ---
 
@@ -432,7 +431,7 @@ The comparison is an interpretable alignment diagnostic (not a causal claim): wh
   - infer required families by thresholding `{family}_prob` at `tau`
   - compare to the user’s family vector to produce `covered_families` and `missing_families`
 
-Critically, the explanator also supports the **full scored universe** (not just Top-N), enabling downstream upskilling to use missing-family fields at scale.
+Critically, the explanator also supports the **full scored universe** (not just Top-N), enabling downstream counterfactual modules to use missing-family fields at scale.
 
 ---
 
@@ -452,6 +451,17 @@ Outputs are designed to plug directly into Chapter 5: top skill families + examp
 
 ---
 
+## Career Simulation (v2 / optional): User-Defined What-If Scenarios
+
+In addition to upskilling recommendations (which auto-select and rank missing families), the same frozen-universe counterfactual machinery can be exposed as a **user-defined simulator**.  
+A career simulation module (`career_simulation`) accepts explicit scenarios (e.g., “add SQL + dbt” or “add AWS + Docker”), reruns the recommender on the same frozen job set, and reports:
+- scenario-level promotion/demotion rates and mean score deltas, and
+- the top “unlocked” jobs that move from `stretch` to `best_now`.
+
+Because v1 uses a curated skill dictionary, the simulator includes **no-op detection**: scenarios are skipped when injected tokens do not change the extracted user skill vector (preventing misleading “fake effects” from out-of-vocabulary tokens). This feature is deferred to v2 because its usefulness depends on broader token coverage and a more robust skill-normalisation layer.
+
+---
+
 ## Chapter 4 Scope Boundary (v1)
 
 Chapter 4 v1 delivers a complete decision-support loop:
@@ -460,5 +470,4 @@ Chapter 4 v1 delivers a complete decision-support loop:
 - inspectable explanations including per-job missing families,
 - counterfactual upskilling ranked by measurable positioning lift.
 
-Deferred or future enhancements include richer ROI modelling, persistence of Chapter 4 artefacts, “what-if” constraint optimisation, and broader macro-market explainability layers handled in Chapter 5.
-
+Deferred or future enhancements include career simulation as an explicit user-facing tool, richer R
