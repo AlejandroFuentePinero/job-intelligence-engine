@@ -370,6 +370,30 @@ Responsibilities:
   - merged metrics are present and finite
   - `missing_*` count columns match list lengths
 
+### 4.4 Upskilling Recommender (v1)
+**Module:** `features/upskilling_recommender.py`  
+**Function:** `upskill_recommender(..., tau=0.5, n_tokens_per_family=3, demotion_tol=0.0, top_n_skills=3)`
+
+Outputs (dict):
+- `job_base_upskill`: long table (`job_id × upskill_scenario`) with per-job deltas + bucket movement
+- `upskill_summary`: scenario-level metrics + composite ranking score
+- `upskill_recommendation`: top-N recommended upskill scenarios
+- `missing_dict`: `{family: tokens}` aggregated from stretch-job descriptions
+- `recommendation_dict`: `{family: example_tokens}` deduped for reporting
+
+Responsibilities:
+- **Freeze the job universe**: run baseline `job_recommender()` → take `scored_universe[['job_id']]` as `candidate_override_df` so all scenarios compare the same jobs.
+- **Derive what to learn**: run `build_job_explanations()` on the frozen universe to get per-job `missing_families`; focus on `bucket=="stretch"` jobs to source upskill candidates.
+- **Tokenise missing skills**: use `explain_matches(Job Description)` and restrict tokens to each job’s `missing_families`, then aggregate to `missing_dict`.
+- **Counterfactual simulation**: for each missing family, inject representative tokens into `skill_text`, rerun `job_recommender(..., candidate_override_df=override_df)`, and stack results into a long table.
+- **Impact scoring + ranking**: compute percentage-point deltas (×100) vs baseline and rank families by a composite score rewarding promotions (stretch→best_now) + score gains, with guardrails against demotions (`demotion_tol`).
+
+Validation / invariants:
+- Universe size must be identical across scenarios (no filtering).
+- Baseline join by `job_id` must succeed for all rows.
+- Fail loudly if stretch missing families exist but no tokens can be extracted (broken description/extractor plumbing).
+
+
 
 ---
 

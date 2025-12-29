@@ -36,42 +36,18 @@ def build_job_explanations(
     rec: dict[str, Any],
     tau: float = 0.50,
     validate: bool = True,
+    include_scored_universe: bool = True,
 ) -> dict[str, Any]:
     """
     Chapter 4 — Job Explanations (v1)
 
     Augments the Chapter 4 `job_recommender()` output with human-readable explanations.
 
-    Inputs
-    ------
-    rec:
-        Output dict from `job_recommender()`. Must contain:
-          - rec["tables"]["top_best_now"], rec["tables"]["top_stretch"]
-          - rec["tables"]["candidate_jobs"] with: job_id, skill_match_norm, expected_missing_norm
-          - rec["tables"]["skill_prob_matrix"] (job_id + {family}_prob columns)
-          - rec["params"] with: c_max, alpha
-          - rec["profile"]["derived"]["skill_vector"] (1-row DataFrame, columns = families, values 0/1)
+    Adds (optionally) an explained scored-universe table to support upskilling:
+      - rec["tables"]["scored_universe"] must exist (from recommender drop-in)
+      - output includes tables["scored_universe_explained"]
 
-    Adds to each Top-N table
-    ------------------------
-      - why_bucket, why_rank, salary_context
-      - skill_match_norm, expected_missing_norm (merged from candidate_jobs; one-to-one)
-      - missing_families, covered_families (family-level requirements vs user presence; threshold tau)
-      - n_missing_families, n_covered_families (counts)
-
-    Parameters
-    ----------
-    tau:
-        Threshold in [0,1] to convert family probabilities into required/not-required for missing/covered lists.
-    validate:
-        If True, run light invariants (fast) and fail loudly on contract breaks.
-
-    Returns
-    -------
-    dict with keys:
-      - 'tables': {'top_best_explained': df, 'top_stretch_explained': df}
-      - 'metric_glossary': dict[str, str]
-      - 'meta': {'tau': float}
+    See original docstring for full details.
     """
     if not (0.0 <= float(tau) <= 1.0):
         raise ValueError(f"tau must be in [0,1], got {tau}")
@@ -82,6 +58,13 @@ def build_job_explanations(
         ["top_best_now", "top_stretch", "candidate_jobs", "skill_prob_matrix"],
         where="rec['tables']",
     )
+    if include_scored_universe:
+        _require_keys(
+            rec["tables"],
+            ["scored_universe"],
+            where="rec['tables'] (include_scored_universe=True)",
+        )
+
     _require_keys(rec["params"], ["c_max", "alpha"], where="rec['params']")
     _require_keys(rec["profile"], ["derived"], where="rec['profile']")
     _require_keys(
@@ -99,6 +82,12 @@ def build_job_explanations(
     skill_mat = rec["tables"]["skill_prob_matrix"].copy()
     profile = rec["profile"]
 
+    scored_universe = None
+    if include_scored_universe:
+        scored_universe = _ensure_job_id_col(
+            rec["tables"]["scored_universe"], where="rec['tables']['scored_universe']"
+        ).copy()
+
     # Required columns present in Top-N tables from recommender
     base_cols = [
         "job_id",
@@ -111,67 +100,86 @@ def build_job_explanations(
     _require_cols(top_best, base_cols, where="top_best")
     _require_cols(top_stretch, base_cols, where="top_stretch")
 
+    if include_scored_universe:
+        # scored_universe is for upskilling; must include bucket + score at minimum
+        scored_cols = base_cols + ["bucket"]
+        _require_cols(scored_universe, scored_cols, where="scored_universe")
+
     # -----------------------------
     # Deterministic explanation fields
     # -----------------------------
     c_max = float(params["c_max"])
     alpha = float(params["alpha"])
 
-    top_best["why_bucket"] = top_best["competitiveness_index"].map(
-        lambda x: f"Barrier is low (competitiveness {x:.2f} ≤ {c_max:.2f})"
-    )
-    top_stretch["why_bucket"] = top_stretch["competitiveness_index"].map(
-        lambda x: f"Barrier is higher (competitiveness {x:.2f} > {c_max:.2f})"
-    )
+    def _add_bucket_rank_salary_explanations(
+        df: pd.DataFrame, *, bucket_mode: str
+    ) -> pd.DataFrame:
+        """
+        bucket_mode:
+          - "best_now": assumes all rows are best_now (wording)
+          - "stretch": assumes all rows are stretch
+          - "mixed": uses df['bucket'] to decide wording
+        """
+        out = df.copy()
 
-    top_best["why_rank"] = (
-        "Ranked by score = "
-        + top_best["suitability"].map(lambda v: f"{v:.2f}")
-        + " - ("
-        + f"{alpha:.2f}"
-        + " * "
-        + top_best["competitiveness_index"].map(lambda v: f"{v:.2f}")
-        + ") = "
-        + top_best["score"].map(lambda v: f"{v:.2f}")
-    )
-    top_stretch["why_rank"] = (
-        "Ranked by score = "
-        + top_stretch["suitability"].map(lambda v: f"{v:.2f}")
-        + " - ("
-        + f"{alpha:.2f}"
-        + " * "
-        + top_stretch["competitiveness_index"].map(lambda v: f"{v:.2f}")
-        + ") = "
-        + top_stretch["score"].map(lambda v: f"{v:.2f}")
-    )
+        if bucket_mode == "best_now":
+            out["why_bucket"] = out["competitiveness_index"].map(
+                lambda x: f"Barrier is low (competitiveness {x:.2f} ≤ {c_max:.2f})"
+            )
+        elif bucket_mode == "stretch":
+            out["why_bucket"] = out["competitiveness_index"].map(
+                lambda x: f"Barrier is higher (competitiveness {x:.2f} > {c_max:.2f})"
+            )
+        elif bucket_mode == "mixed":
+            out["why_bucket"] = np.where(
+                out["bucket"].astype(str) == "best_now",
+                out["competitiveness_index"].map(
+                    lambda x: f"Barrier is low (competitiveness {x:.2f} ≤ {c_max:.2f})"
+                ),
+                out["competitiveness_index"].map(
+                    lambda x: f"Barrier is higher (competitiveness {x:.2f} > {c_max:.2f})"
+                ),
+            )
+        else:
+            raise ValueError(f"Invalid bucket_mode: {bucket_mode!r}")
 
-    sal_mean_best = pd.to_numeric(top_best["sal_mean"], errors="coerce")
-    pred_sal_best = pd.to_numeric(top_best["pred_sal"], errors="coerce")
-    gap_best = sal_mean_best - pred_sal_best
+        out["why_rank"] = (
+            "Ranked by score = "
+            + out["suitability"].map(lambda v: f"{v:.2f}")
+            + " - ("
+            + f"{alpha:.2f}"
+            + " * "
+            + out["competitiveness_index"].map(lambda v: f"{v:.2f}")
+            + ") = "
+            + out["score"].map(lambda v: f"{v:.2f}")
+        )
 
-    sal_mean_stretch = pd.to_numeric(top_stretch["sal_mean"], errors="coerce")
-    pred_sal_stretch = pd.to_numeric(top_stretch["pred_sal"], errors="coerce")
-    gap_stretch = sal_mean_stretch - pred_sal_stretch
+        sal_mean = pd.to_numeric(out["sal_mean"], errors="coerce")
+        pred_sal = pd.to_numeric(out["pred_sal"], errors="coerce")
+        gap = sal_mean - pred_sal
 
-    top_best["salary_context"] = (
-        "Market mean = "
-        + sal_mean_best.map(lambda v: f"{v:.2f}")
-        + "; predicted for you = "
-        + pred_sal_best.map(lambda v: f"{v:.2f}")
-        + "; gap (market - predicted) = "
-        + gap_best.map(lambda v: f"{v:.2f}")
+        out["salary_context"] = (
+            "Market mean = "
+            + sal_mean.map(lambda v: f"{v:.2f}")
+            + "; predicted for you = "
+            + pred_sal.map(lambda v: f"{v:.2f}")
+            + "; gap (market - predicted) = "
+            + gap.map(lambda v: f"{v:.2f}")
+        )
+
+        return out
+
+    top_best = _add_bucket_rank_salary_explanations(top_best, bucket_mode="best_now")
+    top_stretch = _add_bucket_rank_salary_explanations(
+        top_stretch, bucket_mode="stretch"
     )
-    top_stretch["salary_context"] = (
-        "Market mean = "
-        + sal_mean_stretch.map(lambda v: f"{v:.2f}")
-        + "; predicted for you = "
-        + pred_sal_stretch.map(lambda v: f"{v:.2f}")
-        + "; gap (market - predicted) = "
-        + gap_stretch.map(lambda v: f"{v:.2f}")
-    )
+    if include_scored_universe:
+        scored_universe = _add_bucket_rank_salary_explanations(
+            scored_universe, bucket_mode="mixed"
+        )
 
     # -----------------------------
-    # Add skill metrics (from candidate_jobs) — drop-in of your notebook logic
+    # Add skill metrics (from candidate_jobs)
     # -----------------------------
     _require_cols(
         candidate_jobs,
@@ -182,10 +190,15 @@ def build_job_explanations(
         ["job_id", "skill_match_norm", "expected_missing_norm"]
     ].copy()
 
+    # Top-N are one-to-one; scored_universe is one-to-one as well (job_id unique)
     top_best = top_best.merge(gap_addon, how="left", on="job_id", validate="one_to_one")
     top_stretch = top_stretch.merge(
         gap_addon, how="left", on="job_id", validate="one_to_one"
     )
+    if include_scored_universe:
+        scored_universe = scored_universe.merge(
+            gap_addon, how="left", on="job_id", validate="one_to_one"
+        )
 
     # -----------------------------
     # Family-level missing / covered lists (via skill_mat)
@@ -251,12 +264,19 @@ def build_job_explanations(
 
     top_best = _attach_family_lists(top_best, where="top_best")
     top_stretch = _attach_family_lists(top_stretch, where="top_stretch")
+    if include_scored_universe:
+        scored_universe = _attach_family_lists(scored_universe, where="scored_universe")
 
     # -----------------------------
     # Light eval (fast invariants)
     # -----------------------------
     if validate:
-        # Salary numeric sanity
+        # Salary numeric sanity for top tables
+        sal_mean_best = pd.to_numeric(top_best["sal_mean"], errors="coerce")
+        pred_sal_best = pd.to_numeric(top_best["pred_sal"], errors="coerce")
+        sal_mean_stretch = pd.to_numeric(top_stretch["sal_mean"], errors="coerce")
+        pred_sal_stretch = pd.to_numeric(top_stretch["pred_sal"], errors="coerce")
+
         if sal_mean_best.isna().any() or pred_sal_best.isna().any():
             raise ValueError(
                 "Non-numeric sal_mean/pred_sal detected in top_best after coercion."
@@ -266,7 +286,7 @@ def build_job_explanations(
                 "Non-numeric sal_mean/pred_sal detected in top_stretch after coercion."
             )
 
-        # Explanation columns should have no NaNs
+        # Explanation columns should have no NaNs (top tables)
         for col in [
             "why_bucket",
             "why_rank",
@@ -283,7 +303,7 @@ def build_job_explanations(
                     f"NaNs detected in top_stretch explanation column '{col}'."
                 )
 
-        # Metrics from candidate_jobs should be present and finite
+        # Metrics from candidate_jobs should be present and finite (top tables)
         for col in ["skill_match_norm", "expected_missing_norm"]:
             if top_best[col].isna().any() or (
                 not np.isfinite(top_best[col].to_numpy()).all()
@@ -298,7 +318,7 @@ def build_job_explanations(
                     f"Invalid values in top_stretch '{col}' after merge from candidate_jobs."
                 )
 
-        # Counts match list lengths
+        # Counts match list lengths (top tables)
         if (
             top_best["n_missing_families"] != top_best["missing_families"].map(len)
         ).any():
@@ -308,6 +328,30 @@ def build_job_explanations(
             != top_stretch["missing_families"].map(len)
         ).any():
             raise ValueError("n_missing_families mismatch in top_stretch.")
+
+        # Optional: validate scored_universe key fields (don’t overdo; it can be large)
+        if include_scored_universe:
+            _require_cols(
+                scored_universe,
+                [
+                    "job_id",
+                    "bucket",
+                    "missing_families",
+                    "covered_families",
+                    "n_missing_families",
+                    "n_covered_families",
+                ],
+                where="scored_universe_explained",
+            )
+            if scored_universe["job_id"].isna().any():
+                raise ValueError(
+                    "scored_universe_explained contains null job_id values."
+                )
+            if not scored_universe["job_id"].is_unique:
+                dup_n = int(scored_universe["job_id"].duplicated().sum())
+                raise ValueError(
+                    f"scored_universe_explained job_id is not unique ({dup_n} duplicates)."
+                )
 
     metric_glossary = {
         "job_id": "Unique identifier for the job posting/role row used throughout the project. Primary key for joins.",
@@ -336,11 +380,18 @@ def build_job_explanations(
         "c_max": "Competitiveness threshold used to split buckets into 'best_now' vs 'stretch'.",
     }
 
+    tables_out: dict[str, Any] = {
+        "top_best_explained": top_best,
+        "top_stretch_explained": top_stretch,
+    }
+    if include_scored_universe:
+        tables_out["scored_universe_explained"] = scored_universe
+
     return {
-        "tables": {
-            "top_best_explained": top_best,
-            "top_stretch_explained": top_stretch,
-        },
+        "tables": tables_out,
         "metric_glossary": metric_glossary,
-        "meta": {"tau": float(tau)},
+        "meta": {
+            "tau": float(tau),
+            "include_scored_universe": bool(include_scored_universe),
+        },
     }

@@ -32,3 +32,5 @@
 - Skill ROI Model (salary uplift ÷ difficulty)
 - Career Path Optimization (Pareto skill choices)
 - Add ch2 outputs to the recommendation engine
+- Career Simulation (what-if skill additions)
+- Cross-City Optimization (salary × competitiveness × difficulty)

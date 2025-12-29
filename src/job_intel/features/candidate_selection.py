@@ -10,6 +10,24 @@ from src.job_intel.schemas import build_user_profile
 REQUIRED_FILTER_COLS = ["state", "Sector", "title_rich", "job_title_family"]
 
 
+def _normalize_job_id_series(s: pd.Series, *, where: str) -> pd.Series:
+    """
+    Canonicalize job_id to string, strip whitespace, fix float artifacts like '1060.0'.
+    """
+    if s.isna().any():
+        raise ValueError(f"{where} contains NaNs in 'job_id'.")
+
+    out = s.astype("string").str.strip()
+    out = out.str.replace(r"\.0$", "", regex=True)
+
+    if (out == "").any():
+        raise ValueError(
+            f"{where} contains empty-string job_id values after normalization."
+        )
+
+    return out
+
+
 def candidate_set_construction(
     df: pd.DataFrame,
     skill_text: str = "",
@@ -19,28 +37,28 @@ def candidate_set_construction(
     target_sectors: Optional[Union[str, List[str]]] = None,
     salary_target: Optional[Union[int, float, str]] = None,
     explain_skills: bool = False,
+    candidate_override_df: Optional[pd.DataFrame] = None,
     verbose: bool = False,
 ) -> Tuple[Dict[str, Any], pd.DataFrame]:
-    """
-    Construct a candidate job set by applying hard filters derived from a user profile.
-
-    This function:
-      1) builds a validated UserProfile (schemas.py)
-      2) filters the provided jobs dataframe by state / sector / title constraints
-      3) returns (profile, candidates_df)
-
-    Notes
-    -----
-    This function performs *no scoring*. Suitability, gaps, and other analyses are
-    applied downstream to the returned candidates dataframe.
-    """
-
+    # --- base df contract ---
     missing = [c for c in REQUIRED_FILTER_COLS if c not in df.columns]
     if missing:
         raise KeyError(
             f"Candidate selection requires columns missing from df: {missing}"
         )
 
+    if "job_id" not in df.columns:
+        raise KeyError("Candidate selection requires 'job_id' column in df.")
+
+    # Normalize df job_id to ensure reliable isin() behavior
+    df = df.copy()
+    df["job_id"] = _normalize_job_id_series(df["job_id"], where="df (jobs artefact)")
+
+    if df["job_id"].duplicated().any():
+        dup = df.loc[df["job_id"].duplicated(), "job_id"].iloc[0]
+        raise ValueError(f"df contains duplicate job_id values (e.g. {dup!r}).")
+
+    # Build profile always (skill_text changes between upskilling runs)
     profile = build_user_profile(
         skill_text=skill_text,
         current_state=current_state,
@@ -51,31 +69,78 @@ def candidate_set_construction(
         explain_skills=explain_skills,
     )
 
+    # --- OVERRIDE MODE: freeze candidates by job_id set ---
+    if candidate_override_df is not None:
+        if "job_id" not in candidate_override_df.columns:
+            raise KeyError("candidate_override_df must contain a 'job_id' column.")
+
+        # Dropna BEFORE converting; then normalize
+        ov = candidate_override_df["job_id"].dropna()
+        if ov.empty:
+            raise ValueError("candidate_override_df contains no valid job_id values.")
+
+        ov = _normalize_job_id_series(ov, where="candidate_override_df")
+        override_ids = ov.unique().tolist()
+        override_set = set(override_ids)
+
+        out = df[df["job_id"].isin(override_set)].copy()
+
+        if out.empty:
+            raise ValueError(
+                "Override candidate set produced 0 rows after subsetting df by job_id. "
+                "Likely job_id mismatch between override and artefacts."
+            )
+
+        # Strict freeze invariant: all requested ids must be present
+        present = set(out["job_id"].tolist())
+        missing_override = override_set - present
+        if missing_override:
+            ex = sorted(list(missing_override))[:10]
+            raise KeyError(
+                f"Override candidate set is missing {len(missing_override)} requested job_ids "
+                f"after alignment to df. Examples: {ex}"
+            )
+
+        # Optional strictness: ensure no duplicates after filtering (should already hold)
+        if out["job_id"].duplicated().any():
+            dup = out.loc[out["job_id"].duplicated(), "job_id"].iloc[0]
+            raise ValueError(
+                f"Override output contains duplicate job_id values (e.g. {dup!r})."
+            )
+
+        if verbose:
+            print(
+                f"[override] requested ids: {len(override_ids)} | returned rows: {len(out)}"
+            )
+
+        return profile, out
+
+    # --- NORMAL MODE: apply constraints ---
     out = df
 
-    # 1) state
-    if profile["raw_inputs"]["current_state"] is not None:
-        out = out[out["state"] == profile["raw_inputs"]["current_state"]]
+    st = profile["raw_inputs"].get("current_state", None)
+    if st not in (None, "ALL"):
+        out = out[out["state"] == st]
 
-    # 2) sectors
-    if profile["raw_inputs"]["target_sectors"] is not None:
-        out = out[out["Sector"].isin(profile["raw_inputs"]["target_sectors"])]
+    sectors = profile["raw_inputs"].get("target_sectors", None)
+    if sectors is not None:
+        out = out[out["Sector"].isin(sectors)]
 
-    # 3) title_rich
-    if profile["raw_inputs"]["job_title_rich"] is not None:
-        out = out[out["title_rich"] == profile["raw_inputs"]["job_title_rich"]]
+    tr = profile["raw_inputs"].get("job_title_rich", None)
+    if tr is not None:
+        out = out[out["title_rich"] == tr]
 
-    # 4) title_family
-    if profile["raw_inputs"]["job_title_family"] is not None:
-        out = out[out["job_title_family"] == profile["raw_inputs"]["job_title_family"]]
-
-    if verbose:
-        print(f"Initial number of jobs available: {len(df)}.")
-        print(f"Current number of jobs available: {len(out)}.")
+    tf = profile["raw_inputs"].get("job_title_family", None)
+    if tf is not None:
+        out = out[out["job_title_family"] == tf]
 
     if out.empty:
         raise ValueError(
             "No jobs available within the current constraints. Please widen your filters."
         )
+
+    if verbose:
+        print(f"Initial number of jobs available: {len(df)}.")
+        print(f"Current number of jobs available: {len(out)}.")
 
     return profile, out.copy()

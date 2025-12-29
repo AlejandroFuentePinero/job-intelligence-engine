@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -48,38 +48,9 @@ def job_recommender(
     top_n_best: int = 10,
     top_n_stretch: int = 5,
     verbose: bool = True,
+    # Upskilling support: freeze job universe
+    candidate_override_df: Optional[pd.DataFrame] = None,
 ) -> dict[str, Any]:
-    """
-    Chapter 4 — Hybrid Job Recommender (v1)
-
-    Runs the Chapter 4 context loader (Chapter 3 positioning + salary feature prep),
-    attaches salary predictions conditioned on the user's skill PCs, then produces
-    two ranked recommendation buckets:
-
-    - best_now: jobs with competitiveness_index <= c_max
-    - stretch:  jobs with competitiveness_index  > c_max
-
-    Ranking score (within each bucket):
-        score = suitability - alpha * competitiveness_index
-
-    Suitability gating:
-    - First apply s_min_base; if < n_target jobs remain, fall back to s_min_floor.
-    - If still < n_target jobs remain, raise ValueError (user should relax constraints or upskill).
-
-    Returns
-    -------
-    dict with keys:
-    - "params": all thresholds/knobs used
-    - "counts": candidate counts and per-bucket counts
-    - "warnings": list[str]
-    - "tables":
-        - "candidate_jobs": filtered + scored candidate set used for ranking
-        - "top_best_now": top-N best_now recommendations (indexed by job_id)
-        - "top_stretch": top-N stretch recommendations (indexed by job_id)
-        - "skill_gap": global skill-gap table (not per-job; for upskilling priorities)
-        - "skill_prob_matrix": per-job skill requirement probabilities (for per-job explanations)
-    - "salary_summary": mean salary comparisons for best_now vs stretch (Top-N only)
-    """
     warnings: list[str] = []
 
     # -----------------------------
@@ -99,16 +70,15 @@ def job_recommender(
         return_top_n_jobs=return_top_n_jobs,
         run_sensitivity=run_sensitivity,
         salary_model_path=salary_model_path,
+        candidate_override_df=candidate_override_df,
     )
 
-    # Minimal in-function guardrails (no separate eval script)
     _require_keys(
         ctx,
         [
             "candidates_df",
             "salary_model",
             "user_salary_model_features",
-            # explanation + upskilling dependencies
             "profile",
             "gap_df",
             "skill_prob_matrix",
@@ -147,7 +117,7 @@ def job_recommender(
         )
 
     # -----------------------------
-    # Validate skill_prob_matrix contract (needed for per-job skill explanations)
+    # Validate skill_prob_matrix contract
     # -----------------------------
     if "job_id" not in skill_prob_matrix.columns:
         raise KeyError("skill_prob_matrix must contain 'job_id' column.")
@@ -177,7 +147,6 @@ def job_recommender(
             f"(example: {missing_prob_cols[:5]})."
         )
 
-    # Require non-trivial overlap between candidates and probability matrix job_ids
     cand_job_ids = set(can_df["job_id"].astype(str).tolist())
     prob_job_ids = set(skill_prob_matrix["job_id"].astype(str).tolist())
     overlap = cand_job_ids.intersection(prob_job_ids)
@@ -188,7 +157,7 @@ def job_recommender(
         )
 
     # -----------------------------
-    # Validate gap_df contract (global upskilling priorities table)
+    # Validate gap_df contract
     # -----------------------------
     gap_required_cols = ["skill", "job_skill_rate", "user_skill", "skill_gap"]
     _require_cols(gap_df, gap_required_cols, where="gap_df (skill gap table)")
@@ -199,7 +168,6 @@ def job_recommender(
         dup_n = int(gap_df["skill"].duplicated().sum())
         raise ValueError(f"gap_df.skill is not unique ({dup_n} duplicates).")
 
-    # numeric ranges sanity
     for col in ["job_skill_rate", "skill_gap"]:
         s = pd.to_numeric(gap_df[col], errors="coerce")
         if s.isna().any():
@@ -219,13 +187,13 @@ def job_recommender(
     if verbose:
         print("Predicting salary based on input skills...")
 
-    y_hat = salary_model.predict(X)
+    # Ensure a clean 1D vector (some models return (n,1))
+    y_hat = np.asarray(salary_model.predict(X)).ravel()
 
     if len(y_hat) != len(can_df):
         raise ValueError(
             f"Salary prediction length mismatch: len(pred)={len(y_hat)} vs len(candidates_df)={len(can_df)}"
         )
-
     if not np.isfinite(y_hat).all():
         raise ValueError(
             "Salary predictions contain NaN/inf; feature construction or model output is invalid."
@@ -238,12 +206,51 @@ def job_recommender(
         not np.isfinite(can_df["pred_sal"].to_numpy()).all()
     ):
         raise ValueError(
-            "Salary predictions contain NaN/inf after assignment; feature construction/alignment is broken."
+            "Salary predictions contain NaN/inf after assignment; alignment is broken."
         )
 
     if verbose:
         print("Acceptance shape test passed:", len(y_hat) == len(can_df))
         print("Acceptance alignment test passed:", can_df["pred_sal"].isna().sum() == 0)
+
+    # -----------------------------
+    # Scored universe (for upskilling deltas)
+    # -----------------------------
+    can_df_universe = can_df.copy()
+
+    can_df_universe = can_df_universe.sort_values(
+        "job_id", kind="mergesort"
+    ).reset_index(drop=True)
+
+    can_df_universe["bucket"] = np.where(
+        can_df_universe["competitiveness_index"] <= c_max, "best_now", "stretch"
+    )
+    can_df_universe["competitiveness_bucket"] = can_df_universe["bucket"]
+
+    can_df_universe["score"] = can_df_universe["suitability"] - (
+        alpha * can_df_universe["competitiveness_index"]
+    )
+
+    if can_df_universe["job_id"].isna().any():
+        raise ValueError("can_df_universe contains null job_id values.")
+    if not can_df_universe["job_id"].is_unique:
+        dup_n = int(can_df_universe["job_id"].duplicated().sum())
+        raise ValueError(f"can_df_universe job_id is not unique ({dup_n} duplicates).")
+
+    allowed = {"best_now", "stretch"}
+    actual = set(can_df_universe["bucket"].dropna().unique())
+    if not actual.issubset(allowed):
+        raise ValueError(
+            f"Invalid bucket values detected in universe: {sorted(actual - allowed)}"
+        )
+
+    for col in ["suitability", "competitiveness_index", "score", "pred_sal"]:
+        if can_df_universe[col].isna().any() or (
+            not np.isfinite(can_df_universe[col].to_numpy()).all()
+        ):
+            raise ValueError(
+                f"can_df_universe contains NaN/inf in required column '{col}'."
+            )
 
     # -----------------------------
     # Suitability gating (base -> floor -> fail)
@@ -272,7 +279,6 @@ def job_recommender(
         candidate_jobs = try_base.copy()
         s_min_used = s_min_base
 
-    # Guardrail: job_id integrity
     if candidate_jobs["job_id"].isna().any():
         raise ValueError("candidate_jobs contains null job_id values after gating.")
     if not candidate_jobs["job_id"].is_unique:
@@ -290,7 +296,7 @@ def job_recommender(
         )
 
     # -----------------------------
-    # Competitiveness buckets (canonical: 'bucket')
+    # Competitiveness buckets (gated set)
     # -----------------------------
     if verbose:
         print(
@@ -300,10 +306,8 @@ def job_recommender(
     candidate_jobs["bucket"] = np.where(
         candidate_jobs["competitiveness_index"] <= c_max, "best_now", "stretch"
     )
-    # Backwards-compatible alias
     candidate_jobs["competitiveness_bucket"] = candidate_jobs["bucket"]
 
-    allowed = {"best_now", "stretch"}
     actual = set(candidate_jobs["bucket"].dropna().unique())
     if not actual.issubset(allowed):
         raise ValueError(f"Invalid bucket values detected: {sorted(actual - allowed)}")
@@ -316,20 +320,20 @@ def job_recommender(
         print(f'Number of "Best-now" jobs = {best_now}')
         print(f'Number of "Stretch" jobs = {stretch}')
 
-    if best_now <= min_bucket_size_bestnow:
+    if best_now < min_bucket_size_bestnow:
         msg = 'Low number of "best-now" options. Consider relaxing constraints or using upskilling.'
         warnings.append(msg)
         if verbose:
             print("WARNING:", msg)
 
-    if stretch <= min_bucket_size_stretch:
+    if stretch < min_bucket_size_stretch:
         msg = 'Low number of "stretch" options. Consider relaxing constraints or using upskilling.'
         warnings.append(msg)
         if verbose:
             print("WARNING:", msg)
 
     # -----------------------------
-    # Ranking score and sorting
+    # Ranking score and sorting (gated set)
     # -----------------------------
     if verbose:
         print("Computing ranking score based on suitability and competitiveness.")
@@ -379,7 +383,6 @@ def job_recommender(
         .copy()
     )
 
-    # Guardrail: Top tables job_ids are subsets of candidate_jobs ids
     cand_ids = set(candidate_jobs["job_id"].tolist())
     if not set(top_best_now.index.tolist()).issubset(cand_ids):
         raise ValueError("top_best_now contains job_id not present in candidate_jobs.")
@@ -400,12 +403,6 @@ def job_recommender(
         warnings.append(msg)
         if verbose:
             print("WARNING:", msg)
-
-    if verbose:
-        print(f'Top {top_n_best} "best-now" jobs:\n')
-        print(top_best_now)
-        print(f'\nTop {top_n_stretch} "stretch" jobs:\n')
-        print(top_stretch)
 
     # -----------------------------
     # Salary summary (Top-N means)
@@ -456,14 +453,10 @@ def job_recommender(
             f"Predicted mean salary (based on your skills): {sal_mean_pred_stretch:.2f}"
         )
         print(f"Delta (expected - predicted): {delta_stretch:.2f}")
-
         print(
             f'\nMean salary jump from "Best-now" to "Stretch" jobs (Top-N): {mean_sal_jump:.2f}'
         )
 
-    # -----------------------------
-    # Package results
-    # -----------------------------
     params_out = {
         "s_min_base": s_min_base,
         "s_min_floor": s_min_floor,
@@ -491,6 +484,7 @@ def job_recommender(
         "top_stretch": top_stretch,
         "skill_gap": gap_df,
         "skill_prob_matrix": skill_prob_matrix,
+        "scored_universe": can_df_universe,
     }
 
     salary_summary = {

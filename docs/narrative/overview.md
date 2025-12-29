@@ -360,98 +360,105 @@ Subsequent chapters build on this positioning layer to explore salary prediction
 
 
 # Chapter 4 — Recommender Engine (v1)  
-Narrative overview of context loading, hybrid recommendation, and user-salary integration  
-Date: 2025-12-23
+Narrative overview of context loading, hybrid recommendation, explanations, and counterfactual upskilling  
+Date: 2025-12-29
 
-Chapter 4 shifts the Job Intelligence Engine from **positioning** to **decision support**.  
-Where Chapter 3 tells a user where they stand (fit, difficulty, and gaps), Chapter 4 begins converting those diagnostics into **actionable outputs**: shortlists of jobs organised by accessibility, with an explicit signal about whether the user’s current skill profile is priced above or below the market expectations of those roles.
+Chapter 4 moves the Job Intelligence Engine from **positioning** to **decision support**.  
+Chapter 3 tells the user where they stand (fit, barrier, gaps). Chapter 4 turns those diagnostics into **actionable outputs**: job shortlists split by accessibility, a user-conditioned salary signal for each role, an inspectable explanation layer, and a counterfactual upskilling module that quantifies “what to learn next” in terms of measurable positioning gains.
 
 ---
 
 ## From “Ranking” to “Recommendations”
 
-Chapter 3 already produces a structured candidate universe and two key signals:
-- **Suitability** (alignment with the user’s preferences and skills), and  
-- **Competitiveness** (barrier-to-entry given missing skill burden and salary ambition).
+Chapter 3 already produces a constrained candidate universe and two core signals:
+- **Suitability**: alignment between the user profile and the job (skills + preferences), and  
+- **Competitiveness**: barrier-to-entry given missing skill burden, scarcity/rarity, and constraints.
 
-Chapter 4 does not re-invent those constructs. Instead, it treats them as stable upstream inputs and adds a lightweight recommender layer that answers:
-
-- Which roles are the best opportunities **right now**?  
-- Which roles are plausible but require meaningful growth (**stretch**)?  
-- How do these opportunities compare to what the market would typically pay, versus what the user’s skills suggest they might command?
+Chapter 4 treats these as upstream truth and answers:
+- Which roles are best opportunities **right now**?
+- Which roles are plausible but require meaningful growth (**stretch**)?
+- How does the user’s predicted salary compare to the market expectations of those roles?
+- Which missing skill families provide the strongest **positioning lift** if acquired?
 
 ---
 
 ## A Single Canonical Context Payload
 
-To prevent fragile glue code across notebooks and modules, Chapter 4 introduces a **context loader** that acts as the standard entrypoint for all downstream recommenders. The loader:
+To keep notebooks and `src/` aligned and avoid fragile glue code, Chapter 4 standardises around a **context loader** (`load_ch4_context`) that:
+1) calls Chapter 3 positioning to produce the user profile and candidate set,  
+2) loads aligned artefacts needed for skill reasoning (family probabilities, gap table, etc.), and  
+3) loads the persisted Salary Response Model (Chapter 1) and constructs the candidate-level salary feature matrix by broadcasting the user’s skill PC vector across candidate rows.
 
-1. Calls the Chapter 3 positioning pipeline to generate the user profile and candidate set.  
-2. Loads the aligned Chapter 3 artefacts needed for explanation and skill reasoning.  
-3. Loads the persisted Salary Response Model from Chapter 1.  
-4. Constructs a candidate-level salary feature matrix by **broadcasting the user’s skill PCA vector** across all candidate rows while retaining each job’s categorical codes.
-
-The result is a single “ready-for-recommenders” payload: candidates + user-derived features + model artefacts, aligned by `job_id` and safe to consume across modules.
+This yields one “ready-for-recommenders” payload aligned by `job_id`.
 
 ---
 
-## Hybrid Job Recommendation: Retrieve → Bucket → Rerank
+## Hybrid Job Recommendation: Retrieve → Bucket → Rerank (+ Scored Universe)
 
-The v1 recommender follows a pragmatic design that prioritises clarity and deterministic behaviour:
+The v1 recommender is deliberately simple and deterministic:
 
-### 1) Retrieve (Suitability Thresholding)
-A base suitability threshold selects jobs that are sufficiently aligned with the user.  
-If the candidate set becomes too small, the system falls back to a lower threshold rather than silently returning an unhelpful handful of jobs. If even the relaxed threshold fails, the system raises an explicit error, signalling that constraints are too strict.
+1) **Retrieve (suitability gating)**  
+   Apply a base suitability threshold; fall back to a lower floor if too few jobs remain; fail loudly if still too small.
 
-### 2) Bucket (Accessibility via Competitiveness)
-Candidate jobs are split into two accessibility buckets:
-- **Best-now**: roles that appear attainable given the user’s current profile  
-- **Stretch**: roles that remain aligned but carry substantially higher barriers
+2) **Bucket (accessibility)**  
+   Split into:
+   - **best_now** if `competitiveness_index <= c_max`
+   - **stretch** otherwise  
+   Bucket-size warnings are emitted rather than silently degrading recommendation quality.
 
-If bucket sizes are too small, the engine produces warnings rather than injecting poor-fit jobs. This preserves recommendation integrity while still signalling that the user may need to relax constraints or focus on upskilling.
+3) **Rerank (within-bucket)**  
+   Rank by `score = suitability - alpha * competitiveness_index` to favour fit while penalising barrier.
 
-### 3) Rerank (Within-Bucket Prioritisation)
-Within the eligible jobs, the engine computes a combined ranking score that rewards suitability while penalising competitiveness. This produces stable, user-facing shortlists that reflect “good fit” without ignoring access difficulty.
+4) **Scored universe (for counterfactuals)**  
+   In addition to the gated candidate set and Top-N tables, Chapter 4 produces a `scored_universe` table containing bucket + score for *all* candidate jobs under the user’s constraints. This is the stable substrate for upskilling deltas and downstream Chapter 5 reporting.
 
 ---
 
 ## User Salary Signal: “Market Expected” vs “Skill-Implied”
 
-A key addition in Chapter 4 is an individualized salary signal attached to each candidate job:
+Each candidate job includes:
+- **Market salary** (`sal_mean`): job-side expected salary signal derived from the dataset, and  
+- **User-conditioned salary** (`pred_sal`): Chapter 1 model prediction using job codes plus the user’s broadcast skill PCs.
 
-- **Expected salary** comes from the job posting distribution/model features already present in the dataset.  
-- **Predicted salary** is produced by the Salary Response Model using the job’s categorical context plus the user’s broadcasted skill PCs.
-
-Comparing these creates a simple but interpretable diagnostic:
-- If predicted is below expected, the user may be under-aligned in skill pricing for that role class.  
-- If predicted is close to or above expected, the user’s profile is competitively priced relative to the role set.
-
-This is not a causal claim about what the user “deserves”; it is a model-consistent indicator of alignment between the user’s skill signal and the market structure captured in Chapter 1.
+The comparison is an interpretable alignment diagnostic (not a causal claim): whether the user’s skill signal is priced below/near/above the market structure captured in the model.
 
 ---
 
-## Explanation Layer (v1): Making Recommendations Inspectable
+## Explanation Layer (v1): Making Outputs Inspectable
 
-Chapter 4 includes a lightweight explanator that augments the Top-N recommendations with deterministic, human-readable rationale:
+`build_job_explanations()` augments outputs with:
+- deterministic “why this bucket / why this rank / salary context” strings, and
+- per-job skill-family coverage and gaps:
+  - infer required families by thresholding `{family}_prob` at `tau`
+  - compare to the user’s family vector to produce `covered_families` and `missing_families`
 
-- **Why this bucket?** A sentence explaining whether the role is “best-now” or “stretch” based on `competitiveness_index` relative to `c_max`.  
-- **Why this rank?** A transparent score decomposition showing how `suitability` and the competitiveness penalty (`alpha`) combine into the final `score`.  
-- **Why this salary context?** A short comparison of `sal_mean` (market expected) versus `pred_sal` (user-conditioned), including the gap.
-
-To support skill interpretability without overfitting to noisy token-level extraction in v1, the explanator also adds:
-- **Skill-family coverage** per job (`covered_families`) and gaps (`missing_families`) inferred by thresholding job-family probabilities at `tau`.  
-- **Counts** (`n_covered_families`, `n_missing_families`) for quick scanning.
-
-This keeps the Chapter 4 output auditable and user-facing while reserving deeper token-level skill guidance for the upskilling module.
+Critically, the explanator also supports the **full scored universe** (not just Top-N), enabling downstream upskilling to use missing-family fields at scale.
 
 ---
 
-## Chapter 4 Scope Boundary (Current)
+## Upskilling (v1): Counterfactual Positioning Gains on a Frozen Universe
 
-Chapter 4 v1 establishes a functional recommender loop and a stable context contract. It intentionally defers richer decision-support components to later iterations, including:
-- upskilling recommender and skill ROI-like indices  
-- what-if career simulation and cross-state optimisation  
-- persisted Chapter 4 artefacts for dashboards and reproducibility  
-- orchestrated pipelines and end-to-end invariants
+The upskilling recommender converts “gaps” into “what to learn next” by simulation:
+1) **Freeze the job universe** by `job_id` using `candidate_override_df`, so every upskill scenario compares the same jobs.
+2) **Source candidate skill families** primarily from **stretch jobs** (their `missing_families` are the natural targets).
+3) **Inject representative tokens** for each missing family into the user skill text and rerun the recommender on the same frozen universe.
+4) **Compute per-job deltas** vs baseline (percentage-point deltas for bounded 0–1 metrics).
+5) **Rank skill families** by a composite impact score that rewards:
+   - promotion rate (stretch → best_now), and
+   - score gains (especially on baseline-stretch jobs),
+   while penalising demotions and worst-tail harms among baseline best_now jobs (guardrailed via `demotion_tol`).
 
-The current milestone is the first end-to-end recommendation output built directly on the project’s learned market structure: shortlistable jobs grouped by accessibility with a user-specific salary signal and inspectable rationale attached.
+Outputs are designed to plug directly into Chapter 5: top skill families + example tokens + summary impact metrics + long-table deltas for plots.
+
+---
+
+## Chapter 4 Scope Boundary (v1)
+
+Chapter 4 v1 delivers a complete decision-support loop:
+- canonical context contract,
+- deterministic job recommendations with salary signal,
+- inspectable explanations including per-job missing families,
+- counterfactual upskilling ranked by measurable positioning lift.
+
+Deferred or future enhancements include richer ROI modelling, persistence of Chapter 4 artefacts, “what-if” constraint optimisation, and broader macro-market explainability layers handled in Chapter 5.
+

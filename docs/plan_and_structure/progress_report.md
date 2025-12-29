@@ -206,8 +206,8 @@ _Last updated: 2025-12-15_
 ---
 # Chapter 4 — Recommender Engine
 
-**Progress:** 45%  
-`[█████████...........] 45%`
+**Progress:** 70%  
+`[██████████████......] 70%`
 
 ## Core Work
 - [x] Define recommendation intents + scoring objectives (v1)
@@ -216,11 +216,8 @@ _Last updated: 2025-12-15_
 - [x] Chapter 4 entrypoint evaluation (salary features + predict smoke + alignment)
 - [x] Hybrid job recommender (retrieve → rerank; 2 buckets)
 - [x] Explanation layer (why job / why skill; per-bucket rationale)
-- [ ] Upskilling recommender (counterfactual skill addition → stretch access)
-- [ ] Skill “ROI-like” efficiency index (positioning-gain proxy)
-- [ ] Career simulation (what-if skill additions; deltas + re-rank)
-- [ ] Cross-State optimization (salary × competitiveness; guardrails)
-- [x] Salary prediction integration (`pred_sal` + summaries)
+- [x] Upskilling recommender (counterfactual skill addition → positioning gain on frozen universe)
+- [x] ROI proxy (v1): `upskill_impact_score` (promotion-rate + score-gain composite with demotion/tail penalties + guardrail)
 - [ ] Persist Chapter 4 artefacts (tables for dashboards + reproducibility)
 - [ ] Documentation (module docs + assumptions + limitations)
 
@@ -229,13 +226,11 @@ _Last updated: 2025-12-15_
 - [x] `evaluation/chapter_4_entrypoint_eval.py`
 - [x] `features/job_recommender.py`
 - [x] `features/job_explanations.py`
-- [ ] `features/upskilling_recommender.py`
-- [ ] `features/skill_value_index.py` (or `roi_estimator.py`)
-- [ ] `features/career_simulator.py`
-- [ ] `features/cross_state_optimizer.py`
+- [x] `features/upskilling_recommender.py`
 - [ ] `pipelines/chapter4_recommender_engine.py`
 - [ ] `evaluation/ch4_invariants.py`
 - [ ] End-to-end recommender tests
+
 
 ---
 

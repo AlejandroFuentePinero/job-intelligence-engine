@@ -103,7 +103,7 @@
 - ✅ **Hybrid Job Recommender**  
   *Purpose:* Recommend the top jobs for a user based on fit, realism, and opportunity.
 
-- **Upskilling Recommender**  
+- ✅ **Upskilling Recommender**  
   *Purpose:* Suggest high-value skills that unlock desired roles or salary ranges.
 
 ### Stretch

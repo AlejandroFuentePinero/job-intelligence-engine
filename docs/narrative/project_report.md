@@ -1244,6 +1244,33 @@ The explanation layer makes Chapter 4 recommendations auditable and user-facing 
 
 ---
 
+## 4.5 Upskilling Recommender (v1: Counterfactual Skill Gains on a Frozen Universe)
+**Module:** `features/upskilling_recommender.py`  
+**Function:** `upskill_recommender(...)`
+
+### Methodology
+- Runs the baseline `job_recommender()` to obtain the constrained `scored_universe`, then **freezes** the job universe via `candidate_override_df` (job_id-only) so every upskill scenario is directly comparable.
+- Uses `build_job_explanations()` on the frozen universe to retrieve per-job `missing_families` (thresholded at `tau`), focusing on **stretch** jobs to define the candidate upskill families.
+- For each missing family, injects representative tokens from that family (derived from job descriptions using the same extractor dictionary) into `skill_text`, reruns `job_recommender()` on the frozen universe, and computes **per-job deltas** vs baseline (percentage-point deltas for bounded 0–1 metrics).
+- Summarises each upskill scenario using a composite impact score that rewards:
+  - **promotion_rate** (baseline stretch → best_now),
+  - **mean score gains** (especially among baseline-stretch jobs),
+  and penalises:
+  - **demotions** (baseline best_now → stretch) and worst-tail harms in best_now (10th percentile), with an explicit demotion guardrail (`demotion_tol`).
+
+### Outputs
+Returns a dict with:
+- `job_base_upskill`: long-table (job_id × scenario) with baseline + per-scenario deltas and `bucket_movement`
+- `upskill_summary`: scenario-level metrics (promotion/demotion rates, score deltas, tail risk) + composite `upskill_impact_score`
+- `upskill_recommendation`: Top-N ranked skill families for upskilling
+- `missing_dict`: raw family → matched tokens (from stretch-job descriptions)
+- `recommendation_dict`: deduped example tokens per recommended family for reporting
+
+### Conclusions
+The upskilling module provides a quantitative “what to learn next” layer by simulating skill acquisition as counterfactual profile changes over a fixed job market slice. This produces stable, auditable upskilling recommendations that integrate cleanly into Chapter 5 reporting (top families + example tokens + measurable positioning gains and promotion rates).
+
+---
+
 ## Current Scope Boundary
 Chapter 4 v1 intentionally prioritises a minimal, working recommender loop with inspectable outputs. The following remain out of scope for the current closure point:
 - upskilling recommender and skill ROI-style indices
