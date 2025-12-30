@@ -1,17 +1,20 @@
+```md
 # Job Intelligence Engine — System Architecture
 Date: 2025-12-30
 
-This file contains the updated architecture for the project, organised for fast scanning:
+This file is the canonical architecture reference for shipping + publication. It is organised for fast scanning:
 1) **Overview**
 2) **Features** (by chapter)
 3) **Models** (by chapter)
 4) **Evaluation** (by chapter)
 5) **Pipelines** (by chapter)
-6) **Schemas**
+6) **Schemas & Public APIs**
 7) **Artefacts**
 8) **Assumptions & Limitations**
 
-All components live in `src/job_intel`.
+All architectural components live in `src/job_intel`.
+
+> Completeness contract: this architecture enumerates **47** project `.py` modules (excluding `__init__.py` and `config.py`) and matches the repository filenames shown in the attached screenshots.
 
 ---
 
@@ -22,7 +25,7 @@ The system is a modular, deterministic pipeline transforming raw Glassdoor job p
 - salary and skill-requirement models (Chapter 1),
 - graph/embedding-based labour-market structure artefacts (Chapter 2),
 - per-user positioning outputs (Chapter 3),
-- recommendations + explanations + counterfactual upskilling/simulation (Chapter 4).
+- recommendations + explanations + counterfactual upskilling / simulation (Chapter 4).
 
 ---
 
@@ -41,7 +44,7 @@ Outputs:
 ### 2.1.2 Seniority Extraction
 **Module:** `features/seniority.py`  
 Purpose:
-- Extract seniority signals from titles and descriptions.
+- extract seniority signals from titles and descriptions
 
 ### 2.1.3 Description Cleaning
 **Module:** `features/text_cleaning.py`  
@@ -50,33 +53,33 @@ Output:
 
 ### 2.1.4 Domain Mapping
 **Module:** `features/domain.py`  
-Output:
-- `domain` (lookup-based)
+Purpose / Output:
+- map to canonical `domain` via deterministic lookup
 
 ### 2.1.5 Salary Parsing
 **Module:** `features/salary.py`  
 Outputs:
 - `sal_min`, `sal_max`, `sal_mean`, `sal_is_hourly`
 
-### 2.1.6 Skill Extraction
+### 2.1.6 Skill Extraction (Canonical 27-family space)
 **Modules:**
 - `features/skills_taxonomy.py`
 - `features/skill_extractor.py`  
-Output:
-- multi-hot skill-family flags (canonical 27-family space)
+Purpose / Output:
+- taxonomy-driven extraction into multi-hot skill-family flags (canonical 27 families)
 
 ---
 
 ## 2.2 Chapter 1 — Modelling Features
 
-### 2.2.1 PCA Transformer
-**File:** `features/skills_pca.py`  
+### 2.2.1 PCA Transformer (Skills → Low-Dim)
+**Module:** `features/skills_pca.py`  
 Outputs:
 - PCA model artefact  
-- `skill_PC1` to `skill_PC10` features
+- `skill_PC1` … `skill_PC10` columns
 
 Validation principle:
-- PCA correctness is validated indirectly by reproducing the exact salary-model metrics (XGBoost v4) from the exploratory notebook.
+- PCA correctness is validated indirectly by reproducing the exact salary-model metrics (XGBoost v4) obtained in the exploratory workflow (same preprocessing + PCA ordering/scaling).
 
 ---
 
@@ -86,71 +89,104 @@ Validation principle:
 **Module:** `features/graph_job_skill.py`  
 Outputs:
 - weighted bipartite graph linking `job_id` nodes to 27 skill-family nodes
-- edge weights representing predicted skill–job probabilities
+- edge weights = predicted skill–job probabilities (Chapter 1 output)
+
+Role:
+- this is the relational foundation for Node2Vec embedding, clustering, and downstream “ecosystem” analyses.
 
 ### 2.3.2 Node2Vec Embedding Loader
 **Module:** `features/embedding_loader.py`  
 Outputs:
-- `job_emb`: job embedding table (index = `job_id`, columns = `emb_0` … `emb_{d-1}`)
-- `skill_emb`: skill embedding table (index = skill name, columns = `emb_0` … `emb_{d-1}`)
+- `job_emb`: index = `job_id`, columns = `emb_0` … `emb_{d-1}`
+- `skill_emb`: index = skill name, columns = `emb_0` … `emb_{d-1}`
+
+Role:
+- canonical loader/validator for persisted embeddings used across Chapter 2/5-style analyses.
 
 ### 2.3.3 Job Families Clustering
 **Module:** `features/job_families_clustering.py`  
 Outputs:
-- `km_jobs_df`: job clusters table (index = `job_id`, column = `job_family_id` or equivalent cluster id)
+- `km_jobs_df`: job family assignment table with `job_id` + `job_family_id` (cluster id)
 
-### 2.3.4 Skill Ecosystem Similarity Structure
+Role:
+- deterministic clustering of job embeddings into interpretable “job families”.
+
+### 2.3.4 Skill Ecosystem Similarity Structure (k-NN skill graph)
 **Module:** `features/skill_embedding_similarity.py`  
 Outputs:
-- skill–skill neighbour edge list (columns = `skill_1`, `skill_2`, `similarity`), top-*k* neighbours per skill
+- skill–skill neighbour edge list with columns:
+  - `skill_1`, `skill_2`, `similarity`
+- constructed as top-*k* neighbours per skill (sparsified similarity network)
 
-### 2.3.5 Skill Specialisation Map
+### 2.3.5 Skill Specialisation Map (Lift Tables)
 **Module:** `features/skill_specialisation_map.py`  
 Outputs:
-- `{group_col}_skill_specialisation.csv`: specialisation table (columns = `{group_col}` + 27 skill-family columns)
+- `{group_col}_skill_specialisation.csv` lift-style tables:
+  - columns = `{group_col}` + 27 skill-family columns
 
 ### 2.3.6 User Skill Processing (PCA for User)
 **Module:** `features/userprofile_skill_processing.py`  
 Purpose / Output:
-- derive PCA axes (`skill_PC1..skill_PC10`) from a user’s extracted skills, aligned to the PCA space used by salary + positioning components
+- derive user `skill_PC1..skill_PC10` from extracted user skills
+- aligned to the PCA space used by the salary model + positioning/recommender components
 
 ---
 
-## 2.4 Chapter 3 — Individual Positioning (User → Ranked Jobs + Gaps)
+## 2.4 Chapter 3 — Individual Positioning (User → Ranked Jobs + Skill Gaps)
 
 ### 2.4.1 Chapter 3 Artefact Loader
 **Module:** `features/artefacts_ch3.py`  
 **Function:** `load_ch3_artefacts()`  
 Outputs:
-- `jobs_df`: modelling-ready jobs table
-- `skill_prob_matrix`: job × `{skill}_prob` probability matrix
+- `jobs_df`: modelling-ready jobs table (Chapter 2 processed jobs table)
+- `skill_prob_matrix`: job × `{skill}_prob` probability matrix (calibrated skill requirements)
 
-### 2.4.2 Candidate Set Construction
+Notes:
+- `jobs_df` corresponds to the persisted Chapter 2 processed table (see Artefacts).
+
+### 2.4.2 Candidate Set Construction (Hard Constraints)
 **Module:** `features/candidate_selection.py`  
 **Function:** `candidate_set_construction()`  
 Outputs:
-- `profile`: validated UserProfile dict (from `schemas.py`)
+- `profile`: validated UserProfile dict
 - `candidates_df`: filtered job subset based on hard constraints
 
-### 2.4.3 Suitability Components
-**Module:** `features/candidate_suitability.py`  
-Adds:
-- `skill_match_score`, `skill_match_norm`
-- `salary_score`
-- `suitability`
+Core responsibilities:
+- build user profile (schema-valid)
+- apply hard filters in deterministic order (as implemented), failing loudly on empty-candidate outcomes.
 
-### 2.4.4 Skill Gap Analysis
+### 2.4.3 Suitability Components (Match + Salary)
+**Module:** `features/candidate_suitability.py`  
+Adds to `candidates_df`:
+- `skill_match_score` (cosine similarity in PCA space, raw)
+- `skill_match_norm` (mapped to [0,1] for aggregation)
+- `salary_score` (one-sided target formulation)
+- `suitability` (weighted sum; weights normalized to sum to 1)
+
+Scope:
+- computation only; no artefact loading and no filtering.
+
+### 2.4.4 Skill Gap Analysis (Calibrated)
 **Module:** `features/candidate_skill_gap.py`  
 **Function:** `compute_skill_gaps(...)`  
 Output:
-- `gap_df`
+- `gap_df`: one row per skill-family with probability-based gap severity
+
+Method (high level):
+- take top-K jobs by suitability
+- join to `skill_prob_matrix` by `job_id`
+- compute mean required probability per skill-family across top-K jobs
+- gap severity = mean_prob if user lacks skill, else 0
 
 ### 2.4.5 Skill Rarity Weights
 **Module:** `features/skill_rarity.py`  
 Output:
-- rarity weights aligned to canonical 27-skill order
+- rarity weights aligned to canonical 27-skill order (mean-normalised for stability)
 
-### 2.4.6 Competitiveness Index
+Role:
+- optional weighting so rare missing skills contribute more to “difficulty of access”.
+
+### 2.4.6 Competitiveness Index (Barrier-to-Entry)
 **Module:** `features/candidate_competitiveness.py`  
 Adds:
 - `expected_missing`
@@ -158,52 +194,95 @@ Adds:
 - `salary_pct`
 - `competitiveness_index`
 
-### 2.4.7 Sensitivity Analyses
+Interpretation:
+- competitiveness reflects *difficulty of access*, not desirability.
+
+### 2.4.7 Sensitivity Analyses (Robustness to Weights)
 **Modules:**
 - `features/competitiveness_sensitivity.py`
-- `features/suitability_sensitivity.py`
+- `features/suitability_sensitivity.py`  
 
-### 2.4.8 Chapter 3 Orchestrator (Public API)
+Outputs:
+- weight-grid sensitivity tables (rank stability vs baseline using Spearman correlation)
+
+### 2.4.8 Chapter 3 Orchestrator
 **Module:** `positioning.py`  
-**Function:** `run_positioning()`
+**Function:** `run_positioning()`  
+Returns:
+- `profile`, `candidates_df`, `gap_df`
+- suitability + competitiveness sensitivity outputs
+
+Responsibilities:
+- load artefacts (via Chapter 3 loader)
+- build candidate universe and compute all Chapter 3 metrics
+- run sensitivity + gap analysis
+- provide the single canonical Chapter 3 entrypoint for downstream chapters.
 
 ---
 
-## 2.5 Chapter 4 — Recommender Engine
+## 2.5 Chapter 4 — Recommender Engine (Decision Support)
 
 ### 2.5.1 Chapter 4 Context Loader
 **Module:** `features/artefacts_ch4.py`  
 **Function:** `load_ch4_context()`  
-Outputs:
-- `profile`, `candidates_df`, `gap_df`, `sensitivity_out`
-- `jobs_df`, `skill_prob_matrix`
+Outputs (canonical payload):
+- Chapter 3 outputs: `profile`, `candidates_df`, `gap_df`, `sensitivity_out`
+- Chapter 3 inputs: `jobs_df`, `skill_prob_matrix`
 - `salary_model`
-- `user_salary_model_features`
+- `user_salary_model_features` (candidate-aligned salary design matrix)
+
+Core responsibilities:
+- call `run_positioning()` to obtain the candidate universe + derived user PCA
+- load Chapter 3 artefacts (jobs_df, skill_prob_matrix) without rerunning Chapter 1
+- build salary feature matrix by:
+  - selecting required categorical codes from candidates (e.g., size/sector/state/ownership/seniority/title_rich codes)
+  - broadcasting user `skill_PC1..skill_PC10` across candidate rows
+- return a single “ready for Chapter 4” payload used by all downstream modules.
 
 ### 2.5.2 Hybrid Job Recommender (v1)
 **Module:** `features/job_recommender.py`  
 **Function:** `job_recommender()`  
 Outputs:
-- `tables`: `scored_universe`, `top_best_now`, `top_stretch`, plus intermediate `candidate_jobs`
+- `tables`: `candidate_jobs`, `scored_universe`, `top_best_now`, `top_stretch`
 - `params`, `counts`, `warnings`, `salary_summary`
+
+Behaviour (high level):
+- attach salary predictions (row-aligned; no implicit merges)
+- apply suitability gating with fallback thresholds
+- split into buckets by competitiveness threshold (`best_now` vs `stretch`)
+- re-rank deterministically with stable tie-breakers:
+  - score desc → suitability desc → competitiveness asc → job_id asc
 
 ### 2.5.3 Job Explanations (v1)
 **Module:** `features/job_explanations.py`  
 **Function:** `build_job_explanations(...)`  
 Outputs:
-- `tables`: `scored_universe_explained`, `top_best_explained`, `top_stretch_explained`
-- `metric_glossary`, `meta`
+- `tables`: explained versions of `scored_universe`, `top_best_now`, `top_stretch`
+- `metric_glossary`, `meta` (e.g., probability threshold used)
+
+Role:
+- add human-readable rationale: why bucket, why rank, salary context, missing vs covered families
+- include light contract validation (fail loudly if required joins/columns break).
 
 ### 2.5.4 Upskilling Recommender (v1)
 **Module:** `features/upskilling_recommender.py`  
 **Function:** `upskill_recommender(...)`  
 Outputs:
-- `job_base_upskill`, `upskill_summary`, `upskill_recommendation`
+- `job_base_upskill` (job × scenario long table with deltas + bucket movement)
+- `upskill_summary`, `upskill_recommendation`
 - `missing_dict`, `recommendation_dict`, `scenario_meta`
+
+Core invariants:
+- frozen-universe comparability across scenarios (same `job_id` universe)
+- fail loudly if required missing-skill extraction/tokenisation plumbing breaks.
 
 ### 2.5.5 Career Simulation (v2 / experimental)
 **Module:** `v2_updates/features/career_simulator.py`  
 **Function:** `career_simulation(...)`
+
+Role:
+- user-driven counterfactual simulator (“what changes if I add these skills?”) on a frozen universe
+- produces per-scenario deltas and unlocked jobs under strict universe consistency checks.
 
 ---
 
@@ -214,20 +293,26 @@ Outputs:
 ### 3.1.1 Titles SBERT + Clustering Trainer
 **File:** `models/sbert_clustering_training_title.py`  
 Purpose:
-- train SBERT embeddings for unique job titles and cluster them with KMeans to produce a deterministic title/domain lookup consumed by Chapter 0
+- train SBERT embeddings for unique job titles and cluster with KMeans to produce a deterministic title/domain lookup consumed by Chapter 0.
 
 ## 3.2 Chapter 1
 
 ### 3.2.1 Salary Model Predictor
-**File:** `models/salary_predictor.py`
+**File:** `models/salary_predictor.py`  
+Purpose:
+- load and apply the trained salary model to new records (inference utilities used by Chapter 4).
 
 ### 3.2.2 Skill Probability Builder
-**File:** `models/skill_prob_matrix.py`
+**File:** `models/skill_prob_matrix.py`  
+Purpose:
+- build/persist the job × skill probability matrix from the 27 skill models.
 
 ## 3.3 Chapter 2
 
 ### 3.3.1 Node2Vec Embedding Trainer
-**File:** `models/node2vec_trainer.py`
+**File:** `models/node2vec_trainer.py`  
+Purpose:
+- learn Node2Vec embeddings from the Chapter 2 job–skill bipartite graph and persist reusable embedding tables.
 
 ---
 
@@ -236,33 +321,84 @@ Purpose:
 ## 4.1 Chapter 0
 
 ### 4.1.1 Chapter 0 Benchmark Validator
-**File:** `evaluation/build_base_dataset_benchmark.py`
+**File:** `evaluation/build_base_dataset_benchmark.py`  
+Purpose:
+- compare Chapter 0 processed outputs to a benchmark/expectations (schema + basic distribution sanity).
 
 ## 4.2 Chapter 1
 
 ### 4.2.1 Salary Model Evaluator
-**File:** `evaluation/salary_model_eval.py`
+**File:** `evaluation/salary_model_eval.py`  
+Outputs / checks (typical):
+- R² / RMSE / MAE
+- diagnostics and sanity checks (e.g., leakage guards, feature availability)
+- feature importance extracts (model-native)
 
 ### 4.2.2 Skill Model Evaluator
-**File:** `evaluation/skill_model_eval.py`
+**File:** `evaluation/skill_model_eval.py`  
+Outputs / checks (typical):
+- ROC AUC / PR AUC + calibration summaries
+- per-skill diagnostics and failure modes
+- feature importance extracts (model-native)
 
 ## 4.3 Chapter 2
 
-### 4.3.1 Chapter 2 Integrity Evaluator
-**File:** `evaluation/chapter2_integrity.py`
+### 4.3.1 Chapter 2 Integrity Checks (Artefact Contracts)
+**File:** `evaluation/chapter2_integrity.py`  
+Purpose:
+- lightweight, deterministic integrity checks for Chapter 2 artefacts (alignment, shapes, ranges, ID coverage) without expensive recomputation.
+
+Examples of checks:
+- `job_id` alignment across `jobs_df` / `prob_mat` / embeddings
+- embedding dimensions and finiteness
+- clustering coverage and expected number of clusters
+- similarity edge list schema + dedup invariants
+- lift/specialisation tables numeric + expected columns.
 
 ## 4.4 Chapter 3
 
 ### 4.4.1 Chapter 3 Positioning Pipeline Evaluator
-**File:** `evaluation/chapter3_pipeline_eval.py`
+**File:** `evaluation/chapter3_pipeline_eval.py`  
+Purpose:
+- engineering hardening + behavioural validation for Chapter 3.
+
+Typical checks:
+- determinism under repeated runs (same inputs → identical outputs)
+- boundary conditions (empty candidates, minimal skill_text, single-job sets)
+- artefact integrity (missing skill columns, job_id mismatches)
+- behavioural sanity (suitability/competitiveness response to inputs)
+- sensitivity integrity (weight grid normalization; Spearman bounds; baseline uniqueness)
+- smoke tests for required columns, valid ranges, ranking order.
 
 ## 4.5 Chapter 4
 
-### 4.5.1 Chapter 4 Entry Point Evaluator
-**File:** `evaluation/chapter4_entrypoint_eval.py`
+### 4.5.1 Chapter 4 Context Loader Evaluator
+**File:** `evaluation/chapter4_entrypoint_eval.py`  
+Purpose:
+- validate Chapter 4-specific risks introduced by `load_ch4_context()` without duplicating Chapter 3 tests.
+
+Typical checks:
+- salary feature matrix columns present and non-missing
+- PC broadcasting correctness (user PCs constant across candidate rows)
+- salary prediction smoke test (predict runs, finite outputs, correct length)
+- prerequisite alignment (candidate job_ids subset of prob-matrix universe).
 
 ### 4.5.2 Chapter 4 Pipeline Evaluator
-**File:** `evaluation/chapter4_pipeline_eval.py`
+**File:** `evaluation/chapter4_pipeline_eval.py`  
+Purpose:
+- orchestration-level validation for the Chapter 4 recommender pipeline using the persisted demo config.
+
+Typical checks:
+- demo config loads and validates
+- end-to-end pipeline smoke execution
+- output contracts: required tables exist, required columns exist, non-null identifiers
+- bucket integrity: no overlap, correct labels, deterministic sorting
+- explanation contract (when enabled)
+- upskilling contract + frozen-universe invariant (when enabled)
+- simulation contract + frozen-universe invariant (when enabled).
+
+Supporting config file (not counted as a `.py` module):
+- `evaluation/recommender_demo.json`
 
 ---
 
@@ -272,82 +408,88 @@ Purpose:
 
 ### 5.1.1 Data Builder
 **File:** `pipelines/chapter0_build_base_dataset.py`  
-Steps:
-1. Load raw DS/DA job CSVs
-2. Apply all feature modules
-3. Clean and validate fields
-4. Build final Chapter 0 dataset
-5. Save processed dataset
+Purpose:
+1. load raw job CSVs
+2. apply Chapter 0 feature modules
+3. validate + clean fields deterministically
+4. persist processed dataset for reuse downstream.
 
 ## 5.2 Chapter 1
 
 ### 5.2.1 Run Model (Unified Entrypoint)
 **File:** `pipelines/chapter1_models.py`  
 Purpose:
-- run either the Salary Modelling Pipeline or the Skill Requirement Pipeline
+- run either the salary modelling pipeline or the skill requirement pipeline via a single entrypoint.
 
 ### 5.2.2 Salary Modelling Pipeline
 **File:** `pipelines/salary_model_pipeline.py`  
-Steps:
-1. Build Chapter 0 dataset
-2. Encode categoricals
-3. PCA transform
-4. Train XGBoost
-5. Optional evaluation
-6. Optional save artefacts
+Purpose (high level):
+- build modelling table → encode categoricals → apply PCA → train XGBoost → (optional eval) → persist artefacts.
 
 ### 5.2.3 Skill Requirement Pipeline
 **File:** `pipelines/skill_model_pipeline.py`  
-Steps:
-1. Build Chapter 0 dataset
-2. Encode features
-3. Train 27 LightGBM models
-4. Evaluate
-5. Save models
-6. Generate skill probability matrix
+Purpose (high level):
+- build skill dataset → train 27 models → evaluate → persist models → generate `skill_prob_matrix`.
 
 ## 5.3 Chapter 2
 
 ### 5.3.1 Hidden Structures Pipeline
 **File:** `pipelines/chapter2_hidden_structures.py`  
 Purpose:
-- convert Chapter 1 job × skill probabilities into graphs + embeddings + clustered job families + skill ecosystems and persist outputs
+- convert Chapter 1 job × skill probabilities into:
+  - bipartite graph
+  - Node2Vec embeddings (jobs + skills)
+  - job family clustering
+  - skill similarity edge list (k-NN graph)
+  - skill specialisation lift tables
+- persist outputs as versioned processed artefacts.
 
 ## 5.4 Chapter 3
 
 ### 5.4.1 Individual Positioning Pipeline
 **File:** `pipelines/chapter3_individual_positioning.py`  
 Purpose:
-- runnable wrapper around `run_positioning()`
+- runnable wrapper around `run_positioning()` for reproducible execution outside notebooks.
 
 ## 5.5 Chapter 4
 
 ### 5.5.1 Recommender Engine Pipeline
 **File:** `pipelines/chapter4_recommender.py`  
 Purpose:
-- orchestrate:
-  - baseline recommender
-  - explanations (optional)
-  - upskilling (optional)
-  - career simulation (optional)
+- orchestrate baseline recommendation plus optional decision-support modules:
+  - explanations
+  - upskilling counterfactuals
+  - career simulation scenarios
 
 Recommended persistence:
-- persist **demo config** only: `evaluation/recommender_demo.json` (and optionally a “golden” snapshot)
+- persist demo config only (`evaluation/recommender_demo.json`), optionally plus a small “golden” output snapshot for regression checks.
 
 ---
 
-# 6. Schemas
+# 6. Schemas & Public APIs
 
 ## 6.1 User Profile Schema (Entry Point)
 **Module:** `schemas.py`  
-**Function:** `build_user_profile()`
+**Function:** `build_user_profile()`  
+
+Responsibilities:
+- validate + normalize raw user inputs
+- reuse Chapter 0 skill extraction to produce the canonical 27-skill vector
+- project user skills into the shared PCA space used downstream
+- return deterministic, model-ready payload consumed by Chapter 3+.
+
+## 6.2 Chapter 3 Public API
+**Module:** `positioning.py`  
+**Function:** `run_positioning()`  
+
+Role:
+- single canonical public entrypoint for positioning; consumed by Chapter 4 context loader.
 
 ---
 
 # 7. Artefacts
 
 ## 7.1 Persisted Artefacts (Files)
-(Union of artefacts listed across the project documentation.)
 
 Chapter 0:
 - `data/processed/ch0_processed_jobs.csv` (Chapter 0 processed jobs table)
@@ -361,23 +503,22 @@ Chapter 1:
 - `models/{skill}_model.pkl` (27 skill models)
 
 Chapter 2:
+- `data/processed/ch2_processed_df.csv` (canonical `jobs_df` consumed by Chapter 3; a.k.a. “Chapter 2 processed jobs table”)
 - `data/processed/job_skill_bipartite_*.gpickle`
 - `data/processed/job_embeddings_node2vec_v01.csv`
 - `data/processed/skill_embeddings_node2vec_v01.csv`
 - `data/processed/job_families_graph_embeddings.csv`
 - `data/processed/skill_similarity_edges_k*_embeddings.csv`
-- `data/processed/job_family_skill_specialisation.csv`
+- `data/processed/job_family_skill_specialisation.csv` (or equivalent `{group_col}` lift outputs)
 
-Evaluation outputs:
-- `evaluation/skill_model_evaluation_results.csv` (if produced)
-- `{feature}_fairness.csv` (if produced)
-- other evaluation tables/plots created by evaluation scripts
-
-Chapter 4 demo:
+Evaluation / reproducibility:
 - `evaluation/recommender_demo.json`
+- evaluation tables/plots produced by evaluators (if enabled), e.g.:
+  - `evaluation/skill_model_evaluation_results.csv`
+  - `{feature}_fairness.csv` (if produced)
 
 ## 7.2 Runtime Outputs (Not Persisted by Default)
-Produced per user run (tables returned by APIs/pipelines):
+Produced per user run (returned by APIs/pipelines):
 - Chapter 3: `candidates_df`, `gap_df`, sensitivity outputs
 - Chapter 4: `scored_universe`, bucket tables, explained tables, upskilling tables, simulation tables
 
@@ -386,24 +527,25 @@ Produced per user run (tables returned by APIs/pipelines):
 # 8. Assumptions & Limitations (Project + Chapters)
 
 Project-wide:
-- inputs are job postings from a specific dataset source and timeframe; distribution shift is expected
-- skill extraction is token/taxonomy-driven; out-of-vocabulary skills may be ignored or mapped imperfectly
-- determinism is prioritised; exploration/diversity objectives are not first-class in v1
+- inputs are job postings from a specific dataset source/timeframe; distribution shift is expected
+- skill extraction is taxonomy/token-driven; out-of-vocabulary skills may be ignored or mapped imperfectly
+- determinism is prioritized; exploration/diversity objectives are not first-class in v1
 
 Chapter 0:
-- cleaning/normalisation rules are heuristic; edge cases may exist in salary parsing and descriptions
+- cleaning/normalisation rules are heuristic; salary parsing and text cleaning have edge cases
 
 Chapter 1:
-- salary model performance depends on encoded categoricals + PCA representation; causal interpretation is not implied
-- skill models predict “job requires skill-family” from observed text/tokens and are limited by label construction
+- salary model is predictive, not causal
+- skill models are limited by label construction and token coverage
 
 Chapter 2:
-- Node2Vec structure reflects co-occurrence in the learned job–skill graph; embeddings are not ground-truth semantics
+- embeddings reflect co-occurrence in the learned job–skill graph; they are not ground-truth semantics
 
 Chapter 3:
-- positioning is computed within a constrained candidate universe; suitability/competitiveness are relative to that universe
-- skill gaps use mean probability across top-K jobs; K choice is a modelling assumption
+- positioning is computed within a constrained candidate universe; results are relative to that universe
+- probability-based gaps depend on top-K design choice
 
 Chapter 4:
-- “best_now” vs “stretch” is defined by competitiveness thresholding; it is an operational proxy, not a guarantee
-- upskilling and simulation are counterfactual token injections; they measure model response, not guaranteed labour-market outcomes
+- “best_now” vs “stretch” is operational (competitiveness threshold proxy), not a guarantee
+- upskilling + simulation are counterfactual model responses (token injections), not guaranteed labour-market outcomes
+```
