@@ -105,6 +105,8 @@ Purpose: document modelling choices and evaluation.
 **Table 4:** Salary model performance (overall + slices).  
 **Table 5:** Skill model performance (overall + slices + hardest skills).
 
+ADD EVALUATION METRICS AND TABLES
+
 ---
 
 ## 8. Market Structure Layer (Hidden Geometry)

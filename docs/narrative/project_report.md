@@ -1316,3 +1316,121 @@ Chapter 4 v1 intentionally prioritises a minimal, working recommender loop with 
 - persistence of Chapter 4 artefacts for dashboards and reproducibility
 
 Chapter 4 is in active development, with a stable entrypoint, a functioning v1 job recommender, and an explanation layer now established.
+
+
+# Assumptions & Limitations
+
+This section documents the modelling assumptions and practical limitations at two levels:
+1) **Project-level** (cross-cutting constraints), and  
+2) **Chapter-level** (module-specific constraints that shape interpretation and scope).
+
+---
+
+## Overall Project Assumptions
+
+- **Static labour-market snapshot**: the dataset represents a single slice of postings (no reliable time series or forecasting).
+- **Postings approximate requirements**: job descriptions are treated as meaningful signals for skills, seniority, and role structure.
+- **Taxonomy can normalize reality**: noisy titles and heterogeneous descriptions can be mapped into a stable job-title family space.
+- **Skill extraction is “good enough”**: token-based parsing captures the dominant skill signals needed for modelling and recommendation.
+- **Models capture associations, not causation**: downstream recommendations interpret model response surfaces, not causal effects.
+- **Geography/sector labels are informative**: location and sector categories are assumed sufficiently consistent for aggregation and comparison.
+
+## Overall Project Limitations
+
+- **No supply-side competitiveness**: no applicant volumes, interview difficulty, or hiring funnel outcomes—competitiveness is a proxy.
+- **No temporal dynamics**: cannot detect changing demand, seasonality, or emerging skills; results can become stale as the dataset ages.
+- **Data source bias**: postings overrepresent certain industries, company types, and job styles; conclusions may not generalize globally.
+- **Partial observability**: many real drivers (team quality, visa sponsorship, remote eligibility, brand, negotiation, portfolio strength) are not encoded.
+- **Limited user representation**: user profiles are primarily skill-token based (no proficiency, recency, depth, or evidence unless explicitly provided).
+- **Interpretability boundaries**: explanations support transparency, but they are not guaranteed to mirror employer reasoning.
+
+---
+
+## Chapter 0 — Foundations (Preprocessing & Taxonomy)
+
+### Assumptions
+- Raw postings contain enough consistent structure (title, description, location, sector, salary fields) to be normalized.
+- Title normalization can reliably collapse noisy variants into a usable job-family taxonomy.
+- Dictionary/regex-based skill parsing provides a usable first-order skill signal.
+
+### Limitations
+- Missing/incorrect fields (salary ranges, sectors, locations) can propagate noise downstream.
+- Title normalization can misclassify edge cases (hybrid roles, ambiguous titles, non-standard seniority terms).
+- Skill extraction is lossy (synonyms, implicit requirements, context-dependent meaning) and can be biased by boilerplate text.
+
+---
+
+## Chapter 1 — System Mechanics (Salary, Skill Demand, Fairness)
+
+### Assumptions
+- Salary is modelable as a function of title family, skills, geography, and company/job traits (association-based).
+- Skill-requirement models approximate “probability a posting mentions/needs a skill” using observable features.
+- Residual-based fairness views are informative as *relative* over/underpay signals given the modeled covariates.
+
+### Limitations
+- Compensation is noisy and context-dependent (negotiation, equity, leveling, remote premiums, bonuses) and not fully captured.
+- Skill requirement probabilities depend on text mention and extraction quality (not true necessity).
+- Fairness/residual analyses are descriptive; omitted-variable bias can make “over/underpay” conclusions non-causal.
+- Calibration and uncertainty are limited unless explicitly implemented (e.g., quantiles, prediction intervals).
+
+---
+
+## Chapter 2 — Hidden Structure (Graphs, Clusters, Ecosystems)
+
+### Assumptions
+- Job–skill co-occurrence is a meaningful proxy for latent similarity between jobs and between skills.
+- Node2Vec embeddings preserve useful neighbourhood structure for downstream clustering and similarity queries.
+- KMeans job-family clustering yields interpretable “ecosystems” for macro navigation and recommendations.
+
+### Limitations
+- Embeddings/clusters depend on hyperparameters and graph construction choices; different settings can change structure.
+- Co-occurrence can reflect posting style, not true functional skill relationships.
+- Clusters are not ground-truth ontologies; boundaries are fuzzy and may merge distinct subdomains.
+- Similarity edges can overconnect generic skills (e.g., “communication”) unless explicitly handled.
+
+---
+
+## Chapter 3 — Individual Positioning (Suitability, Competitiveness, Gaps)
+
+### Assumptions
+- A user can be positioned against jobs using match signals derived from skill overlap, embeddings, and constraints.
+- Competitiveness can be proxied using rarity/requirements/seniority signals (not applicant supply).
+- Skill gaps inferred from posting requirements are actionable targets for upskilling guidance.
+
+### Limitations
+- User proficiency, years of experience, and evidence strength are not fully modeled unless explicitly provided.
+- Suitability is a model score, not a hiring probability; “fit” includes many unobserved factors.
+- Competitiveness is a proxy and can disagree with real difficulty in the market.
+- Gap analysis inherits extraction noise and posting idiosyncrasies; missing skills may be overstated for some postings.
+
+---
+
+## Chapter 4 — Recommender Engine (Recommendations, Upskilling, Simulation)
+
+### Assumptions
+- **Skill text is a usable proxy for capability** and maps reliably to the internal skill vector representation.
+- **Frozen-universe counterfactuals are comparable**: upskilling/simulation reruns on the same `job_id` set so deltas are interpretable.
+- **Ranking weights reflect preferences**: composite scores (skill vs salary, promotion/demotion tradeoffs) encode user objectives.
+
+### Limitations
+- No supply-side signal (applicant pool, interview bar); recommendations optimize model fit, not guaranteed outcomes.
+- No time dimension; recommended skills/jobs may shift as the market evolves.
+- Counterfactual upskilling is not causal: it measures **model response** to added skills, not real learning ROI or hiring uplift.
+- Explainability is partial: explanations surface missing families/matches, not full human reasoning.
+- One-step skill injection: does not model learning time, prerequisites, curricula, or multi-skill sequencing unless extended.
+
+---
+
+## Chapter 5 — Insights & Dashboards (Transparency & Exploration)
+
+### Assumptions
+- Aggregated views (salary landscapes, skill demand, job-family structure) provide useful macro-level decision support.
+- Persisted artefacts (models, embeddings, cluster centroids, summary tables) are stable enough to back interactive exploration.
+
+### Limitations
+- Dashboards are descriptive; they can mislead if interpreted causally or used outside dataset scope.
+- Aggregation can hide heterogeneity (within-sector variance, company effects, niche subfamilies).
+- Without temporal data, dashboards cannot answer “what’s changing” questions reliably.
+- Interpretability is bounded by upstream modelling and extraction quality; dashboards reflect those constraints.
+
+---

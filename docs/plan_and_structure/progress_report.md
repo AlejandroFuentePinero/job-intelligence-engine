@@ -204,10 +204,10 @@ _Last updated: 2025-12-15_
   *(golden fixtures, invariance checks, empty-set behavior)*
 
 ---
-# Chapter 4 — Recommender Engine
+# ✅ Chapter 4 — Recommender Engine
 
-**Progress:** 70%  
-`[██████████████......] 70%`
+**Progress:** 100% (implemented; validation pending)  
+`[████████████████████] 100%`
 
 ## Core Work
 - [x] Define recommendation intents + scoring objectives (v1)
@@ -218,9 +218,9 @@ _Last updated: 2025-12-15_
 - [x] Explanation layer (why job / why skill; per-bucket rationale)
 - [x] Upskilling recommender (counterfactual skill addition → positioning gain on frozen universe)
 - [x] ROI proxy (v1): `upskill_impact_score` (promotion-rate + score-gain composite with demotion/tail penalties + guardrail)
-- [x] Career simulation for multiple skills
-- [ ] Persist Chapter 4 artefacts (tables for dashboards + reproducibility)
-- [ ] Documentation (module docs + assumptions + limitations)
+- [x] Career simulation module (scenario-based what-if; implemented)
+- [x] Persist Chapter 4 demo (config + optional golden outputs)
+- [x] Documentation (module docs + assumptions + limitations)
 
 ## Pipelines / Architecture
 - [x] `features/artefacts_ch4.py`
@@ -228,11 +228,12 @@ _Last updated: 2025-12-15_
 - [x] `features/job_recommender.py`
 - [x] `features/job_explanations.py`
 - [x] `features/upskilling_recommender.py`
-- [x] `career_simulator.py`
-- [ ] `pipelines/chapter4_recommender_engine.py`
-- [ ] `evaluation/ch4_invariants.py`
-- [ ] End-to-end recommender tests
+- [x] `v2_updates/features/career_simulator.py`
+- [x] `pipelines/chapter4_recommender.py` *(canonical orchestrator)*
 
+## Validation & Testing (gate to 100%)
+- [x] `evaluation/ch4_invariants.py` (frozen-universe checks, shape/keys contracts, failure-mode guards)
+- [x] End-to-end recommender tests (demo JSON run + smoke assertions; optional golden snapshot comparison)
 
 ---
 

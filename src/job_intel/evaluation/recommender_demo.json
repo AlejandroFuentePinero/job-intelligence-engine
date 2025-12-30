@@ -1,0 +1,37 @@
+{
+  "demo_name": "ch4_demo_v1",
+  "user_inputs": {
+    "skill_text": "python, sql, bayesian, communication, problem-solving, research, publication, causal inference, statistical modelling, r, ecology, visualisation, ggplot, seaborn, numpy, pandas, git, github, microsoft office, phd, neural networks, excel, teamwork, cloud, aws, pca, recommender systems, shiny app, shiny, technical writing, scientific research",
+    "current_state": "ALL",
+    "job_title_family": "data_scientist",
+    "job_title_rich": null,
+    "target_sectors": null,
+    "salary_target": 200000,
+    "explain_skills": false
+  },
+  "pipeline_params": {
+    "run_explanator": true,
+    "run_upskilling": true,
+    "tau": 0.5,
+    "top_n_best": 10,
+    "top_n_stretch": 5,
+    "top_n_skills": 3,
+    "demotion_tol": 0.0
+  },
+  "career_simulation": {
+    "run_career_sim": true,
+    "scenarios": [
+      {
+        "name": "parallelism_tooling",
+        "added_tokens": ["parallel computing", "multithreading", "pycharm"],
+        "max_tokens": 3,
+        "demotion_tol": 0.0
+      }
+    ],
+    "config": {
+      "top_n_unlocked_jobs": 20,
+      "require_frozen_universe": true,
+      "enforce_same_job_set": true
+    }
+  }
+}

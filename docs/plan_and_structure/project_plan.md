@@ -97,7 +97,7 @@
 
 ---
 
-# CHAPTER 4 — Job Intelligence Engine (Recommendations & Optimization)
+# ✅✅ CHAPTER 4 — Job Intelligence Engine (Recommendations & Optimization)
 
 ### Core
 - ✅ **Hybrid Job Recommender**  
@@ -108,7 +108,7 @@
 
 ### Stretch
 - **Skill ROI Model (salary uplift ÷ difficulty)**  
-- **Career Simulation (what-if skill additions)**  
+- ✅ **Career Simulation (what-if skill additions)**  
 - **Career Path Optimization (Pareto skill choices)**  
 - **Cross-City Optimization (salary × competitiveness × difficulty)**
 
