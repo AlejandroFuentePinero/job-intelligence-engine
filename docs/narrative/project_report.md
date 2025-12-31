@@ -2209,3 +2209,63 @@ With these sections added, the report contains:
 - a coherent evaluation narrative,
 - shipping/reproducibility notes,
 which is sufficient to later craft both a scientific-paper style narrative and a professional technical report.
+
+
+## Chapter 5 — Insights & Dashboards (App) — Reproducibility Notes
+
+Chapter 5 is a **product surface** (Streamlit app) plus a small set of **deterministic build assets** that make the app fast and reproducible. No model training occurs in Chapter 5: the app either (i) loads prebuilt, persisted artefacts for market context and explainability, or (ii) calls the **Chapter 4 recommender pipeline** on demand when the user clicks *Run recommender*.
+
+### Inputs and required artefacts
+
+**App runtime configuration**
+- `src/job_intel/evaluation/recommender_demo.json`  
+  Demo persona configuration used by the *Load demo persona* button (manual inputs remain supported).
+
+**Chapter 5 persisted assets (fast app loading)**
+- `data/processed/ch5_assets/fairness_group_summary_long.csv`  
+  Group-level residual summaries used by the fairness explorer.
+- `data/processed/ch5_assets/fairness_residual_box_stats.json`  
+  Residual distribution summary statistics shown in the UI.
+- `data/processed/ch5_assets/skill_value_index.csv`  
+  Global Skill Value Index (GSVI) used by the skill value ranking view.
+- `data/processed/ch5_assets/shap_salary_explanation.npz`  
+  Salary-model SHAP explanation bundle (global bar + beeswarm + local categorical views).
+
+**Upstream data consumed by Chapter 5 views**
+- `data/processed/df_with_residuals.csv`  
+  Residual series used for the fairness histogram and as input to the fairness asset builder (must include `residuals` column).
+- `CH1_PROCESSED_SALARY_MODEL_PCA_DF` (path defined in config)  
+  Chapter 1 salary-model PCA dataframe used for code→label lookup tables in local SHAP categorical plots (e.g., `state_code`→`state`, `sector_code`→`Sector`).
+- `data/processed/skill_similarity_matrix/skill_similarity_edges_k5_embeddings.csv`  
+  Chapter 2 k-NN edge list used by the macro co-learning visualisation (skill similarity around top recommended upskills).
+
+### Build entrypoint (deterministic; no training)
+
+Chapter 5 assets are built and validated via a single deterministic entrypoint:
+
+- `python -m src.job_intel.pipelines.ch5_app_build`
+
+This build step:
+1) regenerates fairness artefacts into `data/processed/ch5_assets/` via `ch5_build_fairness_assets.py`  
+2) validates that all required runtime artefacts for the app are present on disk (fail-fast if missing)
+
+### App execution (product surface)
+
+The Streamlit app is launched with:
+
+- `streamlit run app.py`
+
+The app is composed of modular pages (Home, Landscape, Recommender, Upskilling + Macro). The recommender and upskilling views call the **Chapter 4 pipeline** directly; Chapter 5 does not re-implement recommendation logic.
+
+### Determinism, caps, and scope boundaries (v1)
+
+- **No training in Chapter 5.** All artefacts are either deterministic build outputs (fairness assets) or precomputed outputs from Chapters 1–2.
+- **Career simulation is disabled in v1.** Chapter 4 is executed with `run_career_sim=False` and no scenarios/config are applied.
+- **Hard caps are enforced** in the UI for readability (e.g., top-N bars/categories/skills; top explained jobs per bucket). These caps are presentation constraints only and do not change the underlying pipeline outputs.
+- **Interpretation is descriptive, not causal.** Landscape residuals and SHAP explainability describe learned patterns in the dataset and model behaviour; they do not establish causal effects.
+
+### Key assumptions and limitations
+
+- Salary drivers are dominated by **structural context** (location, role semantics, sector, company context); skills primarily refine outcomes within those regimes (skills appear as PCA bundles in the salary model).
+- Skill similarity in the macro co-learning view reflects **embedding-space proximity** (skills that co-occur or are learned together in the job market), not a strict prerequisite ordering.
+- Chapter 2 cluster/job-family artefacts are not exposed in the v1 UI to avoid unlabeled, high-cognitive-load views; Chapter 2 contributes to v1 primarily through the **skill similarity edges** used for co-learning.

@@ -239,8 +239,8 @@ _Last updated: 2025-12-30_
 
 # Chapter 5 — Insights & Dashboards
 
-**Progress:** ~65%  
-`[█████████████.......] 65%`
+**Progress:** ~95%  
+`[███████████████.....] 65%`
 
 ## Core Work
 
@@ -275,7 +275,7 @@ _Last updated: 2025-12-30_
 - [x] `pipelines/ch5_app_build.py` (single entrypoint to assemble app-ready artefacts)
 - [x] Artefact manifest (required outputs from Ch1/Ch2/Ch4 + load locations)
 - [ ] Smoke tests (run build + open app + load demo personas)
-- [ ] Chapter 5 reproducibility notes (data sources + joins + caps + assumptions)
+- [x] Chapter 5 reproducibility notes (data sources + joins + caps + assumptions)
 
 
 ---
