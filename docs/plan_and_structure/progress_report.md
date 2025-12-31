@@ -1,5 +1,5 @@
 # Job Intelligence Engine — Progress Tracker (STEERING DOCUMENT)
-_Last updated: 2025-12-15_
+_Last updated: 2025-12-30_
 
 > This document is the **authoritative steering and sanity-check document**.
 > It reflects what is required, what is optional, and what must be translated
@@ -239,39 +239,56 @@ _Last updated: 2025-12-15_
 
 # Chapter 5 — Insights & Dashboards
 
-**Progress:** 0%  
-`[....................] 0%`
+**Progress:** ~65%  
+`[█████████████.......] 65%`
 
 ## Core Work
+
+### Product Surface (App Spine)
+- [x] App shell + navigation (4–6 pages max; demo-first)
+- [x] Demo personas loader (1–2 preset user profiles + reset)
+- [ ] One-click “Run demo” path (no configuration required)  *(not explicitly implemented as a single button across pages yet)*
+- [x] Input validation + guardrails (empty results, no candidates under constraints, bad inputs)
+- [ ] Determinism proof point (same inputs → same outputs; build/version stamp)
+
 ### Market Mechanics (Chapter 1 outputs)
-- [ ] Salary landscape dashboard
-- [ ] Fairness residual summaries
-- [ ] SHAP global importance
-- [ ] SHAP dependence plots
-- [ ] PDP / ICE panels
-- [ ] Global skill value ranking
+- [x] Salary landscape dashboard *(Landscape page in place)*
+- [ ] Model performance snapshot (R²/RMSE/MAE + residual histogram) *(residual hist yes; metrics snapshot not wired)*
+- [x] Fairness residual summaries
+- [x] SHAP global importance
+- [ ] SHAP dependence plots (2–3 only)
+- [ ] PDP / ICE panels (1–2 only)
+- [x] Global skill value ranking
 
 ### Market Structure (Chapter 2 outputs)
 - [ ] Job family explorer (latent clusters)
-- [ ] Skill ecosystem visualisation (co-occurrence)
+- [ ] Job family summary card (top titles, sectors, lifted skills; hard caps)
+- [x] Skill ecosystem visualisation (co-occurrence) *(via upskilling macro co-learning plot)*
 - [ ] Skill specialisation / lift views
+- [x] Skill neighbour lookup (top-k neighbours per skill; simple + fast) *(wired from similarity edges for top upskill skills)*
 
 ### User & Recommendation Context (Chapter 3–4 outputs)
-- [ ] User positioning summary
-- [ ] Recommendation views (`best_now`, `stretch`)
-- [ ] Upskilling plan views (counterfactual deltas; top 3)
-- [ ] Recommendation concentration / diversity diagnostics (under current constraints)
+- [ ] User positioning summary *(not a dedicated panel; implicit in recommender inputs/outputs)*
+- [x] Recommendation views (`best_now`, `stretch`)
+- [x] Job-level “why” panel (covered vs missing families; key drivers; salary-gap context)
+- [x] Upskilling plan views (counterfactual deltas; top 3)
+- [ ] Recommendation concentration / diversity diagnostics (under current constraints; hard caps)
 - [ ] What-if / future-facing panels (visual only)
 
 ### Macro Recommendation Layer (Chapter 2 → optional, shown in Chapter 5)
-- [ ] Macro vs micro framing (micro = constraint-defined market; macro = global exploration; opt-in)
+- [x] Macro vs micro framing (micro = constraint-defined market; macro = global exploration; opt-in) *(macro section added in upskilling page)*
 - [ ] Adjacent job families panel (3 closest families to dominant stretch family; 2–3 exemplar jobs each; hard caps)
-- [ ] Co-learning neighbours for upskilling (top 3 skills; 2–3 neighbours each; hard caps)
+- [x] Co-learning neighbours for upskilling (top 3 skills; 2–3 neighbours each; hard caps) *(implemented as top-3 focals × top-5 neighbours plot)*
+- [ ] “Why these families?” note (centroid similarity / neighbour table; brief)
 
 ## Pipelines / Architecture
 - **Lightweight deterministic assembly recommended** (no training; joins + top-k selection + caps)
 - [ ] `features/ch5_macro_layer.py` (name flexible; deterministic only)
 - [ ] Chapter 5 notebook(s) / dashboard assets
+- [ ] `pipelines/ch5_app_build.py` (single entrypoint to assemble app-ready artefacts)
+- [ ] App config + demo config (default that “just works”) *(demo persona exists; app-wide default run path not final)*
+- [ ] Artefact manifest (required outputs from Ch1/Ch2/Ch4 + load locations)
+- [ ] Smoke tests (run build + open app + load demo personas)
 - [ ] Chapter 5 reproducibility notes (data sources + joins + caps + assumptions)
 
 
@@ -279,10 +296,15 @@ _Last updated: 2025-12-15_
 
 # Chapter 6 — Final Steps
 
-- [ ] Portfolio write-up
+- [ ] Portfolio write-up (unified narrative)
 - [ ] Project README consolidation
+- [ ] How to run (one command) + environment notes
+- [ ] App screenshots / short GIF for README
+- [ ] Explicit limitations / scope boundaries page (interview-safe)
 - [ ] Explicit v2 improvement list
 - [ ] Final scope lock
+- [ ] Licensing / attribution (dataset sources; external assets)
+
 
 ---
 

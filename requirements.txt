@@ -14,3 +14,4 @@ shap
 NetworkX
 pickle
 node2vec
+streamlit

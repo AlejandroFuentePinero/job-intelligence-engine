@@ -78,6 +78,12 @@ v1 is intentionally constrained to a **deterministic, auditable, end-to-end syst
 **5) Add Chapter 2 outputs to the recommendation engine**  
 - **Why it’s not in v1:** It is valuable but should be added surgically to avoid turning the recommender into an opaque hybrid. In v1, recommendations are intentionally interpretable (fit vs barrier). Chapter 2 is best introduced first as a macro/adjacent-role exploration layer (Chapter 5 storytelling), then optionally integrated into ranking in v2 once you can evaluate whether it improves outcomes.
 
+
+## Chapter 5 - APP
+- Add the skill specialisation map (lift) - from chapter 2
+- Add nearest job families and diversity index - from chapter 2
+- Add skill shap dependence plots to landscape
+
 ---
 
 ## Summary principle for v1 → v2 scope
