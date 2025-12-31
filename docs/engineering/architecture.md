@@ -284,6 +284,48 @@ Role:
 - user-driven counterfactual simulator (“what changes if I add these skills?”) on a frozen universe
 - produces per-scenario deltas and unlocked jobs under strict universe consistency checks.
 
+## 2.6 Chapter 5 — Insights & Dashboards (Streamlit App)
+
+### 2.6.0 App Entrypoint (Root)
+**File:** `app.py`  
+Role:
+- root Streamlit entrypoint used to launch the application locally
+- delegates routing/navigation to `src/job_intel/app/engine.py`
+
+### 2.6.1 App Engine + Navigation (App Spine)
+**Module:** `app/engine.py`  
+Role:
+- Streamlit app entrypoint + navigation router across pages
+- wires page-level `render()` functions
+- centralizes shared config + “Reload assets” behaviour
+
+### 2.6.2 Home Page (Demo-first landing)
+**Module:** `app/home.py`  
+Outputs:
+- introduction + guidance for how to use the app
+- lightweight “what to click next” structure (no computation)
+
+### 2.6.3 Landscape Page (Market mechanics + explainability)
+**Module:** `app/landscape.py`  
+Views:
+- Fairness (residuals) summary + group breakdown
+- Global skill value ranking (GSVI)
+- SHAP explainability (global bar + beeswarm; local drilldown for top-3 drivers)
+Artefact dependencies:
+- `data/processed/ch5_assets/*` (see Artefacts section additions below)
+
+### 2.6.4 Recommender Page (User → best_now / stretch)
+**Module:** `app/recommender.py`  
+Role:
+- UI for running Chapter 4 outputs and presenting recommendation buckets
+- surfaces job-level rationale (as available from Chapter 4 outputs)
+
+### 2.6.5 Upskilling + Macro Layer Page (Decision support)
+**Module:** `app/upskilling_macro.py`  
+Role:
+- UI for counterfactual upskilling deltas (Chapter 4 outputs)
+- UI for optional macro layer exploration (Chapter 5 scope)
+
 ---
 
 # 3. Model Modules (by Chapter)
@@ -464,6 +506,35 @@ Purpose:
 Recommended persistence:
 - persist demo config only (`evaluation/recommender_demo.json`), optionally plus a small “golden” output snapshot for regression checks.
 
+## 5.6 Chapter 5 — App Build / Asset Pipelines
+
+### 5.6.1 Fairness Assets Builder
+**File:** `pipelines/ch5_build_fairness_assets.py`  
+Purpose:
+- assemble deterministic, app-ready fairness artefacts (group summaries + histogram bins + box stats)
+- persist outputs into `data/processed/ch5_assets/` for fast app loading
+
+### 5.6.2 App Asset Build + Validation (Single Entrypoint)
+**File:** `pipelines/ch5_app_build.py`  
+Purpose:
+- provide a **single deterministic build entrypoint** for Chapter 5 app assets (no training)
+- call Chapter 5 asset builders (currently: fairness assets) and **validate required runtime artefacts exist**
+- fail fast if any required artefact is missing (ship hygiene + smoke-test friendly)
+
+Build scope (v1):
+- rebuild (if enabled): fairness group summaries + box stats (+ optional histogram bins) via `ch5_build_fairness_assets.py`
+- validate presence of required artefacts consumed by the app:
+  - `data/processed/df_with_residuals.csv`
+  - `data/processed/ch5_assets/fairness_group_summary_long.csv`
+  - `data/processed/ch5_assets/fairness_residual_box_stats.json`
+  - `data/processed/ch5_assets/skill_value_index.csv`
+  - `data/processed/ch5_assets/shap_salary_explanation.npz`
+  - `data/processed/skill_similarity_matrix/skill_similarity_edges_k5_embeddings.csv`
+  - (optional) `src/job_intel/evaluation/recommender_demo.json`
+
+Execution:
+- `python -m src.job_intel.pipelines.ch5_app_build`
+
 ---
 
 # 6. Schemas & Public APIs
@@ -510,6 +581,13 @@ Chapter 2:
 - `data/processed/job_families_graph_embeddings.csv`
 - `data/processed/skill_similarity_edges_k*_embeddings.csv`
 - `data/processed/job_family_skill_specialisation.csv` (or equivalent `{group_col}` lift outputs)
+
+Chapter 5 (App assets):
+- `data/processed/ch5_assets/fairness_group_summary_long.csv`
+- `data/processed/ch5_assets/fairness_residual_box_stats.json`
+- `data/processed/ch5_assets/fairness_residual_hist_bins.csv`
+- `data/processed/ch5_assets/shap_salary_explanation.npz` (saved SHAP Explanation object for app plots)
+- `data/processed/ch5_assets/skill_value_index.csv`
 
 Evaluation / reproducibility:
 - `evaluation/recommender_demo.json`

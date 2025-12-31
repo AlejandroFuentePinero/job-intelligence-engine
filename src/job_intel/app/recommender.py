@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
+import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -99,6 +100,56 @@ def _split_payload(payload: dict[str, Any]) -> tuple[dict[str, Any], dict[str, A
     return payload, {}
 
 
+def _series_summary(x: pd.Series) -> dict[str, Any]:
+    s = pd.to_numeric(x, errors="coerce").dropna()
+    if s.empty:
+        return {"n": 0}
+    q = s.quantile([0.1, 0.25, 0.5, 0.75, 0.9]).to_dict()
+    return {
+        "n": int(s.shape[0]),
+        "mean": float(s.mean()),
+        "std": float(s.std(ddof=1)) if s.shape[0] > 1 else 0.0,
+        "p10": float(q.get(0.1, np.nan)),
+        "q1": float(q.get(0.25, np.nan)),
+        "median": float(q.get(0.5, np.nan)),
+        "q3": float(q.get(0.75, np.nan)),
+        "p90": float(q.get(0.9, np.nan)),
+    }
+
+
+def _candidate_positioning_summary(candidate_jobs: pd.DataFrame) -> dict[str, Any]:
+    if candidate_jobs is None or not isinstance(candidate_jobs, pd.DataFrame):
+        return {}
+
+    out: dict[str, Any] = {"n_candidates": int(candidate_jobs.shape[0])}
+
+    for col in [
+        "suitability",
+        "competitiveness_index",
+        "pred_sal",
+        "sal_mean",
+        "score",
+    ]:
+        if col in candidate_jobs.columns:
+            out[col] = _series_summary(candidate_jobs[col])
+
+    # light categorical context (only if present)
+    for col in ["state", "Sector", "Industry", "title_rich"]:
+        if col in candidate_jobs.columns:
+            vc = (
+                candidate_jobs[col]
+                .astype(str)
+                .replace("nan", np.nan)
+                .dropna()
+                .value_counts()
+                .head(8)
+            )
+            if not vc.empty:
+                out[f"top_{col}"] = vc.to_dict()
+
+    return out
+
+
 def _run_ch4(payload: dict[str, Any]) -> tuple[AppResult, dict[str, Any]]:
     """
     Runs the Chapter 4 pipeline once, storing:
@@ -117,9 +168,13 @@ def _run_ch4(payload: dict[str, Any]) -> tuple[AppResult, dict[str, Any]]:
     pipeline_params.pop("scenarios", None)
     pipeline_params.pop("config", None)
 
-    # Force app toggles
+    # Force app toggles (deterministic, fast)
     pipeline_params["run_explanator"] = True
     pipeline_params["run_upskilling"] = True
+    pipeline_params["print_report"] = False
+    pipeline_params["verbose"] = False
+    # If your pipeline supports it, keep it light:
+    pipeline_params["include_scored_universe"] = False
 
     # Run pipeline (career sim explicitly disabled)
     rec_out, expl_out, up_out, sim_out = run_recommender_pipeline(
@@ -148,8 +203,16 @@ def _run_ch4(payload: dict[str, Any]) -> tuple[AppResult, dict[str, Any]]:
         stretch_df = rec_out.get("tables", {}).get("top_stretch")
 
     candidate_jobs = None
+    counts: dict[str, Any] = {}
+    salary_summary: dict[str, Any] = {}
+    warnings: list[Any] = []
+
     if isinstance(rec_out, dict):
-        candidate_jobs = rec_out.get("tables", {}).get("candidate_jobs")
+        tables = rec_out.get("tables", {}) or {}
+        candidate_jobs = tables.get("candidate_jobs")
+        counts = rec_out.get("counts", {}) or {}
+        salary_summary = rec_out.get("salary_summary", {}) or {}
+        warnings = rec_out.get("warnings", []) or []
 
     # Narrative (minimal)
     n_best = int(best_df.shape[0]) if isinstance(best_df, pd.DataFrame) else 0
@@ -168,6 +231,14 @@ def _run_ch4(payload: dict[str, Any]) -> tuple[AppResult, dict[str, Any]]:
         "stretch_explained": stretch_df,
         "candidate_jobs": candidate_jobs,
         "metric_glossary": glossary,
+        "counts": counts,
+        "salary_summary": salary_summary,
+        "warnings": warnings,
+        "positioning_summary": (
+            _candidate_positioning_summary(candidate_jobs)
+            if isinstance(candidate_jobs, pd.DataFrame)
+            else {}
+        ),
     }
 
     res = AppResult(narrative=narrative, payload=app_payload)
@@ -225,6 +296,10 @@ def render() -> None:
             st.session_state["demo_cfg"] = None
             st.session_state["result"] = None
             st.session_state["ch4_results"] = None
+            # convenience keys (optional)
+            st.session_state.pop("recommender_out", None)
+            st.session_state.pop("explanation_out", None)
+            st.session_state.pop("upskilling_out", None)
 
     with col3:
         if st.button("Run recommender", type="primary"):
@@ -324,6 +399,32 @@ def render() -> None:
         st.error("Pipeline error")
         st.json(res.payload)
         return
+
+    # --- positioning summary (dedicated, compact, optional) ---
+    positioning = res.payload.get("positioning_summary", {}) or {}
+    counts = res.payload.get("counts", {}) or {}
+    salary_summary = res.payload.get("salary_summary", {}) or {}
+    warnings = res.payload.get("warnings", []) or []
+
+    if positioning or counts or salary_summary or warnings:
+        with st.expander("User positioning summary", expanded=False):
+            if counts:
+                st.markdown("**Pipeline counts (from Chapter 4)**")
+                st.json(counts)
+
+            if salary_summary:
+                st.markdown("**Salary summary (from Chapter 4)**")
+                st.json(salary_summary)
+
+            if positioning:
+                st.markdown(
+                    "**Candidate market under your constraints (computed from candidate_jobs)**"
+                )
+                st.json(positioning)
+
+            if warnings:
+                st.markdown("**Warnings**")
+                st.json(warnings)
 
     best = _ensure_job_id(res.payload.get("best_now_explained"))
     stretch = _ensure_job_id(res.payload.get("stretch_explained"))

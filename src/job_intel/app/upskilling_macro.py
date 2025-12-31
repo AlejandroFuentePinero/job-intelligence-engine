@@ -430,7 +430,7 @@ def render() -> None:
     # Macro: co-learning suggestions
     # -----------------------------
     st.divider()
-    st.subheader("Macro: co-learning suggestions (skill similarity)")
+    st.subheader("Macro: Co-learning strength (skill similarity)")
 
     st.markdown(
         dedent(
@@ -439,6 +439,8 @@ def render() -> None:
             learned over the labour-market skill ecosystem (built from the skill probability matrix).
             Skills that are close in embedding space tend to occur in similar contexts across the job market,
             so they are often efficient to learn together and can lift **average market suitability** more quickly.
+
+            Higher means these skills tend to show up together across roles; not causal.
             """
         ).strip()
     )
@@ -474,7 +476,7 @@ def render() -> None:
         nei_all = _build_neighbors_all(edges, focals, top_k=5)
         _plot_grouped_colearning(nei_all, focal_order=focals, top_k=5)
 
-        with st.expander("Show neighbour table (debug)", expanded=False):
+        with st.expander("Show neighbour table", expanded=False):
             st.dataframe(
                 nei_all.sort_values(
                     ["focal_skill", "similarity"], ascending=[True, False]

@@ -59,14 +59,14 @@ def render() -> None:
 Most people don’t struggle to work hard — they struggle to **choose**: which jobs to target, what “good fit” means in practice,
 and which skills actually change outcomes (instead of just adding noise).
 
-Job Intelligence Engine turns the job market into something you can **query**: it summarises the market signal, then maps your current
+Job Intelligence Engine turns the **data** job market into something you can **query**: it summarises the market signal, then maps your current
 skills to **best-now roles**, **stretch roles**, and an **ROI-ranked upskilling plan** that’s grounded in real job-posting patterns.
 
 
 This project addresses a common problem: job search is noisy and time-consuming, and it’s hard to know which roles are realistic now,
 which are worth stretching for, and which skills will move the needle most.
 
-This app uses a unified pipeline built on job-ad skill signals and a salary model to help you make **clear, evidence-based decisions**.
+This app uses a unified pipeline built on **data-related** job-ad skill signals and a salary model to help you make **clear, evidence-based decisions**.
 """.strip()
         )
     with right:
@@ -80,7 +80,7 @@ This app uses a unified pipeline built on job-ad skill signals and a salary mode
     st.subheader("What you can do here")
     st.markdown(
         """
-- **Landscape:** understand the global job market signal (salary residuals, fairness lenses, and skill value ranking).
+- **Landscape:** understand the global data job market signal (salary residuals, fairness lenses, and skill value ranking).
 - **Recommender:** enter your constraints and skills to get two job buckets:
   - **Best now** (low barrier / high fit)
   - **Stretch** (higher barrier, but strong upside)

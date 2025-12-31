@@ -79,10 +79,33 @@ v1 is intentionally constrained to a **deterministic, auditable, end-to-end syst
 - **Why it’s not in v1:** It is valuable but should be added surgically to avoid turning the recommender into an opaque hybrid. In v1, recommendations are intentionally interpretable (fit vs barrier). Chapter 2 is best introduced first as a macro/adjacent-role exploration layer (Chapter 5 storytelling), then optionally integrated into ranking in v2 once you can evaluate whether it improves outcomes.
 
 
-## Chapter 5 - APP
-- Add the skill specialisation map (lift) - from chapter 2
-- Add nearest job families and diversity index - from chapter 2
-- Add skill shap dependence plots to landscape
+## Chapter 5 — App (V2 ideas / deferred scope)
+
+These items were intentionally **de-scoped from v1** to keep the app compact and decision-oriented. V2 can add them back only if they improve user understanding or materially change recommendations.
+
+### Chapter 2: Market structure (optional advanced views)
+- Add a **skill specialisation / lift map** (Chapter 2) as an *advanced* panel.
+  - Constraint: requires clear labels, hard caps, and a “how to read” box; otherwise becomes analysis-grade clutter.
+- Add **nearest job families** (adjacent-family explorer) and a **recommendation diversity / concentration diagnostic**.
+  - Dependencies: interpretable family naming/labeling + stable neighbour table (centroid similarity).
+  - UI principle: show only *user-conditioned* families (e.g., closest to dominant stretch family) with 2–3 exemplar roles each.
+  - Optional metric: concentration index (e.g., shares by state/sector/title; Herfindahl) if families remain unlabelled.
+
+### Chapter 1: Explainability expansions (only if high-signal)
+- Add **SHAP dependence plots** for a very small set of features (2–3 max), only if they clarify a non-obvious pattern.
+  - Likely candidates: one **skill PCA “gatekeeper”** component and one structural driver.
+  - Guardrail: keep technical detail in expanders; default view stays global SHAP + beeswarm.
+
+### Counterfactual / future-facing layer
+- Add **career simulation** (what-if scenarios) as an explicitly opt-in advanced feature.
+  - Design: scenario cards (e.g., “move state”, “add X skills”, “change sector constraint”) with a single “run scenario” button.
+  - Keep v1 determinism/clarity: simulation should never be on by default; it should be clearly labelled “counterfactual”.
+
+### Notes on v1 decisions (context for why these are V2)
+- v1 intentionally avoids unlabelled clusters and dense heatmaps to reduce cognitive load.
+- v1 surfaces Chapter 2 only through **user-conditioned co-learning neighbours** (skill similarity around top upskills), which is the most actionable bridge from graph structure to upskilling decisions.
+- PDP/ICE panels were not included in v1 because they add complexity without improving the core recommendation story (structure dominates; skills refine within regimes).
+
 
 ---
 

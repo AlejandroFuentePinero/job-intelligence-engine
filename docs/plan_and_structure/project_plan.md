@@ -117,10 +117,10 @@
 # CHAPTER 5 — Insights & Dashboards (Transparency & Exploration)
 
 ### Core
-- **Salary Landscape Dashboard**  
+- ✅ **Salary Landscape Dashboard**  
 - **Skill Ecosystem Map**  
-- **Skill Value Ranking Board**  
-- **Geographical Job Summary (salary + competitiveness)**
+- ✅ **Skill Value Ranking Board**  
+- ✅ **Geographical Job Summary (salary + competitiveness)**
 
 ### Stretch
 - **Industry Opportunity Gap Analysis**  
