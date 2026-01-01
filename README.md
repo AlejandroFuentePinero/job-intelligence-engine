@@ -1,7 +1,7 @@
 # Job Intelligence Engine
 A deterministic, end-to-end job-market intelligence system that converts job ads into interpretable market signals and a constraint-aware recommender (**best-now** vs **stretch**) surfaced via a lightweight Streamlit app.
 
-![Job Intelligence Engine — engine path](docs/narrative/figures/engine_path.png)
+![Job Intelligence Engine — engine path](media/engine_path.png)
 
 ## Contents
 - [About](#about-the-project)
@@ -33,7 +33,7 @@ The motivation is straightforward: reduce job-search noise by making trade-offs 
 The fastest way to experience the project is the deployed app.
 
 **Live app:** [link]  
-![Job Intelligence Engine — Demo](docs/narrative/figures/app_demo.gif)
+![Job Intelligence Engine — Demo](media/app_demo.gif)
 
 To run it locally, clone the repository, install dependencies, and launch the app. The build step assembles the app assets and validates required artefacts before Streamlit starts.
 
@@ -65,7 +65,7 @@ When a user enters the system, their profile is mapped into the same skill space
 
 A full technical description (features, models, evaluation, and artifacts) is provided in `docs/narrative/technical_report.md`, with the canonical system map in `docs/engineering/architecture.md`.
 
-![Job Intelligence Engine — Simple App Workflow](docs/narrative/figures/simple_workflow.png)
+![Job Intelligence Engine — Simple App Workflow](media/simple_workflow.png)
 
 ## Reproducibility and scope
 
@@ -85,7 +85,7 @@ The intent is decision support, not hiring guarantees. The engine summarises pat
 <details>
   <summary><strong>Pipeline map (full system overview)</strong></summary>
 
-  ![Job Intelligence Engine — full pipeline map](docs/narrative/figures/visual_overview.png)
+  ![Job Intelligence Engine — full pipeline map](media/visual_overview.png)
 </details>
 
 ## Data and licensing
