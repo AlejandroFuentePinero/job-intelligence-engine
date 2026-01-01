@@ -1,8 +1,87 @@
 # Job Intelligence Engine
 A deterministic, end-to-end job-market intelligence system that converts raw job ads into interpretable market signals and a constraint-aware recommender (best_now vs stretch) surfaced via a lightweight Streamlit app.
 
-**Project report:** `docs/narrative/technical_report.md`  
-**How to run:** `docs/plan_and_structure/how_to_run_v1.md`  
-**Architecture:** `docs/engineering/architecture.md`
+![Job Intelligence Engine — engine path](docs/narrative/figures/engine_path.png)
 
-[**Demo App**](https://raw.githubusercontent.com/AlejandroFuentePinero/job-intelligence-engine/main/docs/narrative/figures/app_demo.mp4)
+## About the project
+
+Most people don’t struggle to work hard — they struggle to choose: which jobs to target, what “good fit” means in practice, and which skills actually change outcomes (instead of just adding noise).
+
+The data job market is especially prone to this problem. Postings are high-volume, inconsistent, and full of overlapping terminology. Advice is often generic, and even when data exists, it rarely translates into concrete decisions: which roles are realistic *now*, which are worth stretching for, and what to learn next to materially improve outcomes.
+
+Job Intelligence Engine turns the market into something you can query. It learns structured signals from real job postings and uses them to position an individual under constraints. The app summarises market patterns, then maps your current profile to **best-now roles**, **stretch roles**, and an **ROI-ranked upskilling plan** grounded in observed demand rather than guesswork.
+
+The motivation is straightforward: reduce job-search noise by making trade-offs legible. Instead of scanning postings one by one, you get an evidence-based view of where you fit, what you’re missing, and which improvements are most likely to change the set of roles you can credibly target.
+
+
+## Quickstart
+
+The fastest and easiest way to experience the project is the deployed app
+
+**Live app:** [link]  
+![Job Intelligence Engine — Demo](docs/narrative/figures/app_demo.mp4)
+
+To run it locally, clone the repository, install dependencies, and launch the app. The build step assembles the app assets and validates required artefacts before Streamlit starts.
+
+```bash
+git clone https://github.com/AlejandroFuentePinero/job-intelligence-engine.git
+cd job-intelligence-engine
+
+pip install -r requirements.txt
+python -m src.job_intel.pipelines.ch5_app_build && streamlit run app.py
+```
+Full environment notes and troubleshooting: `docs/plan_and_structure/how_to_run_v1.md`
+
+## Usage
+
+The app is designed to be usable in two modes: a fast demo path for first-time visitors, and a configurable path for exploring different profiles and constraints.
+
+For a quick tour, follow the demo video and reproduce the same flow in the live app: start from the market overview, run the recommender to generate **best-now** and **stretch** roles, and then open the upskilling view to see which skill families produce the largest counterfactual lift.
+
+For your own scenario, enter a profile and constraints (role preferences, location/filters, and current skill signals). The system builds a constrained candidate universe, ranks roles into best-now vs stretch, and attaches explanations showing the main drivers of each recommendation. Upskilling then evaluates “what changes if I add this skill family?” by temporarily adding it to your profile and recomputing positioning deltas, producing an ROI-ranked plan grounded in demand from the stretch set.
+
+The app has supporting interpretation blocks throughout. However, if you wish to explore the full set of supported inputs, demo persona config, and interpretation notes, they are documented in `docs/narrative/technical_report.md` .
+
+## How it works
+
+Job Intelligence Engine is built as a single, end-to-end pipeline that turns messy job postings into a market representation you can reason about, then uses that representation to produce personalised decision support. It starts by normalising job ads into a consistent dataset (titles, seniority, location/sector metadata, salary fields, and structured skill signals). From there, the system learns the “shape” of the market: a salary response model captures how job attributes and skill structure relate to compensation, and a set of skill-demand models produces a calibrated job × skill probability layer that smooths noisy binary keywords into a reusable demand signal. Those signals also power the app’s market summary and interpretability views.
+
+When a user enters the system, their profile is mapped into the same skill space used for jobs, then hard constraints define a feasible candidate universe. Within that universe, the engine separates two ideas that job search often mixes: **suitability** (fit to the user’s current profile) and **competitiveness** (barrier to entry driven by missing, rare skill requirements and job seniority/pay expectations). The recommender turns those signals into two shortlists—**best-now** and **stretch**—and attaches a simple explanation layer that makes each result inspectable. Upskilling is handled as counterfactual decision support: the system holds the job universe constant, simulates adding missing skill families, recomputes positioning, and ranks skills by measurable lift (including “stretch → best-now” promotion effects), so recommendations stay grounded in observed job-posting demand rather than generic advice.
+
+A full technical description (features, models, evaluation, and artifacts) is provided in `docs/technical_report.md`, with the canonical system map in `docs/architecture.md`.
+
+![Job Intelligence Engine — Simple App Workflow](docs/narrative/figures/simple_workflow.png)
+
+## Reproducibility and scope
+
+Job Intelligence Engine is organised around production-style pipelines. Each chapter is implemented as an executable pipeline that produces a small set of stable outputs (processed datasets, fitted models, and derived market assets). Those outputs are then composed downstream rather than recomputed ad hoc, which keeps the system predictable and makes it easier to validate what changed when you update one part of the engine.
+
+In practice, reproducibility comes from two things: the chapter pipelines that build and validate their outputs, and the app build step that gathers the required artefacts across the project into a single “app-ready” surface. That means the recommender, explanations, and upskilling views are not standalone scripts—they are assembled from upstream pipeline outputs that encode the market signal learned from the data.
+
+The intent is decision support, not hiring guarantees. The engine summarises patterns in job-posting data and converts them into interpretable ranking and gap signals; it is useful for prioritising roles and planning upskilling, but it should not be interpreted as causal claims about what any specific employer will do. Deeper evaluation, assumptions, and limitations are documented in `docs/technical_report.md`.
+
+<details>
+  <summary><strong>Pipeline map (full system overview)</strong></summary>
+
+  ![Job Intelligence Engine — full pipeline map](docs/narrative/figures/visual_overview.png)
+</details>
+
+## Data and licensing
+
+This project uses two public Kaggle datasets:
+- [Data Scientist Jobs (DataScientist.csv)](https://www.kaggle.com/datasets/andrewmvd/data-scientist-jobs?select=DataScientist.csv)
+- [Data Analyst Jobs](https://www.kaggle.com/datasets/andrewmvd/data-analyst-jobs)
+
+Code licensing is defined in `LICENSE`. Dataset usage is governed by Kaggle and the dataset authors’ terms; please review those terms before reuse or redistribution.
+
+## Documentation
+
+- `docs/engineering/architecture.md` — canonical system map (modules, pipelines, artefacts)
+- `docs/engineering/artefact_manifest_ch5_app.md` - manifest lists every persisted file the app expects at runtime
+- `docs/engineering/data_dictionary.md` — engineered fields and definitions
+- `docs/narrative/technical_report.md` — full narrative, methodology, and results
+- `docs/plan_and_structure/how_to_run_v1.md` — environment setup, local run, troubleshooting
+- `docs/plan_and_structure/v2_improvements.md` — scoped, ranked backlog
+
+## Contact
+Alejandro de la Fuente — [GitHub](https://github.com/AlejandroFuentePinero) · [LinkedIn](https://www.linkedin.com/in/alejandro-de-la-fuente-a367a137a/)

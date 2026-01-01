@@ -63,7 +63,8 @@ docs/interim/
 
 data/external
 data/interim
-docs/interim
+docs/archive/
+docs/interim/
 
 
 # Optional local outputs
