@@ -128,17 +128,33 @@ $RECYCLE.BIN/
 # Project-specific: ignore derived artefacts (reproducible)
 # ------------------------------------------------------------
 
-# Ignore all data by default (large / reproducible), but keep app-shipping assets.
+# Ignore all data by default
 data/
+
+# Keep only the minimal app/CI runtime bundle (committed)
 !data/processed/
-data/processed/*
 !data/processed/ch5_assets/
 !data/processed/ch5_assets/**
 
-# Trained models / embeddings / persisted artefacts (reproducible)
-models/
+# CI / app runtime dependencies (minimal, committed)
+!data/processed/df_with_residuals.csv
+!data/processed/skill_similarity_matrix/
+!data/processed/skill_similarity_matrix/**
 
-# Optional: if you generate logs or reports locally
-logs/
-reports/_build/
-reports/figures/_build/
+# Everything else in processed stays ignored
+data/processed/*
+!data/processed/ch5_assets/
+!data/processed/ch5_assets/**
+!data/processed/df_with_residuals.csv
+!data/processed/skill_similarity_matrix/
+!data/processed/skill_similarity_matrix/**
+
+# Trained models / persisted artefacts (reproducible)
+models/
+**/*.pkl
+**/*.joblib
+**/*.npz
+**/*.onnx
+
+# Ignore interim scratch docs (not shipped)
+docs/interim/
