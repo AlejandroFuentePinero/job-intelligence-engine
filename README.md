@@ -98,7 +98,7 @@ A snapshot of the Kaggle source data used for this project is included under `da
 
 Code licensing is defined in `LICENSE`.
 
-## Documentation
+## Documentation and repository structure
 
 - `docs/engineering/architecture.md` — canonical system map (modules, pipelines, artefacts)
 - `docs/engineering/artefact_manifest_ch5_app.md` — manifest lists every persisted file the app expects at runtime
@@ -106,6 +106,8 @@ Code licensing is defined in `LICENSE`.
 - `docs/narrative/technical_report.md` — full narrative, methodology, and results
 - `docs/plan_and_structure/how_to_run_v1.md` — environment setup, local run, troubleshooting
 - `docs/plan_and_structure/v2_improvements.md` — scoped, ranked backlog
+
+![Job Intelligence Engine — Repo Structure](media/repo_structure.png)
 
 ## Contact
 Alejandro de la Fuente — [GitHub](https://github.com/AlejandroFuentePinero) · [LinkedIn](https://www.linkedin.com/in/alejandro-de-la-fuente-a367a137a/)

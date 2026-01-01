@@ -117,8 +117,7 @@
 # ✅✅ CHAPTER 5 — Insights & Dashboards (Transparency & Exploration)
 
 ### Core
-- ✅ **Salary Landscape Dashboard**  
-- **Skill Ecosystem Map**  
+- ✅ **Salary Landscape Dashboard**
 - ✅ **Skill Value Ranking Board**  
 - ✅ **Geographical Job Summary (salary + competitiveness)**
 
@@ -126,7 +125,7 @@
 - **Industry Opportunity Gap Analysis**  
 - **City Competitiveness Heatmap**  
 - **Interactive Suitability Explorer (what-if tool)**
-
+- **Skill Ecosystem Map**  
 ---
 
 # Likely Unnecessary Components (And Why)
