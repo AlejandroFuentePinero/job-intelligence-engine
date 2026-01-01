@@ -91,7 +91,7 @@ The intent is decision support, not hiring guarantees. The engine summarises pat
 ## Data and licensing
 
 This project uses two public Kaggle datasets:
-- [Data Scientist Jobs (DataScientist.csv)](https://www.kaggle.com/datasets/andrewmvd/data-scientist-jobs?select=DataScientist.csv)
+- [Data Scientist Jobs](https://www.kaggle.com/datasets/andrewmvd/data-scientist-jobs?select=DataScientist.csv)
 - [Data Analyst Jobs](https://www.kaggle.com/datasets/andrewmvd/data-analyst-jobs)
 
 A snapshot of the Kaggle source data used for this project is included under `data/raw/` for reproducibility. Please review Kaggle and the dataset authors’ terms before reusing or redistributing the data.
