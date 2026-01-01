@@ -3,6 +3,16 @@ A deterministic, end-to-end job-market intelligence system that converts raw job
 
 ![Job Intelligence Engine — engine path](docs/narrative/figures/engine_path.png)
 
+## Contents
+- [About](#about-the-project)
+- [Quickstart](#quickstart)
+- [Usage](#usage)
+- [How it works](#how-it-works)
+- [Reproducibility and scope](#reproducibility-and-scope)
+- [Data and licensing](#data-and-licensing)
+- [Documentation](#documentation)
+
+
 ## About the project
 
 Most people don’t struggle to work hard — they struggle to choose: which jobs to target, what “good fit” means in practice, and which skills actually change outcomes (instead of just adding noise).
@@ -13,13 +23,18 @@ Job Intelligence Engine turns the market into something you can query. It learns
 
 The motivation is straightforward: reduce job-search noise by making trade-offs legible. Instead of scanning postings one by one, you get an evidence-based view of where you fit, what you’re missing, and which improvements are most likely to change the set of roles you can credibly target.
 
+**How to read recommendations**
+- **Best-now:** roles where you score well on fit and have few critical gaps.
+- **Stretch:** roles with strong directional fit but clearer gaps / higher entry barrier.
+- **Upskilling:** ranks missing skill families by simulated lift—“if you add this skill family, how much do your stretch roles improve and how often do they promote into best-now,” while penalising changes that harm your current best-now set.
+
 
 ## Quickstart
 
-The fastest and easiest way to experience the project is the deployed app
+The fastest and easiest way to experience the project is the deployed app.
 
 **Live app:** [link]  
-![Job Intelligence Engine — Demo](docs/narrative/figures/app_demo.mp4)
+![Job Intelligence Engine — Demo](docs/narrative/figures/app_demo.gif)
 
 To run it locally, clone the repository, install dependencies, and launch the app. The build step assembles the app assets and validates required artefacts before Streamlit starts.
 
@@ -27,12 +42,22 @@ To run it locally, clone the repository, install dependencies, and launch the ap
 git clone https://github.com/AlejandroFuentePinero/job-intelligence-engine.git
 cd job-intelligence-engine
 
-pip install -r requirements.txt
-python -m src.job_intel.pipelines.ch5_app_build && streamlit run app.py
+python -m pip install -r requirements.txt
+python -m src.job_intel.pipelines.ch5_app_build
+streamlit run app.py
 ```
+Note: local run **does not train**. It loads persisted models and artefacts (built by the pipelines) and assembles an app-ready bundle via `ch5_app_build`.
+
+**Requirements:** Python 3.10+ (3.11 recommended). 
+
 Full environment notes and troubleshooting: `docs/plan_and_structure/how_to_run_v1.md`
 
 ## Usage
+
+**Recommended flow**
+1. **Market overview:** scan salary + skill signals to calibrate the landscape.
+2. **Recommender:** set constraints, generate **best-now** and **stretch**, and inspect “why”.
+3. **Upskilling:** review the top skill families by simulated lift and open the role-level deltas.
 
 The app is designed to be usable in two modes: a fast demo path for first-time visitors, and a configurable path for exploring different profiles and constraints.
 
@@ -48,7 +73,7 @@ Job Intelligence Engine is built as a single, end-to-end pipeline that turns mes
 
 When a user enters the system, their profile is mapped into the same skill space used for jobs, then hard constraints define a feasible candidate universe. Within that universe, the engine separates two ideas that job search often mixes: **suitability** (fit to the user’s current profile) and **competitiveness** (barrier to entry driven by missing, rare skill requirements and job seniority/pay expectations). The recommender turns those signals into two shortlists—**best-now** and **stretch**—and attaches a simple explanation layer that makes each result inspectable. Upskilling is handled as counterfactual decision support: the system holds the job universe constant, simulates adding missing skill families, recomputes positioning, and ranks skills by measurable lift (including “stretch → best-now” promotion effects), so recommendations stay grounded in observed job-posting demand rather than generic advice.
 
-A full technical description (features, models, evaluation, and artifacts) is provided in `docs/technical_report.md`, with the canonical system map in `docs/architecture.md`.
+A full technical description (features, models, evaluation, and artifacts) is provided in `docs/narrative/technical_report.md`, with the canonical system map in `docs/engineering/architecture.md`.
 
 ![Job Intelligence Engine — Simple App Workflow](docs/narrative/figures/simple_workflow.png)
 
@@ -58,13 +83,21 @@ Job Intelligence Engine is organised around production-style pipelines. Each cha
 
 In practice, reproducibility comes from two things: the chapter pipelines that build and validate their outputs, and the app build step that gathers the required artefacts across the project into a single “app-ready” surface. That means the recommender, explanations, and upskilling views are not standalone scripts—they are assembled from upstream pipeline outputs that encode the market signal learned from the data.
 
-The intent is decision support, not hiring guarantees. The engine summarises patterns in job-posting data and converts them into interpretable ranking and gap signals; it is useful for prioritising roles and planning upskilling, but it should not be interpreted as causal claims about what any specific employer will do. Deeper evaluation, assumptions, and limitations are documented in `docs/technical_report.md`.
+The intent is decision support, not hiring guarantees. The engine summarises patterns in job-posting data and converts them into interpretable ranking and gap signals; it is useful for prioritising roles and planning upskilling, but it should not be interpreted as causal claims about what any specific employer will do. Deeper evaluation, assumptions, and limitations are documented in `docs/narrative/technical_report.md`.
+
+**Limitations (high level)**
+- **Job ads are noisy proxies:** postings reflect stated requirements, not actual hiring decisions.
+- **Dataset bias:** coverage is limited to the Kaggle sources and their time/region mix.
+- **Skills are text-derived:** extracted tokens can miss context (e.g., “nice to have” vs “required”).
+- **Salary fields are imperfect:** compensation is sparse/heterogeneous and may be parsed or imputed.
+- **Decision support, not causality:** outputs are correlational signals to guide targeting and upskilling.
 
 <details>
   <summary><strong>Pipeline map (full system overview)</strong></summary>
 
   ![Job Intelligence Engine — full pipeline map](docs/narrative/figures/visual_overview.png)
 </details>
+
 
 ## Data and licensing
 
