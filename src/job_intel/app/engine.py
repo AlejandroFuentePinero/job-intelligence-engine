@@ -3,7 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Tuple
+import os
+import subprocess
+import sys
 
 import pandas as pd
 
@@ -18,6 +23,86 @@ from src.job_intel.v2_updates.features.career_simulator import (
 class AppResult:
     narrative: str
     payload: dict[str, Any]
+
+
+def _get_git_commit_short() -> str | None:
+    """
+    Best-effort git commit hash (short). Works in local dev and in GitHub Actions.
+    Never raises.
+    """
+    # CI-first
+    sha = (os.environ.get("GITHUB_SHA") or "").strip()
+    if sha:
+        return sha[:7]
+
+    # Local git repo (best-effort)
+    try:
+        out = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            stderr=subprocess.DEVNULL,
+            text=True,
+            timeout=2,
+        ).strip()
+        return out or None
+    except Exception:
+        return None
+
+
+def _assets_updated_at_iso(paths: list[Path]) -> str | None:
+    """
+    Max mtime across a set of artefacts. Returns ISO UTC timestamp or None.
+    Never raises.
+    """
+    try:
+        mtimes = [p.stat().st_mtime for p in paths if p.exists()]
+        if not mtimes:
+            return None
+        dt = datetime.fromtimestamp(max(mtimes), tz=timezone.utc)
+        return dt.isoformat().replace("+00:00", "Z")
+    except Exception:
+        return None
+
+
+def get_build_info() -> dict[str, Any]:
+    """
+    Minimal build-info stamp for UI display (sidebar/footer).
+    Safe to call in any environment; never raises.
+    """
+    repo_root = (
+        Path(__file__).resolve().parents[3]
+    )  # .../src/job_intel/app/engine.py -> repo root
+
+    # Keep this list small and stable: only what the app/CI smoke expects.
+    artefacts = [
+        repo_root / "data" / "processed" / "df_with_residuals.csv",
+        repo_root
+        / "data"
+        / "processed"
+        / "skill_similarity_matrix"
+        / "skill_similarity_edges_k5_embeddings.csv",
+        repo_root / "data" / "processed" / "ch5_assets" / "skill_value_index.csv",
+        repo_root / "data" / "processed" / "ch5_assets" / "shap_salary_explanation.npz",
+        repo_root
+        / "data"
+        / "processed"
+        / "ch5_assets"
+        / "fairness_group_summary_long.csv",
+        repo_root
+        / "data"
+        / "processed"
+        / "ch5_assets"
+        / "fairness_residual_box_stats.json",
+    ]
+
+    missing = [str(p.relative_to(repo_root)) for p in artefacts if not p.exists()]
+    updated_at = _assets_updated_at_iso(artefacts)
+
+    return {
+        "git_commit": _get_git_commit_short(),
+        "assets_updated_at_utc": updated_at,
+        "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+        "missing_required_assets": missing,
+    }
 
 
 def _parse_request(
@@ -65,9 +150,12 @@ def run_recommender(profile_or_cfg: dict[str, Any]) -> AppResult:
       - forces run_explanator=True (use explanation branch)
       - returns explained tables + glossary + candidate_jobs
     """
+    build_info = get_build_info()
+
     if not isinstance(profile_or_cfg, dict):
         return AppResult(
-            "Invalid input (must be a dict).", {"error": "profile_not_dict"}
+            "Invalid input (must be a dict).",
+            {"error": "profile_not_dict", "build_info": build_info},
         )
 
     try:
@@ -75,7 +163,10 @@ def run_recommender(profile_or_cfg: dict[str, Any]) -> AppResult:
             _parse_request(profile_or_cfg)
         )
     except Exception as e:
-        return AppResult("Invalid demo/profile payload.", {"error": repr(e)})
+        return AppResult(
+            "Invalid demo/profile payload.",
+            {"error": repr(e), "build_info": build_info},
+        )
 
     # --- hard app constraints (fast + deterministic) ---
     pp = dict(pipeline_params)
@@ -104,18 +195,22 @@ def run_recommender(profile_or_cfg: dict[str, Any]) -> AppResult:
             )
         )
     except Exception as e:
-        return AppResult("Chapter 4 pipeline error.", {"error": repr(e)})
+        return AppResult(
+            "Chapter 4 pipeline error.",
+            {"error": repr(e), "build_info": build_info},
+        )
 
     if not isinstance(recommender_out, dict):
         return AppResult(
-            "Unexpected recommender_out type.", {"type": type(recommender_out).__name__}
+            "Unexpected recommender_out type.",
+            {"type": type(recommender_out).__name__, "build_info": build_info},
         )
 
     tables = recommender_out.get("tables", {})
     if not isinstance(tables, dict):
         return AppResult(
             "Missing recommender_out['tables'] dict.",
-            {"tables_type": type(tables).__name__},
+            {"tables_type": type(tables).__name__, "build_info": build_info},
         )
 
     candidate_jobs = tables.get("candidate_jobs")
@@ -123,13 +218,14 @@ def run_recommender(profile_or_cfg: dict[str, Any]) -> AppResult:
     if recommender_expl is None or not isinstance(recommender_expl, dict):
         return AppResult(
             "Explanations missing (expected build_job_explanations output).",
-            {"tables_keys": sorted(list(tables.keys()))},
+            {"tables_keys": sorted(list(tables.keys())), "build_info": build_info},
         )
 
     expl_tables = recommender_expl.get("tables", {})
     if not isinstance(expl_tables, dict):
         return AppResult(
-            "Explanation tables missing.", {"expl_type": type(expl_tables).__name__}
+            "Explanation tables missing.",
+            {"expl_type": type(expl_tables).__name__, "build_info": build_info},
         )
 
     best_now_expl = expl_tables.get("top_best_explained")
@@ -141,7 +237,10 @@ def run_recommender(profile_or_cfg: dict[str, Any]) -> AppResult:
     ):
         return AppResult(
             "Explanation branch ran, but top_best_explained/top_stretch_explained not found.",
-            {"expl_tables_keys": sorted(list(expl_tables.keys()))},
+            {
+                "expl_tables_keys": sorted(list(expl_tables.keys())),
+                "build_info": build_info,
+            },
         )
 
     warnings = recommender_out.get("warnings", [])
@@ -150,6 +249,7 @@ def run_recommender(profile_or_cfg: dict[str, Any]) -> AppResult:
     return AppResult(
         f"Recommender ran successfully. Warnings: {warn_n}.",
         {
+            "build_info": build_info,
             "best_now_explained": best_now_expl,
             "stretch_explained": stretch_expl,
             "candidate_jobs": (

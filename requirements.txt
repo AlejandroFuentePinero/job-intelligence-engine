@@ -1,14 +1,24 @@
+# Core
 pandas
 numpy
+
+# ML / modelling
 scikit-learn
-matplotlib
-joblib
-nltk
 xgboost
 lightgbm
 shap
+joblib
+
+# NLP / embeddings
+nltk
+sentence-transformers
+
+# Graphs / embeddings
 networkx
 node2vec
+
+# App
 streamlit
-sentence-transformers
-scikit-learn
+
+# Viz (keep minimal; only include seaborn if you actually import it)
+matplotlib

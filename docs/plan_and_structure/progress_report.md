@@ -280,12 +280,14 @@ _Last updated: 2025-12-31_
 ---
 
 # Chapter 6 — V1 Final Steps (Shipping + Portfolio)
-**Progress:** ~12%  
-[███.................] 12%
+**Progress:** ~32%  
+[██████..............] 32%
 
 ## Core deliverables (LOCKED)
 - [ ] Portfolio write-up (unified narrative)
 - [ ] Project README consolidation (single front door)
+    - README: **demo persona quickstart** (1–2 commands + what to expect) + link to `docs/how_to_run_v1.md`
+    - README: **data/artefact availability note** (what is committed vs what must be generated/downloaded) to prevent reviewer confusion
 - [x] How to run (one command) + environment notes
 - [x] requirements.txt review + pinning strategy (prod vs dev if needed)
 - [x] gitignore review
@@ -297,13 +299,13 @@ _Last updated: 2025-12-31_
 
 ## Shipping proof points (HIGH SIGNAL)
 - [x] CI smoke check (GitHub Actions): run `python -m src.job_intel.evaluation.ch5_smoke_test`
-- [ ] App “build info” stamp (git commit hash + artefact date/version shown in UI)
+- [x] App “build info” stamp (git commit hash + artefact date/version shown in UI) *(implemented: `get_build_info()` + sidebar panel in `app.py`)*
+
 
 ## Optional (only if fast)
 - [ ] Deploy app online (Streamlit Cloud / HF Spaces / Render) OR publish local-only with demo video
-- [ ] Resume bullet pack (3–5 bullets + 1 impact line)
 - [ ] LinkedIn update (project + 2-paragraph description)
-- [ ] Porfolio entry
+- [ ] Portfolio entry
 - [ ] Final scope lock (explicit “v1 is closed” statement in README)
 
 ---

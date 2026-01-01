@@ -5,7 +5,19 @@ This repo ships a deterministic, end-to-end **Job Intelligence Engine** and a li
 - **Recommender** (`best_now` / `stretch`) + job-level “why”
 - **Upskilling** (counterfactual deltas) + **macro co-learning** (skill neighbour view)
 
-The app is designed to run **without training** (models are loaded from `models/`; assets are assembled/validated by Chapter 5 build scripts).
+The app is designed to run **without training** (models are loaded from `models/`; app assets are assembled/validated by Chapter 5 build scripts).
+
+---
+
+## Quickstart (recommended for reviewers)
+
+From the repository root:
+
+```bash
+pip install -r requirements.txt
+python -m src.job_intel.pipelines.ch5_app_build
+python -m streamlit run app.py
+```
 
 ---
 
@@ -13,7 +25,7 @@ The app is designed to run **without training** (models are loaded from `models/
 
 - Python **3.10+** (recommended: 3.11)
 - macOS / Linux / Windows (WSL recommended on Windows)
-- `pip` available (or `uv`/`pipx` if you prefer; instructions below use `pip`)
+- `pip` available (instructions below use `pip`)
 
 ---
 
@@ -23,11 +35,12 @@ From the repository root:
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate    # macOS/Linux
-# .venv\Scripts\activate   # Windows (PowerShell)
+source .venv/bin/activate              # macOS/Linux
+# .venv\Scripts\activate               # Windows (PowerShell)
+# .venv\Scripts\activate.bat           # Windows (CMD)
 
-pip install --upgrade pip
-pip install -r requirements.txt
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
 ---
@@ -37,19 +50,19 @@ pip install -r requirements.txt
 From the repository root:
 
 ```bash
-python -m src.job_intel.pipelines.ch5_app_build && streamlit run app.py
+python -m src.job_intel.pipelines.ch5_app_build && python -m streamlit run app.py
 ```
 
 What this does:
-1) **Builds** (or refreshes) app-ready Chapter 5 artefacts (currently fairness assets) and  
-2) **Validates** that all required runtime artefacts exist on disk (fail-fast if anything is missing), then  
-3) Launches the Streamlit app via the root entrypoint `app.py`.
+1) **Builds/refreshes** app-ready Chapter 5 assets (e.g., fairness + explainability summaries), and  
+2) **Validates** required runtime artefacts on disk (fail-fast with a clear missing-file list), then  
+3) Launches the Streamlit app via `app.py`.
 
 ---
 
 ## 4) What you should see in the app
 
-1) Open the **Home** page and read the “how to use” flow (landscape → recommender → upskilling).
+1) Open **Home** and follow the suggested flow (Landscape → Recommender → Upskilling).
 2) Go to **Landscape** to understand the market mechanics.
 3) Go to **Recommender**:
    - click **Load demo persona**
@@ -63,8 +76,8 @@ What this does:
 This project is designed as a portfolio-quality codebase with deterministic pipelines.
 
 ### What is typically committed
-- `src/` code (all pipelines/features/models/app pages)
-- **trained model artefacts** under `models/` (salary model + PCA + 27 skill models), if you choose to ship them
+- `src/` code (features, pipelines, evaluators, app pages)
+- **trained model artefacts** under `models/` *(salary model + PCA + 27 skill models)* if you choose to ship them
 - small **demo configs** under `src/job_intel/evaluation/` (e.g., `recommender_demo.json`)
 - lightweight **app assets** under `data/processed/ch5_assets/` *if you choose to ship them*
 
@@ -72,7 +85,7 @@ This project is designed as a portfolio-quality codebase with deterministic pipe
 - Large raw datasets (`data/raw/`)
 - Large intermediate processed outputs (`data/processed/`), unless explicitly needed for demo
 
-Your `.gitignore` and README should make this explicit. If artefacts are not committed, users must (re)generate them using the pipelines below.
+If required artefacts are not committed, users must generate them using the pipelines below.
 
 ---
 
@@ -90,7 +103,7 @@ This:
 - executes the Chapter 4 pipeline in “app mode”
 - verifies output contracts (tables exist, job_ids present, non-empty buckets)
 
-Optional determinism check (if implemented in your file):
+Optional determinism check (only if implemented):
 ```bash
 python -m src.job_intel.evaluation.ch5_smoke_test --check-determinism
 ```
@@ -99,9 +112,9 @@ python -m src.job_intel.evaluation.ch5_smoke_test --check-determinism
 
 ## 7) Full rebuild (from raw data) — optional
 
-If you want to reproduce *everything* from scratch (including processed tables), you’ll need the raw dataset.
+If you want to reproduce *everything* from scratch, you’ll need the raw dataset.
 
-1) Download the raw data (e.g., Kaggle source referenced in README)
+1) Download the raw data (source referenced in README)
 2) Place raw files into:
 ```
 data/raw/
@@ -114,13 +127,15 @@ python -m src.job_intel.pipelines.chapter0_build_base_dataset
 python -m src.job_intel.pipelines.chapter1_models --which salary
 python -m src.job_intel.pipelines.chapter1_models --which skills
 python -m src.job_intel.pipelines.chapter2_hidden_structures
+python -m src.job_intel.pipelines.ch3_individual_positioning
+python -m src.job_intel.pipelines.chapter4_recommender
 python -m src.job_intel.pipelines.ch5_app_build
-streamlit run app.py
+python -m streamlit run app.py
 ```
 
 Notes:
-- Chapter 1 training can take time depending on hardware.
-- Chapter 2 embedding steps can be compute-heavy; they are *not required* for the v1 app beyond the skill-neighbour artefact (if you already ship it).
+- Chapter 1 training time depends on hardware.
+- Chapter 2 embedding steps can be compute-heavy; they are only required if you are not shipping the skill-neighbour artefact used by the app.
 
 ---
 
@@ -131,22 +146,23 @@ Run the build/validator explicitly:
 ```bash
 python -m src.job_intel.pipelines.ch5_app_build
 ```
-It will print which expected files are missing.
+It prints which expected files are missing and where they should live.
 
 ### App runs but plots are empty
-Verify the Chapter 5 assets exist:
+Verify assets exist:
 - `data/processed/ch5_assets/`
-- and the required model files exist under `models/`
+- required model files exist under `models/`
 
 ### Streamlit import / module path issues
-Run commands from the **repo root** (same directory as `app.py`).
+- Run commands from the **repo root** (same directory as `app.py`).
+- Prefer `python -m streamlit run app.py` to ensure Streamlit uses the active venv.
 
 ---
 
 ## 9) Minimal run checklist (for interviewers)
 
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 python -m src.job_intel.pipelines.ch5_app_build
-streamlit run app.py
+python -m streamlit run app.py
 ```
