@@ -5,12 +5,27 @@ Live App: <link>
 Author: Alejandro de la Fuente  
 License: <MIT/Apache-2.0/etc>  
 Data access: <public / not redistributable / instructions>
+    - [Data Scientist Jobs](https://www.kaggle.com/datasets/andrewmvd/data-scientist-jobs?select=DataScientist.csv)
+    - [Data Analyst Jobs](https://www.kaggle.com/datasets/andrewmvd/data-analyst-jobs)
 
 ---
 
-## 0. Abstract (150–250 words)
-Purpose: pseudo-academic summary that stands alone.
-- Problem, approach, data, main outputs, headline results, and key limitations.
+## 0. Abstract
+
+The data job market is difficult to navigate not because information is scarce, but because it is fragmented: roles overlap while being described with inconsistent terminology, and skill requirements are expressed as long, noisy lists with substantial synonymy. As a result, “good fit” and “what to learn next” are often decided by manual scanning and generic advice rather than by evidence grounded in observed demand.
+
+Job Intelligence Engine converts job postings into a queryable market landscape and uses it to position an individual to learn the most suitable jobs and optimal upskilling. From public job postings databases, the pipeline standardises titles, seniority, company metadata, and salary targets, and extracts a curated skill taxonomy mapped into aggregated skill families. It then learns two complementary signals: a salary response model that estimates expected pay and provides interpretable drivers via residual diagnostics and SHAP attributions, and a suite of per-skill probabilistic requirement models that estimate how likely each skill family is demanded by each job (yielding a dense job × skill probability matrix).
+
+These market artefacts are turned into decision support by computing two orthogonal user-conditioned measures—**suitability** (fit to current skills and targets) and **competitiveness** (barriers implied by missing, probabilistic requirements)—to produce **best-now** and **stretch** recommendations with explicit gap explanations. Upskilling is framed as counterfactual analysis: the engine simulates acquiring missing skill families, recomputes positioning, and ranks skills by measurable lift in realistic targetability.
+
+A lightweight Streamlit app packages the workflow using persisted artefacts (no retraining) and contract-style evaluations that enforce schema alignment, determinism, and fail-fast behaviour. Limitations reflect the data: postings are imperfect proxies for hiring decisions, skill signals are text-derived, and salary fields are heterogeneous; outputs are intended for decision support rather than causal claims.
+
+<figure>
+  <img src="media/project_pipeline_simple.png" alt="Job Intelligence Engine — system simple pipeline" style="width:100%; max-width:1100px;">
+  <figcaption style="text-align:center; font-size:0.9em; color:#666;">
+    Figure 1. High-level overview.
+  </figcaption>
+</figure>
 
 ---
 
@@ -22,7 +37,14 @@ Purpose: hiring-manager-readable summary.
 - Key results snapshot (metrics + behavior-based checks).
 - Where to see it: app link + demo scenario.
 
-**Figure 1:** System overview diagram (engine + artefacts + app).
+
+<figure>
+  <img src="media/visual_overview.png" alt="Job Intelligence Engine — system overview" style="width:100%; max-width:1100px;">
+  <figcaption style="text-align:center; font-size:0.9em; color:#666;">
+    Figure 2. System overview diagram.
+  </figcaption>
+</figure>
+
 
 ---
 
