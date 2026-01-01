@@ -48,7 +48,7 @@ def render() -> None:
 
     engine_path = _figure_path(
         "engine_path.png",
-        mac_abs="/Users/alejandrofp/Desktop/Projects/03_Flagship_Portfolio/job-intelligence-engine/docs/narrative/figures/engine_path.png",
+        mac_abs="/Users/alejandrofp/Desktop/Projects/03_Flagship_Portfolio/job-intelligence-engine/media/engine_path.png",
     )
 
     # 50/50 split so the figure is readable
@@ -73,7 +73,7 @@ This app uses a unified pipeline built on **data-related** job-ad skill signals 
         if engine_path is not None:
             st.image(engine_path.as_posix(), use_container_width=True)
         else:
-            st.info("Figure missing: docs/narrative/figures/engine_path.png")
+            st.info("Figure missing: media/engine_path.png")
 
     st.divider()
 
@@ -92,7 +92,7 @@ This app uses a unified pipeline built on **data-related** job-ad skill signals 
 
     simple_workflow = _figure_path(
         "simple_workflow.png",
-        mac_abs="/Users/alejandrofp/Desktop/Projects/03_Flagship_Portfolio/job-intelligence-engine/docs/narrative/figures/simple_workflow.png",
+        mac_abs="/Users/alejandrofp/Desktop/Projects/03_Flagship_Portfolio/job-intelligence-engine/media/simple_workflow.png",
     )
 
     # 50/50 split so the figure is readable
@@ -117,7 +117,7 @@ This app uses a unified pipeline built on **data-related** job-ad skill signals 
         if simple_workflow is not None:
             st.image(simple_workflow.as_posix(), use_container_width=True)
         else:
-            st.info("Figure missing: docs/narrative/figures/simple_workflow.png")
+            st.info("Figure missing: media/simple_workflow.png")
 
     st.divider()
 

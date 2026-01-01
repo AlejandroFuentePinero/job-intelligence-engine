@@ -19,6 +19,19 @@ def _render_build_info_sidebar() -> None:
             st.warning("Missing required assets:\n- " + "\n- ".join(missing))
 
 
+def _render_author_sidebar() -> None:
+    st.sidebar.caption("Developed by **Alejandro de la Fuente**")
+    st.sidebar.markdown(
+        (
+            "[GitHub](https://github.com/AlejandroFuentePinero)"
+            " · "
+            "[LinkedIn](https://www.linkedin.com/in/alejandro-de-la-fuente-a367a137a/)"
+            " · "
+            "[Email](mailto:alejandrofuentepinero@gmail.com)"
+        )
+    )
+
+
 st.set_page_config(page_title="Job Intelligence Engine", layout="wide")
 
 if "page" not in st.session_state:
@@ -31,7 +44,9 @@ st.sidebar.radio(
     key="page",
 )
 
-# Sidebar: build info at the bottom
+# Sidebar: footer
+st.sidebar.markdown("---")
+_render_author_sidebar()
 st.sidebar.markdown("---")
 _render_build_info_sidebar()
 

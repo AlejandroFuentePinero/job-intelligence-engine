@@ -1,5 +1,5 @@
-# Job Intelligence Engine — Progress Tracker (STEERING DOCUMENT)
-_Last updated: 2025-12-31_
+# Job Intelligence Engine — Progress Tracker
+_Last updated: 2026-01-01_
 
 > This document is the **authoritative steering and sanity-check document**.
 > It reflects what is required, what is optional, and what must be translated
@@ -8,8 +8,8 @@ _Last updated: 2025-12-31_
 ---
 
 # OVERALL PROJECT PROGRESS (V1)
-[████████████████....] 70%
-~70% complete
+[███████████████████.] 90%
+~90% complete
 
 ---
 
@@ -302,7 +302,7 @@ _Last updated: 2025-12-31_
 ## Optional (only if fast)
 - [ ] Deploy app online (Streamlit Cloud / HF Spaces / Render) OR publish local-only with demo video
 - [ ] LinkedIn update (project + 2-paragraph description)
-- [ ] Portfolio entry
+- [x] Portfolio entry
 - [ ] Final scope lock (explicit “v1 is closed” statement in README)
 
 ---
