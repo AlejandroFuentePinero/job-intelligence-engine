@@ -1,5 +1,5 @@
 # Job Intelligence Engine — Progress Tracker (STEERING DOCUMENT)
-_Last updated: 2025-12-30_
+_Last updated: 2025-12-31_
 
 > This document is the **authoritative steering and sanity-check document**.
 > It reflects what is required, what is optional, and what must be translated
@@ -7,7 +7,7 @@ _Last updated: 2025-12-30_
 
 ---
 
-# OVERALL PROJECT PROGRESS
+# OVERALL PROJECT PROGRESS (V1)
 [████████████████....] 70%
 ~70% complete
 
@@ -237,10 +237,10 @@ _Last updated: 2025-12-30_
 
 ---
 
-# Chapter 5 — Insights & Dashboards
+# ✅ Chapter 5 — Insights & Dashboards
 
-**Progress:** ~95%  
-`[███████████████.....] 65%`
+**Progress:** ~100%  
+`[████████████████████] 100%`
 
 ## Core Work
 
@@ -274,29 +274,50 @@ _Last updated: 2025-12-30_
 ## Pipelines / Architecture
 - [x] `pipelines/ch5_app_build.py` (single entrypoint to assemble app-ready artefacts)
 - [x] Artefact manifest (required outputs from Ch1/Ch2/Ch4 + load locations)
-- [ ] Smoke tests (run build + open app + load demo personas)
+- [x] Smoke tests (run build + open app + load demo personas)
 - [x] Chapter 5 reproducibility notes (data sources + joins + caps + assumptions)
 
-
 ---
 
-# Chapter 6 — Final Steps
+# Chapter 6 — V1 Final Steps (Shipping + Portfolio)
+**Progress:** ~12%  
+[███.................] 12%
 
+## Core deliverables (LOCKED)
 - [ ] Portfolio write-up (unified narrative)
-- [ ] Project README consolidation
-- [ ] How to run (one command) + environment notes
-- [ ] App screenshots / short GIF for README
-- [ ] Explicit limitations / scope boundaries page (interview-safe)
-- [ ] Explicit v2 improvement list
-- [ ] Final scope lock
+- [ ] Project README consolidation (single front door)
+- [x] How to run (one command) + environment notes
+- [x] requirements.txt review + pinning strategy (prod vs dev if needed)
+- [x] gitignore review
+- [x] Dictionary documents
+- [x] Architecture documents
+- [ ] App screenshots (6–10) + short GIF (demo path)
+- [x] Explicit v2 improvement list (scoped, ranked)
 - [ ] Licensing / attribution (dataset sources; external assets)
 
+## Shipping proof points (HIGH SIGNAL)
+- [x] CI smoke check (GitHub Actions): run `python -m src.job_intel.evaluation.ch5_smoke_test`
+- [ ] App “build info” stamp (git commit hash + artefact date/version shown in UI)
+
+## Optional (only if fast)
+- [ ] Deploy app online (Streamlit Cloud / HF Spaces / Render) OR publish local-only with demo video
+- [ ] Resume bullet pack (3–5 bullets + 1 impact line)
+- [ ] LinkedIn update (project + 2-paragraph description)
+- [ ] Porfolio entry
+- [ ] Final scope lock (explicit “v1 is closed” statement in README)
 
 ---
 
-# LOCKED PROJECT GUARANTEES
+# OVERALL PROJECT PROGRESS (V2)
+[█....................] 2%
+~2% complete
 
-- Every module explicitly states pipeline status
-- Notebook → `src/` translation is tracked where required
-- Optional work cannot silently become required
-- This document is the single source of truth for scope and progress
+---
+
+# V2 review
+- [ ] V2 integration plan
+
+---
+
+# Chapter 4
+- [x] Career simulation engine (Chapter 4)

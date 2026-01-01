@@ -1,121 +1,138 @@
 # V2 Improvements Backlog
 
-This backlog captures plausible v2 improvements that expand capability beyond the v1 deliverable.  
-v1 is intentionally constrained to a **deterministic, auditable, end-to-end system** with strong contracts and evaluation. v2 items are mostly deferred because they (i) require new external data, (ii) materially increase surface area and testing burden, or (iii) add UX complexity without proportional portfolio value at v1.
+This backlog captures **plausible v2 extensions** beyond the v1 deliverable.  
+v1 is intentionally constrained to a **deterministic, auditable, end-to-end system** with strong contracts and evaluation. Most v2 items are deferred because they (i) require external data, (ii) materially expand surface area + testing burden, or (iii) add UX complexity without proportional portfolio value at v1.
+
+**V2 inclusion rule:** ship an item only if it either (a) measurably improves recommendation quality, (b) materially improves user understanding, or (c) enables a new credible decision-support use case.
 
 ---
 
 ## Chapter 0 — Foundations (Preprocessing & Taxonomy)
-- Job title embeddings and clustering  
-- Improve skill dictionary  
-- Reinforce salary extraction from description  
-- Retrieve experience requirements from job descriptions  
-- NER / transformer-based skill extraction (reduce reliance on pure dictionary/regex; improve recall/precision)  
-- Domain-specific embedding fine-tuning for title/skill tokens (SBERT fine-tune) if clustering quality is a bottleneck  
-- Stronger seniority detection rules (more robust to messy titles; consistent mapping across job families)  
-- Entry point for additional data and potential international data (salary normalisation and currency translation)  
 
-**Why deferred (v1 rationale):** These changes shift the entire downstream pipeline by altering the base feature layer. They are high leverage but also high risk: they can invalidate earlier benchmarks and require re-validation across Chapters 1–4. In v1, the priority is to lock a stable taxonomy/extractor contract so positioning + recommendations are reproducible and testable.
+### Candidate improvements
+- **Title embeddings + clustering refresh** (retrain or re-cluster title/domain lookup if coverage drifts).
+- **Skill dictionary expansion + normalisation** (synonyms, typos, canonical token mapping).
+- **Salary extraction hardening** (more robust parsing; better recovery when salary appears in description).
+- **Experience requirement extraction** (years-of-experience, degree, “required vs preferred” patterns).
+- **NER / transformer-based skill extraction** (reduce reliance on pure dictionary matching; improve recall/precision).
+- **Domain-specific fine-tuning (SBERT)** for titles/skill tokens *only if* clustering quality becomes a bottleneck.
+- **Stronger seniority detection** (messy titles; consistent mapping across job families).
+- **International expansion entrypoint** (salary normalisation + currency translation + geo handling).
+
+### Why deferred in v1
+These changes alter the base feature layer and therefore shift all downstream outputs (Ch1–Ch4). They are high leverage but high risk: any upgrade requires re-running benchmarks, re-validating contracts, and re-evaluating recommendation behaviour end-to-end.
 
 ---
 
 ## Chapter 1 — System Mechanics (Salary, Skill Demand, Fairness)
-- Revisit salary model by adding new info and/or changing objectives  
-- Estimate uncertainty in skill and salary model  
-- Quantile regression / prediction intervals for salary (P10/P50/P90), not just point estimate  
-- Stronger segment diagnostics + tougher validation split (e.g., grouped splits by company/title cluster) to stress-test generalization  
-- Skill value ranking by city/sector/title (city/sector-specific marginal value rather than global)  
 
-**Why deferred (v1 rationale):** These are “model quality” upgrades that are valuable but can spiral into open-ended iteration. For v1, a point-estimate salary signal is sufficient as an *interpretable alignment cue* in the recommender, and deeper model improvements are better treated as a focused refinement pass after the recommender system is fully closed and evaluated.
+### Candidate improvements
+- **Salary model upgrades** (new features, alternative objectives, alternative model families).
+- **Uncertainty estimates** for salary and skill-demand models (calibration + intervals, not just point estimates).
+- **Quantile regression / prediction intervals** for salary (P10/P50/P90 instead of only mean prediction).
+- **Stronger generalisation validation** (grouped splits by company/title cluster; stress-test leakage risks).
+- **Segmented skill-value** views (city/sector/title-specific marginal value rather than global-only).
+
+### Why deferred in v1
+These are “model quality” upgrades that can spiral into open-ended iteration. In v1, a point-estimate salary signal is sufficient as an **interpretable alignment cue** in the recommender; deeper model improvements are better treated as a focused refinement pass after the full app surface is shipped and stable.
 
 ---
 
 ## Chapter 2 — Hidden Structure (Graphs, Clusters, Ecosystems)
-- Alternative clustering method for job families (HDBSCAN) if KMeans clusters are not coherent  
-- Industry specialization maps (clustered skill vectors / specialization profiles per cluster or sector)  
-- Contrastive job embeddings (Siamese SBERT) if Node2Vec embeddings are too “graph-structure driven” and not semantically clean  
 
-**Why deferred (v1 rationale):** These are “macro-market” enhancements that mainly improve ecosystem interpretability and exploration. v1 only needs stable job-family and skill-similarity artefacts for a minimal macro layer; deeper embedding/clustering alternatives are v2 once you have evidence that the current clusters are not coherent enough for storytelling.
+### Candidate improvements
+- **Alternative clustering for job families** (e.g., HDBSCAN) if KMeans families remain hard to interpret.
+- **Family/sector specialisation profiles** (clustered skill vectors; compact “what defines this family” cards).
+- **Alternative embeddings** (e.g., contrastive/Siamese SBERT) if Node2Vec is too graph-structure-driven.
+
+### Why deferred in v1
+These are macro-market enhancements that mainly improve interpretability and exploration. v1 only needs stable **skill similarity** for user-conditioned co-learning; richer job-family storytelling becomes v2 once you can label families cleanly and prove the extra complexity helps users.
 
 ---
 
 ## Chapter 3 — Individual Positioning (Suitability, Competitiveness, Gaps)
-- Skill rarity integration (inverse frequency weighting in fit / gap severity)  
-- Skill difficulty integration (O*NET or proxy difficulty scores) for “gap cost” not just “gap size”  
-- Suitability sensitivity analysis (how recommendations change when adding/removing specific skills)  
-- City-level competitiveness aggregation (roll job-level competitiveness into city summaries)  
 
-**Why deferred (v1 rationale):** Rarity/difficulty are important, but difficulty requires external sources and careful calibration to avoid arbitrary scores. Sensitivity analysis is useful but expands evaluation burden significantly. v1 keeps positioning minimal-but-solid: the core scores must be deterministic, interpretable, and stable under reasonable settings before adding richer second-order analytics.
+### Candidate improvements
+- **Activate rarity weighting in scoring** (v1 computes rarity artefact; v2 can integrate it into competitiveness and/or gap severity with documented impact).
+- **Skill difficulty / cost signal** (O*NET or proxy difficulty) for “gap cost”, not only “gap size”.
+- **User sensitivity diagnostics** (how rankings change when adding/removing specific skills; scenario-by-skill deltas).
+- **Location summaries** (city/state competitiveness rollups; concentration summaries for constraint-aware views).
+
+### Why deferred in v1
+Difficulty requires external sources and careful calibration to avoid arbitrary “scores.” Sensitivity analysis increases evaluation burden and UI complexity; v1 keeps positioning minimal-but-solid so core scores remain deterministic, interpretable, and stable before layering second-order analytics.
 
 ---
 
-## Chapter 4 — Job Intelligence Engine (Recommendations & Optimization)
-- Skill ROI Model (salary uplift ÷ difficulty)  
-- Career Path Optimization (Pareto skill choices)  
-- Add ch2 outputs to the recommendation engine  
-- Career Simulation (what-if skill additions)  
-- Cross-City Optimization (salary × competitiveness × difficulty)  
+## Chapter 4 — Job Intelligence Engine (Recommendations & Optimisation)
 
-### Why these Chapter 4 items are deferred (explicit rationale)
+### Candidate improvements (headline list)
+- **Skill ROI model** (lift ÷ learning cost) once difficulty/cost is defensible.
+- **Career path optimisation** (Pareto skill bundles; multi-objective trade-offs).
+- **Integrate Chapter 2 signals into ranking** (surgically; measurable uplift only).
+- **Career simulation (manual what-if)** as a product feature (currently exists but is de-scoped in v1).
+- **Cross-location optimisation** (salary × competitiveness × difficulty; higher-stakes decision support).
 
-**1) Career Simulation (what-if skill additions)**  
-- **Why it’s not in v1:** As implemented, it is mostly a generic counterfactual API: the user must guess which skills to test. Without a UI and a stronger skill normalisation layer, many user-proposed tokens become **no-ops** (out-of-vocabulary or typo/synonym issues), which feels broken even when correct.  
-- **Why it’s redundant in v1:** The upskilling recommender already provides counterfactual simulation in a more defensible way: it is anchored to the user’s *actual stretch frontier* (missing families derived from stretch jobs), ranked by measured lift, and guardrailed against harming best-now roles.  
-- **When it becomes v2-worthy:** After taxonomy/normalisation improves (synonyms/typos/coverage), and/or a scenario-builder UI constrains users to “valid” skills, career simulation can be exposed as a “manual scenario” mode that reuses the same counterfactual engine.
+### Why these are deferred (explicit rationale)
 
-**2) Cross-City Optimization (salary × competitiveness × difficulty)**  
-- **Why it’s not in v1:** It changes the product promise from “recommend within constraints” to “recommend where to move,” which is a higher-stakes decision support feature. It also requires a defensible **difficulty** signal (external), plus careful handling of cost-of-living, relocation friction, and comparability across markets to avoid misleading outputs.  
-- **What v1 does instead:** v1 supports dropping geo constraints as a simple extension of the recommender, but does not claim a rigorous optimisation across locations because the missing inputs would make it look overconfident.
+**1) Career simulation (manual what-if skill additions)**  
+- **Why not in v1:** without strong skill normalisation + UI constraints, user-entered tokens often become **no-ops** (OOV/synonyms/typos), which feels broken even when correct.  
+- **Why redundant in v1:** the upskilling recommender already runs counterfactuals anchored to the user’s **actual stretch frontier** (derived missing families) and is guardrailed against harming best-now.  
+- **V2 trigger:** taxonomy/normalisation upgrades + scenario-builder UI that constrains inputs to valid canonical skills.
 
-**3) Skill ROI Model (salary uplift ÷ difficulty)**  
-- **Why it’s not in v1:** A true ROI needs (a) difficulty/cost and (b) a credible salary-uplift estimate attributable to that skill change. v1 can estimate *positioning lift* (score changes, promotions), but difficulty is external and salary uplift attribution is noisy.  
-- **Risk if forced into v1:** Produces a “precise number” that looks scientific but is not grounded in validated difficulty/cost data—bad for portfolio credibility.
+**2) Cross-location optimisation (salary × competitiveness × difficulty)**  
+- **Why not in v1:** changes the promise from “recommend within constraints” to “recommend where to move,” which is higher-stakes. Requires defensible difficulty/cost, and ideally cost-of-living/relocation comparability, to avoid misleading confidence.  
+- **What v1 does instead:** supports relaxing geo constraints, but avoids claiming an optimisation across markets.
 
-**4) Career Path Optimization (Pareto skill choices)**  
-- **Why it’s not in v1:** Multi-skill Pareto optimisation explodes the search space (combinatorics), and the objective is non-trivial: you need trade-offs between lift, risk (demotions), learning cost, time-to-skill, and possibly uncertainty. This demands careful UX (explain Pareto sets), more evaluation, and stronger modelling assumptions than v1 needs.  
-- **What v1 does instead:** Provides a ranked top-*k* upskilling list with guardrails. That is simpler, clearer, and interview-friendly.
+**3) Skill ROI (salary uplift ÷ difficulty)**  
+- **Why not in v1:** true ROI needs (a) difficulty/cost and (b) credible uplift attribution. v1 can estimate *positioning lift*, but difficulty is external and uplift attribution is noisy.  
+- **Portfolio risk if forced into v1:** produces a precise-looking number without validated grounding.
 
-**5) Add Chapter 2 outputs to the recommendation engine**  
-- **Why it’s not in v1:** It is valuable but should be added surgically to avoid turning the recommender into an opaque hybrid. In v1, recommendations are intentionally interpretable (fit vs barrier). Chapter 2 is best introduced first as a macro/adjacent-role exploration layer (Chapter 5 storytelling), then optionally integrated into ranking in v2 once you can evaluate whether it improves outcomes.
+**4) Career path optimisation (Pareto skill choices)**  
+- **Why not in v1:** combinatorial search + non-trivial objective definition (lift vs risk vs time vs uncertainty). Requires careful UX and stronger modelling assumptions.  
+- **What v1 does instead:** ranked top-k upskilling with clear guardrails.
 
+**5) Integrate Chapter 2 into ranking**  
+- **Why not in v1:** adds opacity risk to a recommender that is intentionally interpretable (fit vs barrier).  
+- **V2 approach:** introduce Ch2 signals first as *macro exploration* (already partially done), then integrate into ranking only if it improves outcomes under evaluation.
+
+---
 
 ## Chapter 5 — App (V2 ideas / deferred scope)
 
-These items were intentionally **de-scoped from v1** to keep the app compact and decision-oriented. V2 can add them back only if they improve user understanding or materially change recommendations.
+These items were intentionally de-scoped from v1 to keep the app compact and decision-oriented. Add them only if they improve understanding or materially change decisions.
 
-### Chapter 2: Market structure (optional advanced views)
-- Add a **skill specialisation / lift map** (Chapter 2) as an *advanced* panel.
-  - Constraint: requires clear labels, hard caps, and a “how to read” box; otherwise becomes analysis-grade clutter.
-- Add **nearest job families** (adjacent-family explorer) and a **recommendation diversity / concentration diagnostic**.
-  - Dependencies: interpretable family naming/labeling + stable neighbour table (centroid similarity).
-  - UI principle: show only *user-conditioned* families (e.g., closest to dominant stretch family) with 2–3 exemplar roles each.
-  - Optional metric: concentration index (e.g., shares by state/sector/title; Herfindahl) if families remain unlabelled.
+### Market structure (advanced, opt-in)
+- **Skill specialisation / lift maps** (Ch2) as an *advanced* panel.  
+  - Guardrails: clear labels, hard caps, “how to read” box, and filtering to user-relevant groups.
+- **Adjacent job families explorer** (only if families are labelable).  
+  - Show only user-conditioned families (e.g., nearest to dominant stretch family) with 2–3 exemplar jobs each.
+- **Recommendation concentration / diversity diagnostics** (if families exist and are interpretable).  
+  - Optional: Herfindahl-style concentration over state/sector/title when families remain unlabelled.
 
-### Chapter 1: Explainability expansions (only if high-signal)
-- Add **SHAP dependence plots** for a very small set of features (2–3 max), only if they clarify a non-obvious pattern.
-  - Likely candidates: one **skill PCA “gatekeeper”** component and one structural driver.
-  - Guardrail: keep technical detail in expanders; default view stays global SHAP + beeswarm.
+### Explainability expansions (only if high-signal)
+- **SHAP dependence plots** for 2–3 features max, only when they clarify a non-obvious pattern.  
+  - Default view remains global SHAP + beeswarm; dependence lives behind expanders.
 
-### Counterfactual / future-facing layer
-- Add **career simulation** (what-if scenarios) as an explicitly opt-in advanced feature.
-  - Design: scenario cards (e.g., “move state”, “add X skills”, “change sector constraint”) with a single “run scenario” button.
-  - Keep v1 determinism/clarity: simulation should never be on by default; it should be clearly labelled “counterfactual”.
+### Counterfactual / future-facing layer (advanced)
+- **Expose career simulation** as explicitly opt-in “manual scenario mode.”  
+  - Design: scenario cards (add skills / change constraints / move state) with one “run scenario” action.
+  - Principle: never on by default; clearly labelled “counterfactual.”
 
-### Notes on v1 decisions (context for why these are V2)
-- v1 intentionally avoids unlabelled clusters and dense heatmaps to reduce cognitive load.
-- v1 surfaces Chapter 2 only through **user-conditioned co-learning neighbours** (skill similarity around top upskills), which is the most actionable bridge from graph structure to upskilling decisions.
-- PDP/ICE panels were not included in v1 because they add complexity without improving the core recommendation story (structure dominates; skills refine within regimes).
-
+### Notes on v1 decisions (context)
+- v1 avoids unlabelled clusters and dense heatmaps to reduce cognitive load.
+- v1 surfaces Chapter 2 mainly through **user-conditioned co-learning neighbours**, the most actionable bridge to upskilling.
+- PDP/ICE panels remain out-of-scope because they add complexity without improving the core recommendation story (structure dominates; skills refine within regimes).
 
 ---
 
 ## Summary principle for v1 → v2 scope
+
 v1 prioritises:
 - one canonical recommendation engine,
 - one counterfactual engine (upskilling) anchored to stretch jobs,
-- deterministic behaviour + evaluators.
+- deterministic behaviour + evaluators + shipping docs.
 
-The Chapter 4 items above are deferred because they add either:
-- **new external dependencies** (difficulty, better taxonomy, richer geo comparability),
+v2 items are deferred because they add either:
+- **new external dependencies** (difficulty/cost, international comparability, richer normalisation),
 - **major UX burden** (scenario building, Pareto interpretation),
-- or **feature overlap** that increases complexity without adding new signal for a portfolio-grade v1.
+- or **feature overlap** that increases complexity without adding new portfolio-grade signal.

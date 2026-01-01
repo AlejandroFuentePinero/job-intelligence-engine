@@ -1,0 +1,63 @@
+name: smoke-test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  ch5-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: "Preflight: required artefacts present"
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          root = Path(".").resolve()
+          required = [
+              root / "data" / "processed" / "df_with_residuals.csv",
+              root / "data" / "processed" / "ch5_assets" / "shap_salary_explanation.npz",
+              root / "data" / "processed" / "ch5_assets" / "skill_value_index.csv",
+              root / "data" / "processed" / "skill_similarity_matrix" / "skill_similarity_edges_k5_embeddings.csv",
+              root / "src" / "job_intel" / "evaluation" / "recommender_demo.json",
+          ]
+
+          missing = [p for p in required if not p.exists()]
+          if missing:
+              print("ERROR: Missing required artefacts for CI smoke test:")
+              for p in missing:
+                  print(f"  - {p}")
+              print("\nFix options (choose one):")
+              print("  1) Commit the minimal CI artefact bundle to the repo.")
+              print("  2) Add a CI download step (e.g., from a GitHub Release) before this preflight.")
+              raise SystemExit(1)
+
+          print("Preflight OK: required artefacts exist.")
+          PY
+
+      - name: Build app assets (deterministic)
+        run: |
+          python -m src.job_intel.pipelines.ch5_app_build
+
+      - name: Run Chapter 5 smoke test
+        run: |
+          python -m src.job_intel.evaluation.ch5_smoke_test

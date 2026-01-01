@@ -6,6 +6,12 @@ The Job Intelligence Engine converts unstructured job postings into a structured
 Its goal is to understand how job titles, skills, industries, and companies shape the labour market, beginning with salary prediction.  
 This overview describes the conceptual purpose of Chapter 0 and the first modelling component of Chapter 1.
 
+
+data source:
+
+https://www.kaggle.com/datasets/andrewmvd/data-scientist-jobs?select=DataScientist.csv
+https://www.kaggle.com/datasets/andrewmvd/data-analyst-jobs
+
 ---
 
 # Chapter 0 — Purpose & Narrative

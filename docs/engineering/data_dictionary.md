@@ -1,501 +1,247 @@
-# Job Intelligence Engine — Data Dictionary  
-Verified against jobs_ch0.csv  
-Date: 2025-12-16
+# Job Intelligence Engine — Data Dictionary (Schema + Data Catalogue)
+Date: 2026-01-01
+
+This document is the **schema reference** for the project’s canonical processed dataset (Chapter 0) and a **lightweight catalogue** for the key derived artefacts persisted to disk.
+
+**Scope rule (to avoid duplication with `docs/architecture.md`):**
+- This file gives **column-level definitions** for the **canonical processed dataset**.
+- For downstream artefacts, this file gives **short dataset-level descriptions** and **key columns only** (no full schemas).
+- The **System Architecture** remains the authoritative inventory of modules, pipelines, and artefact ownership.
 
 ---
 
-# 1. Dataset Summary  
-**Source:** Raw Glassdoor datasets (Data Analyst + Data Scientist)  
-**Final Output:** `ch0_processed_jobs.csv`  
-**Rows:** 6,162  
-**Columns:** 47  
+## 1) Canonical Dataset Summary (Chapter 0)
+
+**Canonical file:** `data/processed/jobs_ch0.csv`  
+*(If your repo uses `ch0_processed_jobs.csv`, treat it as the same canonical output.)*
+
+- **Rows:** 6,162  
+- **Columns:** 47  
+- **Unit:** one row per job ad (Glassdoor Data Analyst + Data Scientist datasets).  
+- **Primary key:** `job_id` (stable join key across chapters)
 
 ---
 
-# 2. Column Definitions (Chapter 0)
+## 2) Column Definitions (Canonical Dataset)
 
-## A. Company Metadata
+### 2.1 Identifiers
 
 | Column | Type | Definition |
-|--------|------|------------|
-| `Rating` | float (nullable) | Glassdoor rating (0–5). |
-| `Size` | str | Company size category (`Unknown` if missing). |
-| `Founded` | Int64 | Nullable year founded. |
-| `Industry` | str | Company industry (`Unknown`). |
-| `Sector` | str | High-level sector (`Unknown`). |
-| `ownership_clean` | str | Standardised ownership. |
-| `state` | str | US state or `"international"`. |
+|---|---|---|
+| `job_id` | int | Stable identifier for the job record. Used to join all downstream artefacts. |
 
----
-
-## B. Role Identity
+### 2.2 Company metadata
 
 | Column | Type | Definition |
-|--------|------|------------|
-| `seniority_combined` | str | Seniority extracted from title + description. |
-| `job_title_family` | str | Normalised job family. |
-| `domain` | str | Domain label from SBERT lookup. |
-| `role_source` | str | DA or DS dataset origin. |
+|---|---|---|
+| `Rating` | float (nullable) | Glassdoor company rating (0–5). |
+| `Size` | str | Company size category (`"Unknown"` if missing). |
+| `Founded` | Int64 (nullable) | Year founded (nullable). |
+| `Industry` | str | Industry label (`"Unknown"` if missing). |
+| `Sector` | str | High-level sector (`"Unknown"` if missing). |
+| `ownership_clean` | str | Standardised ownership category. |
+| `state` | str | US state code; `"international"` for non-US postings. |
 
----
-
-## C. Salary Features
+### 2.3 Role identity
 
 | Column | Type | Definition |
-|--------|------|------------|
-| `sal_min` | float | Annualised salary minimum. |
-| `sal_max` | float | Annualised salary maximum. |
-| `sal_mean` | float | Salary midpoint (target). |
-| `sal_is_hourly` | bool | Whether original salary was hourly before annualisation. |
+|---|---|---|
+| `job_title_base` | str | Cleaned title without seniority/noise tokens. |
+| `job_title_norm` | str | Normalised title used for taxonomy lookup. |
+| `job_title_family` | str | Normalised job family label (from title taxonomy). |
+| `title_rich` | str | Enriched title representation used for modelling/navigation (captures family + meaningful modifiers). |
+| `seniority_combined` | str | Seniority extracted from title + description (e.g., junior, senior, lead). |
+| `domain` | str | Domain label from SBERT/nearest-neighbour lookup. |
+| `role_source` | str | Dataset origin (e.g., `DA` vs `DS`). |
+
+### 2.4 Salary features
+
+| Column | Type | Definition |
+|---|---|---|
+| `sal_min` | float (nullable) | Annualised salary minimum. |
+| `sal_max` | float (nullable) | Annualised salary maximum. |
+| `sal_mean` | float (nullable) | Salary midpoint (target variable for the salary model). |
+| `sal_is_hourly` | bool | True if original salary was hourly before annualisation. |
+
+### 2.5 Skill flags (binary 0/1)
+
+Each skill flag indicates whether the (rule-based) extractor detected evidence of the skill group in the job text.
+
+#### Core Programming
+- `core_programming__basic`
+- `core_programming__intermediate`
+- `core_programming__advanced`
+
+#### Data Engineering & Pipelines
+- `data_engineering_pipelines__basic`
+- `data_engineering_pipelines__intermediate`
+- `data_engineering_pipelines__advanced`
+
+#### Machine Learning & AI
+- `ml_ai__basic`
+- `ml_ai__intermediate`
+- `ml_ai__advanced`
+
+#### Analytics & Statistics
+- `analytics_stats__basic`
+- `analytics_stats__intermediate`
+- `analytics_stats__advanced`
+
+#### BI & Visualisation
+- `bi_viz__basic`
+- `bi_viz__intermediate`
+- `bi_viz__advanced`
+
+#### Cloud / MLOps
+- `cloud__basic`
+- `cloud__intermediate`
+- `cloud__advanced`
+
+#### Databases & Storage
+- `db_storage__basic`
+- `db_storage__intermediate`
+- `db_storage__advanced`
+
+#### Productivity & Workflow
+- `productivity_workflow__basic`
+- `productivity_workflow__intermediate`
+- `productivity_workflow__advanced`
+
+#### Soft Skills
+- `soft_skills__core`
+- `soft_skills__leadership`
+
+#### Domain-specific
+- `domain_specific__none`
+
+### 2.6 Text fields
+
+| Column | Type | Definition |
+|---|---|---|
+| `Job Description` | str | Raw job description text. |
+| `job_description_clean` | str | Normalised/cleaned description used for extraction and modelling. |
+| `title_plus_description` | str | Combined text field used for skill extraction and some modelling utilities. |
 
 ---
 
-## D. Skill Flags (0/1)
+## 3) Missing-Value Policy (Canonical Dataset)
 
-### Core Programming  
-- `core_programming__basic`  
-- `core_programming__intermediate`  
-- `core_programming__advanced`  
-
-### Data Engineering & Pipelines  
-- `data_engineering_pipelines__basic`  
-- `data_engineering_pipelines__intermediate`  
-- `data_engineering_pipelines__advanced`  
-
-### Machine Learning & AI  
-- `ml_ai__basic`  
-- `ml_ai__intermediate`  
-- `ml_ai__advanced`  
-
-### Analytics & Statistics  
-- `analytics_stats__basic`  
-- `analytics_stats__intermediate`  
-- `analytics_stats__advanced`  
-
-### BI & Visualisation  
-- `bi_viz__basic`  
-- `bi_viz__intermediate`  
-- `bi_viz__advanced`  
-
-### Cloud / MLOps  
-- `cloud__basic`  
-- `cloud__intermediate`  
-- `cloud__advanced`  
-
-### Databases & Storage  
-- `db_storage__basic`  
-- `db_storage__intermediate`  
-- `db_storage__advanced`  
-
-### Productivity & Workflow  
-- `productivity_workflow__basic`  
-- `productivity_workflow__intermediate`  
-- `productivity_workflow__advanced`  
-
-### Soft Skills  
-- `soft_skills__core`  
-- `soft_skills__leadership`  
-
-### Domain-Specific  
-- `domain_specific__none`  
+- **Drop** rows missing **both** salary fields *and* job description (cannot support modelling or extraction).
+- Fill with `"Unknown"`: `Size`, `Industry`, `Sector` (categorical robustness).
+- Keep as NA: `Rating`, `Founded` (genuine missingness).
+- Skill flags are always 0/1 (never NA).
+- Salary fields may be NA for ads without salary information.
 
 ---
 
-## E. Text Fields
+## 4) Engineered Modelling Features (Chapter 1)
 
-| Column | Meaning |
-|--------|---------|
-| `Job Description` | Raw job description. |
-| `job_description_clean` | Cleaned description for extraction. |
-| `job_title_base` | Cleaned title without noise or seniority. |
-| `job_title_norm` | Normalised version for lookup. |
-| `title_plus_description` | Combined text used for skills. |
+These features are created inside Chapter 1 modelling tables (not required to exist in the canonical Chapter 0 dataset).
 
----
-
-# 3. Missing Value Policy
-
-- Drop rows missing **both** salary and description  
-- Fill with `"Unknown"`: Size, Industry, Sector  
-- Keep NA: Rating, Founded  
-- Skill flags: always 0/1  
-- Salary fields: allow NA  
-
----
-
-# 4. Salary model (Chapter 1) Features (Engineered)
-
-## Categorical Encodings  
-- `size_code`  
-- `sector_code`  
-- `state_code`  
-- `ownership_code`  
-- `seniority_code`  
+### 4.1 Categorical encodings (examples)
+- `size_code`
+- `sector_code`
+- `state_code`
+- `ownership_code`
+- `seniority_code`
 - `title_rich_code`
 
-## PCA Components  
+### 4.2 PCA components
 - `skill_PC1` … `skill_PC10`
 
-## Optional One-Hot Dummies  
-Generated during experimentation only.
+---
 
+## 5) Derived Tabular Artefacts (Data Catalogue)
 
+These artefacts are persisted for reuse, evaluation, and/or the Streamlit app.  
+They are **documented here at a dataset level only**; detailed ownership and build steps live in the System Architecture.
+
+### 5.1 Salary model outputs (Chapter 1)
+
+- `data/processed/df_with_residuals.csv`  
+  **What it is:** canonical salary modelling dataframe augmented with predictions and residuals.  
+  **Key columns:** `job_id`, `sal_mean`, `sal_pred`, `residuals`, plus the model feature columns used during inference.
+
+- `data/processed/global_shap_mean.csv`  
+  **What it is:** global SHAP importance summary for the salary model (aggregated).  
+  **Key columns:** `feature`, `mean_abs_shap` (and/or equivalent importance fields).
+
+- `data/processed/ch5_assets/skill_value_index.csv` *(mirrors `data/processed/skill_value_index/skill_value_index.csv` if both exist)*  
+  **What it is:** global skill value index (PCA-backprojected SHAP signal onto individual skills).  
+  **Key columns:** `skill`, `value` (standardised score).
+
+- `data/processed/fairness/*.csv` *(base fairness outputs)*  
+  **What it is:** residual summaries grouped by a categorical dimension.  
+  **Examples:** `state_fairness.csv`, `sector_fairness.csv`, `title_fairness.csv`, `size_fairness.csv`, `ownership_fairness.csv`, `seniority_fairness.csv`.  
+  **Key columns:** `group_value` (or the grouping label), `mean_residual`, `median_residual`, `count`, `size_weighted_mean`.
+
+### 5.2 Skill requirement model outputs (Chapter 1)
+
+- `data/processed/skill_prob_matrix.csv`  
+  **What it is:** job × skill probability matrix (27 columns, values in [0, 1]).  
+  **Key columns:** `job_id` + `prob_*` skill probability columns.
+
+- `data/processed/skill_model_evaluation_result.csv`  
+  **What it is:** evaluation table (one row per skill classifier).  
+  **Key columns:** `model`, ROC AUC / PR AUC (train/test), `brier_test`, plus tuned hyperparameters and feature importances.
+
+### 5.3 Hidden-structure / market layer outputs (Chapter 2)
+
+- `data/processed/job_embeddings_node2vec_v01.csv`  
+  **What it is:** Node2Vec embedding vectors for job nodes.  
+  **Key columns:** `job_id` + embedding dimensions.
+
+- `data/processed/skill_embeddings_node2vec_v01.csv`  
+  **What it is:** Node2Vec embedding vectors for skill nodes.  
+  **Key columns:** `skill` (or skill-node id) + embedding dimensions.
+
+- `data/processed/job_families_graph_embeddings.csv`  
+  **What it is:** latent job-family cluster assignment from job embeddings.  
+  **Key columns:** `job_id`, `job_family_id`.
+
+- `data/processed/skill_similarity_matrix/skill_similarity_edges_k5_embeddings.csv`  
+  **What it is:** undirected edge list linking each skill to its top-k neighbours by cosine similarity (embedding space).  
+  **Key columns:** `skill_1`, `skill_2`, `similarity`.
+
+- `data/processed/skill_specialisation/*.csv`  
+  **What it is:** skill “lift” tables: group mean probability minus global mean probability.  
+  **Examples:** `sector_skill_specialisation.csv`, `seniority_skill_specialisation.csv`, `state_skill_specialisation.csv`, `title_skill_specialisation.csv`, `title_condensed_skill_specialisation.csv`, `company_size_skill_specialisation.csv`, `ownership_skill_specialisation.csv`, `job_family_skill_specialisation.csv`.  
+  **Key columns:** group label + `*_prob` lift columns.
+
+### 5.4 Chapter 5 app-ready assets (deterministic)
+
+These files exist to keep the app fast and avoid recomputing aggregations at runtime.
+
+- `data/processed/ch5_assets/fairness_group_summary_long.csv`  
+  **What it is:** a stacked (long-form) table of fairness summaries across multiple grouping variables.  
+  **Key columns:** `group_type`, `group_value`, `n`, `mean_residual`, `median_residual`, `p10`, `p90`, `size_weighted_mean`.
+
+- `data/processed/ch5_assets/fairness_residual_box_stats.json`  
+  **What it is:** global distribution summary of residuals (for box/whisker plots).  
+  **Key fields:** `n`, `mean`, `std`, `p10`, `p90`, `q1`, `median`, `q3`, `whisker_low`, `whisker_high`.
+
+- `data/processed/ch5_assets/fairness_residual_hist_bins.csv`  
+  **What it is:** histogram bins for residual distribution (pre-binned).  
+  **Key columns:** `bin_left`, `bin_right`, `count`, `bin_mid`.
+
+- `data/processed/ch5_assets/shap_salary_explanation.npz`  
+  **What it is:** compact SHAP payload for the salary model (used for app plots).  
+  **Key contents:** arrays required to reconstruct global SHAP views; exact array names are implementation-defined.
 
 ---
 
-# 5. Salary Fairness Outputs (Chapter 1)
+## 6) Model artefacts (non-tabular, referenced by filename only)
 
-The Salary Response Model produces residuals for each job record, defined as:
+These are documented primarily in `docs/architecture.md` (Models / Artefacts sections). Listed here only as a pointer.
 
-\[
-\text{residual} = \text{sal\_mean} - \text{sal\_pred}
-\]
-
-These residuals represent how much a job pays **above** or **below** the model’s expected salary after controlling for job family, seniority, sector, state, company size, ownership, and PCA skill components.
-
-Fairness is assessed by grouping residuals across six key categorical variables:
-
-- **state**  
-- **sector**  
-- **job family** (enriched title representation)  
-- **company size**  
-- **ownership type**  
-- **seniority level**
-
-Each grouping produces a fairness summary table with an identical structure and is exported as an individual CSV file.
+- `models/salary_model_v4.pkl` — trained salary model.
+- `models/skill_pca_v1.pkl` — fitted PCA transform for skill components.
+- `models/*_model.pkl` — 27 trained skill requirement models.
+- `models/job_skill_bipartite_thres0_5.gpickle` — thresholded bipartite graph used for embeddings.
 
 ---
 
-## A. Residual Columns (added to modelling dataset)
+## 7) Relationship to the System Architecture
 
-| Column | Type | Definition |
-|--------|------|------------|
-| `sal_pred` | float | Predicted salary from the Salary Response Model. |
-| `residuals` | float | Observed minus predicted salary for each job. |
-
----
-
-## B. Unified Fairness Table Structure
-
-All fairness outputs share the same schema:
-
-| Column | Definition |
-|--------|------------|
-| `mean_residual` | Average residual for the category. |
-| `median_residual` | Median residual. |
-| `count` | Number of job records in the category. |
-| `size_weighted_mean` | Normalised mean residual adjusted by the category’s proportional size. |
-
-This common format ensures interpretability and comparability across all categorical dimensions.
-
----
-
-## C. Exported Fairness Files
-
-Each file contains the unified structure above, indexed by the grouping category:
-
-| File Name | Grouping Variable | Description |
-|-----------|-------------------|-------------|
-| `state_fairness.csv` | `state` | Model-adjusted over/under-payment across U.S. states. |
-| `sector_fairness.csv` | `sector` | Structural salary deviations across company sectors. |
-| `family_fairness.csv` | `title_rich_code` | Fairness across normalised job families. |
-| `size_fairness.csv` | `Size` | Pay deviations by company size category. |
-| `ownership_fairness.csv` | `ownership_clean` | Salary behaviour across ownership classes. |
-| `seniority_fairness.csv` | `seniority_combined` | Fairness across seniority levels. |
-
-All files contain the same four fairness metrics.
-
----
-
-## D. Storage Location
-
-All fairness summary tables are stored in:
-data/processed/
-
-
-These outputs are interpretability artefacts for Chapter 1.  
-They are **not** inputs for downstream modelling pipelines.
-
----
-
----
----
-
-# 6. Skill Requirement Models — Outputs (Chapter 1)
-
-This section documents the outputs generated by the 27 binary skill requirement models:
-1. The **Skill Probability Matrix** (job × skill probability table).  
-2. The **Skill Evaluation Table** (one row per skill model).  
-Both outputs have fixed, reproducible structure and serve as analytical artefacts for later chapters.
-
----
-
-## A. Skill Probability Matrix
-
-The probability matrix stores model-estimated likelihoods that each skill group is required for each job.  
-It replaces sparse binary skill flags with smooth, calibrated probabilities.
-
-### Structure
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `prob_core_programming__basic` | float | P(basic programming skill required). |
-| `prob_core_programming__intermediate` | float | Continuous probability estimate. |
-| … | … | All skill groups follow this naming format. |
-
-There are **27 probability columns**, each corresponding to one skill group.
-
-### Dimensions
-
-- **Rows:** 6,162 jobs  
-- **Columns:** 27 probability features  
-- **Range:** 0–1 for all values  
-
-### Use Cases
-
-- Job–skill embeddings  
-- Skill-demand landscapes  
-- Similarity and clustering  
-- Recommendation logic  
-- Competitiveness modelling  
-
-This is the canonical, continuous skill layer for downstream chapters.
-
----
-
-## B. Skill Model Evaluation Table
-
-The evaluation table records performance metrics, hyperparameters, and feature importances for each of the 27 skill classifiers.  
-Each row corresponds to one skill model.
-
-### Structure  
-
-| Column | Type | Definition |
-|--------|------|------------|
-| `model` | str | Skill group name. |
-| `pos_frac_train` | float | Positive class prevalence in training set. |
-| `pos_frac_test` | float | Positive class prevalence in test set. |
-| `roc_auc_train` | float | ROC AUC on training set. |
-| `roc_auc_test` | float | ROC AUC on test set. |
-| `pr_auc_train` | float | PR AUC on training set. |
-| `pr_auc_test` | float | PR AUC on test set. |
-| `brier_test` | float | Brier score on test set (calibration metric). |
-| `learning_rate` | float | Final model hyperparameter. |
-| `n_estimators` | int | Number of boosting rounds. |
-| `num_leaves` | int | Tree leaf count used in best model. |
-| `colsample_bytree` | float | Column subsampling hyperparameter. |
-| `subsample` | float | Row subsampling hyperparameter. |
-
-### Encoded Feature Importances  
-The table includes one importance column **per predictor variable**.  
-These show the *gain-based LightGBM importance* for each feature in each model.
-
-Categorical predictors:
-
-- `size_code`  
-- `sector_code`  
-- `state_code`  
-- `ownership_code`  
-- `seniority_code`  
-- `title_rich_code`  
-
-Binary skill indicators (all 27):
-
-- `core_programming__basic`  
-- `core_programming__intermediate`  
-- `core_programming__advanced`  
-- `data_engineering_pipelines__basic`  
-- `data_engineering_pipelines__intermediate`  
-- `data_engineering_pipelines__advanced`  
-- `ml_ai__basic`  
-- `ml_ai__intermediate`  
-- `ml_ai__advanced`  
-- `analytics_stats__basic`  
-- `analytics_stats__intermediate`  
-- `analytics_stats__advanced`  
-- `bi_viz__basic`  
-- `bi_viz__intermediate`  
-- `bi_viz__advanced`  
-- `cloud__basic`  
-- `cloud__intermediate`  
-- `cloud__advanced`  
-- `db_storage__basic`  
-- `db_storage__intermediate`  
-- `db_storage__advanced`  
-- `productivity_workflow__basic`  
-- `productivity_workflow__intermediate`  
-- `productivity_workflow__advanced`  
-- `soft_skills__core`  
-- `soft_skills__leadership`  
-- `domain_specific__none`  
-
-### Notes
-
-- Importance values are **not** model quality metrics — they indicate how much each feature contributed to reducing loss.  
-- All skill models share the same set of predictors, allowing direct comparison of feature roles across skill groups.  
-- This table fully captures both *performance* and *behaviour* of every skill classifier.
-
----
-
-## C. Summary
-
-The skill requirement modelling stage yields two structured, reusable artefacts:
-
-1. **Skill Probability Matrix** (6,162 × 27) — continuous estimates of skill demand.  
-2. **Skill Evaluation Table** (27 rows) — performance metrics, hyperparameters, and predictor importances.
-
-Together, these outputs form the analytical backbone for Chapters 2–4, including embeddings, clustering, recommendation systems, and job–skill landscape modelling.
-
----
-# 7. Skill Value Index — Outputs (Chapter 1)
-
-This section documents the Global Skill Value Index derived from the Salary Response Model.
-
----
-
-## A. Skill Value Index Table
-
-The Skill Value Index provides a standardised, model-implied measure of the association between individual skills and predicted salary.
-
-### File
-- `skill_value_index.csv`
-
-### Storage Location
-- `data/processed/`
-
-### Structure
-
-| Column | Type | Definition |
-|--------|------|------------|
-| `skill` | str | Skill identifier corresponding to Chapter 0 binary skill flags (e.g. `ml_ai__advanced`). |
-| `value` | float | Standardised global skill value score (z-score). |
-
-### Notes
-
-- Values are computed by back-projecting PCA component importance (from SHAP) onto individual skills using PCA loadings.  
-- Scores reflect **relative importance within the salary model**, not causal effects.  
-- The index is global (no sector, state, or title stratification).  
-- This table is an interpretability artefact and is **not used as an input** to downstream modelling pipelines.
----
-
-
-# 8. Hidden Structure — Outputs (Chapter 2)
-
-This section documents the structural artefacts produced in Chapter 2. These outputs convert Chapter 1’s tabular job + skill-probability signals into graph-based representations, embeddings, job families, and skill ecosystem summaries.
-
----
-
-## A. Job–Skill Bipartite Graph (Artefact)
-
-A weighted bipartite graph where:
-- **Job nodes** represent individual job records (`job_id`)
-- **Skill nodes** represent skill groups (27 skill probabilities)
-- **Edges** exist when `P(skill | job) ≥ threshold`
-- **Edge weights** equal `P(skill | job)` (continuous in [0, 1])
-
-### File (optional)
-- `models/job_skill_bipartite_thres{threshold}.pkl`
-
-### Notes
-- Used as the canonical structure for Node2Vec embedding training.
-- Identifiers are stable and designed to join back to the Chapter 1 modelling dataframe via `job_id`.
-
----
-
-## B. Node2Vec Embeddings (Jobs and Skills)
-
-Node embeddings learned from random walks over the bipartite graph.
-
-### Outputs
-- **Job embeddings:** one vector per `job_id`
-- **Skill embeddings:** one vector per skill node (skill group)
-
-### Structure (conceptual)
-| Field | Type | Definition |
-|------|------|------------|
-| `job_id` | int | Stable job identifier (joins to Chapter 1 modelling dataframe). |
-| `embedding_dim_*` | float | Embedding vector components (e.g., 64 dimensions). |
-
-| Field | Type | Definition |
-|------|------|------------|
-| `skill_id` | str | Skill identifier (e.g., `ml_ai__advanced_prob`). |
-| `embedding_dim_*` | float | Embedding vector components (e.g., 64 dimensions). |
-
-### Notes
-- Embeddings are latent features capturing graph neighbourhood structure.
-- These vectors are **not directly interpretable**; they are inputs to clustering and similarity analysis.
-
----
-
-## C. Job Families (Cluster Assignments)
-
-Unsupervised job ecosystem labels created by clustering job embeddings (KMeans on L2-normalised vectors).
-
-### File
-- `data/processed/job_families_graph_embeddings.csv`
-
-### Structure
-| Column | Type | Definition |
-|--------|------|------------|
-| `job_id` | int | Stable job identifier. |
-| `job_family_id` | int | Cluster label representing latent job ecosystem membership. |
-
-### Notes
-- Every job receives exactly one job family assignment (complete partition).
-- Job families are provisional structural constructs intended for aggregation and navigation.
-
----
-
-## D. Skill Similarity Edges (Skill Ecosystem Graph)
-
-Undirected edge list connecting each skill to its top-*k* nearest neighbouring skills in embedding space.
-
-### File
-- `data/processed/skill_similarity_edges_k5_embeddings.csv`
-
-### Structure
-| Column | Type | Definition |
-|--------|------|------------|
-| `skill_1` | str | Skill identifier (lexicographically smaller of the pair). |
-| `skill_2` | str | Skill identifier (lexicographically larger of the pair). |
-| `similarity` | float | Cosine similarity between skill embeddings (after L2-normalisation). |
-
-### Notes
-- Constructed by: cosine similarity matrix → top-*k* neighbours per skill → deduplicate to undirected edges.
-- Provides the backbone for skill bundle discovery and gateway-skill interpretation.
-
----
-
-## E. Skill Specialisation Maps (Lift vs Global Mean)
-
-Skill ecosystem summaries computed by group (e.g., sector, title, seniority) showing relative skill over/under-representation.
-
-Each map is computed as:
-
-\[
-\text{lift}_{g,s} = \overline{P(s \mid g)} - \overline{P(s)}
-\]
-
-where \( g \) is a group category and \( s \) is a skill probability column.
-
-### Files
-- `data/processed/sector_skill_specialisation.csv`
-- `data/processed/title_skill_specialisation.csv`
-- `data/processed/seniority_skill_specialisation.csv`
-- `data/processed/ownership_skill_specialisation.csv`
-- `data/processed/state_skill_specialisation.csv`
-- `data/processed/company_size_skill_specialisation.csv`
-- `data/processed/title_condensed_skill_specialisation.csv`
-
-### Structure
-| Field | Type | Definition |
-|------|------|------------|
-| `<group_label>` (index) | str | Group category label (e.g., sector name, title name). |
-| `*_prob` | float | Lift value for a given skill: (group mean − global mean). |
-
-### Notes
-- Positive values indicate skills over-represented in the group relative to the market baseline.
-- Negative values indicate skills under-represented in the group.
-- These are interpretability artefacts supporting ecosystem analysis; they are not model inputs.
-
----
+- Use this file when you need **schema-level clarity** (what columns mean, how to interpret them).
+- Use `docs/architecture.md` when you need **ownership and build logic** (which module/pipeline creates which artefact, and where it lives).

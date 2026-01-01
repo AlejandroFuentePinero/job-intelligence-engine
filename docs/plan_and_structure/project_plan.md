@@ -114,7 +114,7 @@
 
 ---
 
-# CHAPTER 5 — Insights & Dashboards (Transparency & Exploration)
+# ✅✅ CHAPTER 5 — Insights & Dashboards (Transparency & Exploration)
 
 ### Core
 - ✅ **Salary Landscape Dashboard**  

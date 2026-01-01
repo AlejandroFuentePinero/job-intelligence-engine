@@ -3,6 +3,13 @@
 Date: 2025-12-11
 ---
 
+data source:
+
+https://www.kaggle.com/datasets/andrewmvd/data-scientist-jobs?select=DataScientist.csv
+https://www.kaggle.com/datasets/andrewmvd/data-analyst-jobs
+
+
+
 # Chapter 0 — Data Acquisition, Cleaning & Feature Foundation
 
 ## Overview

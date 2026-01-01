@@ -1,4 +1,3 @@
-```md
 # Job Intelligence Engine — System Architecture
 Date: 2025-12-30
 
@@ -14,7 +13,7 @@ This file is the canonical architecture reference for shipping + publication. It
 
 All architectural components live in `src/job_intel`.
 
-> Completeness contract: this architecture enumerates **47** project `.py` modules (excluding `__init__.py` and `config.py`) and matches the repository filenames shown in the attached screenshots.
+> Completeness contract (as of 2025-12-30): this architecture enumerates **47** project `.py` modules (excluding `__init__.py` and `config.py`) and matches the repository filenames shown in the attached screenshots.
 
 ---
 
@@ -25,7 +24,8 @@ The system is a modular, deterministic pipeline transforming raw Glassdoor job p
 - salary and skill-requirement models (Chapter 1),
 - graph/embedding-based labour-market structure artefacts (Chapter 2),
 - per-user positioning outputs (Chapter 3),
-- recommendations + explanations + counterfactual upskilling / simulation (Chapter 4).
+- recommendations + explanations + counterfactual upskilling / simulation (Chapter 4),
+- an app surface that packages insights + the recommender into a runnable demo (Chapter 5).
 
 ---
 
@@ -284,6 +284,8 @@ Role:
 - user-driven counterfactual simulator (“what changes if I add these skills?”) on a frozen universe
 - produces per-scenario deltas and unlocked jobs under strict universe consistency checks.
 
+---
+
 ## 2.6 Chapter 5 — Insights & Dashboards (Streamlit App)
 
 ### 2.6.0 App Entrypoint (Root)
@@ -297,7 +299,7 @@ Role:
 Role:
 - Streamlit app entrypoint + navigation router across pages
 - wires page-level `render()` functions
-- centralizes shared config + “Reload assets” behaviour
+- centralizes shared config + "Reload assets" behaviour
 
 ### 2.6.2 Home Page (Demo-first landing)
 **Module:** `app/home.py`  
@@ -311,8 +313,11 @@ Views:
 - Fairness (residuals) summary + group breakdown
 - Global skill value ranking (GSVI)
 - SHAP explainability (global bar + beeswarm; local drilldown for top-3 drivers)
-Artefact dependencies:
-- `data/processed/ch5_assets/*` (see Artefacts section additions below)
+
+Artefact dependencies (loaded from disk; no training):
+- `data/processed/df_with_residuals.csv`
+- `data/processed/ch5_assets/*` (fairness summaries, SHAP object, skill value index)
+- `data/processed/skill_similarity_matrix/skill_similarity_edges_k5_embeddings.csv`
 
 ### 2.6.4 Recommender Page (User → best_now / stretch)
 **Module:** `app/recommender.py`  
@@ -324,7 +329,7 @@ Role:
 **Module:** `app/upskilling_macro.py`  
 Role:
 - UI for counterfactual upskilling deltas (Chapter 4 outputs)
-- UI for optional macro layer exploration (Chapter 5 scope)
+- UI for optional macro-layer exploration (v1: skill-neighbour exploration via the Chapter 2 skill-similarity edges)
 
 ---
 
@@ -395,7 +400,7 @@ Examples of checks:
 - embedding dimensions and finiteness
 - clustering coverage and expected number of clusters
 - similarity edge list schema + dedup invariants
-- lift/specialisation tables numeric + expected columns.
+- lift/specialisation tables numeric + expected columns
 
 ## 4.4 Chapter 3
 
@@ -410,7 +415,7 @@ Typical checks:
 - artefact integrity (missing skill columns, job_id mismatches)
 - behavioural sanity (suitability/competitiveness response to inputs)
 - sensitivity integrity (weight grid normalization; Spearman bounds; baseline uniqueness)
-- smoke tests for required columns, valid ranges, ranking order.
+- smoke tests for required columns, valid ranges, ranking order
 
 ## 4.5 Chapter 4
 
@@ -423,7 +428,7 @@ Typical checks:
 - salary feature matrix columns present and non-missing
 - PC broadcasting correctness (user PCs constant across candidate rows)
 - salary prediction smoke test (predict runs, finite outputs, correct length)
-- prerequisite alignment (candidate job_ids subset of prob-matrix universe).
+- prerequisite alignment (candidate job_ids subset of prob-matrix universe)
 
 ### 4.5.2 Chapter 4 Pipeline Evaluator
 **File:** `evaluation/chapter4_pipeline_eval.py`  
@@ -437,10 +442,31 @@ Typical checks:
 - bucket integrity: no overlap, correct labels, deterministic sorting
 - explanation contract (when enabled)
 - upskilling contract + frozen-universe invariant (when enabled)
-- simulation contract + frozen-universe invariant (when enabled).
+- simulation contract + frozen-universe invariant (when enabled)
 
 Supporting config file (not counted as a `.py` module):
-- `evaluation/recommender_demo.json`
+- `src/job_intel/evaluation/recommender_demo.json`
+
+## 4.6 Chapter 5
+
+### 4.6.1 Chapter 5 App Smoke Test (Build + End-to-End Run)
+**File:** `evaluation/ch5_smoke_test.py`  
+Purpose:
+- lightweight end-to-end shipping check for the Chapter 5 app surface without UI automation.
+
+What it validates (v1):
+- Chapter 5 asset build + manifest validation runs cleanly (via `pipelines/ch5_app_build.py`)
+- demo persona config loads (`src/job_intel/evaluation/recommender_demo.json`)
+- Chapter 4 pipeline executes successfully in “app mode”:
+  - `run_explanator=True`, `run_upskilling=True`
+  - career simulation explicitly disabled (`run_career_sim=False`)
+- output contracts: required tables exist and are non-empty:
+  - `candidate_jobs`
+  - explained `best_now` / `stretch` tables (or fallbacks if explanations fail)
+  - presence of `job_id` identifiers for downstream app views
+
+Optional check:
+- determinism proof point (run twice; top job_ids match) when invoked with `--check-determinism`
 
 ---
 
@@ -454,7 +480,7 @@ Purpose:
 1. load raw job CSVs
 2. apply Chapter 0 feature modules
 3. validate + clean fields deterministically
-4. persist processed dataset for reuse downstream.
+4. persist processed dataset for reuse downstream
 
 ## 5.2 Chapter 1
 
@@ -504,7 +530,7 @@ Purpose:
   - career simulation scenarios
 
 Recommended persistence:
-- persist demo config only (`evaluation/recommender_demo.json`), optionally plus a small “golden” output snapshot for regression checks.
+- persist demo config only (`src/job_intel/evaluation/recommender_demo.json`), optionally plus a small “golden” output snapshot for regression checks.
 
 ## 5.6 Chapter 5 — App Build / Asset Pipelines
 
@@ -512,13 +538,13 @@ Recommended persistence:
 **File:** `pipelines/ch5_build_fairness_assets.py`  
 Purpose:
 - assemble deterministic, app-ready fairness artefacts (group summaries + histogram bins + box stats)
-- persist outputs into `data/processed/ch5_assets/` for fast app loading
+- persist outputs into `data/processed/ch5_assets/` for fast app loading.
 
 ### 5.6.2 App Asset Build + Validation (Single Entrypoint)
 **File:** `pipelines/ch5_app_build.py`  
 Purpose:
-- provide a **single deterministic build entrypoint** for Chapter 5 app assets (no training)
-- call Chapter 5 asset builders (currently: fairness assets) and **validate required runtime artefacts exist**
+- provide a single deterministic build entrypoint for Chapter 5 app assets (no training)
+- call Chapter 5 asset builders (currently: fairness assets) and validate required runtime artefacts exist
 - fail fast if any required artefact is missing (ship hygiene + smoke-test friendly)
 
 Build scope (v1):
@@ -527,7 +553,7 @@ Build scope (v1):
   - `data/processed/df_with_residuals.csv`
   - `data/processed/ch5_assets/fairness_group_summary_long.csv`
   - `data/processed/ch5_assets/fairness_residual_box_stats.json`
-  - `data/processed/ch5_assets/skill_value_index.csv`
+  - `data/processed/ch5_assets/skill_value_index.csv` (app-ready copy of Skill Value Index)
   - `data/processed/ch5_assets/shap_salary_explanation.npz`
   - `data/processed/skill_similarity_matrix/skill_similarity_edges_k5_embeddings.csv`
   - (optional) `src/job_intel/evaluation/recommender_demo.json`
@@ -563,37 +589,47 @@ Role:
 ## 7.1 Persisted Artefacts (Files)
 
 Chapter 0:
-- `data/processed/ch0_processed_jobs.csv` (Chapter 0 processed jobs table)
+- `data/processed/jobs_ch0.csv` (Chapter 0 processed jobs table)
 
 Chapter 1:
 - `models/skill_pca_v1.pkl`
 - `models/salary_model_v4.pkl`
-- `data/processed/salary_model_dfv02_pca.csv` (if persisted)
-- `data/processed/skill_df_v01.csv` (if persisted)
+- `data/processed/salary_model_dfv01.csv`
+- `data/processed/salary_model_dfv02_pca.csv`
+- `data/processed/salary_model_dfv03_pca_jobid.csv`
+- `data/processed/skills_df_v01.csv`
 - `data/processed/skill_prob_matrix.csv`
+- `data/processed/skill_model_evaluation_result.csv`
+- `data/processed/global_shap_mean.csv`
+- `data/processed/skill_value_index/skill_value_index.csv` (canonical storage for the Skill Value Index table)
 - `models/{skill}_model.pkl` (27 skill models)
 
 Chapter 2:
-- `data/processed/ch2_processed_df.csv` (canonical `jobs_df` consumed by Chapter 3; a.k.a. “Chapter 2 processed jobs table”)
-- `data/processed/job_skill_bipartite_*.gpickle`
+- `models/job_skill_bipartite_thres0_5.gpickle` (or equivalent thresholded graph)
 - `data/processed/job_embeddings_node2vec_v01.csv`
 - `data/processed/skill_embeddings_node2vec_v01.csv`
 - `data/processed/job_families_graph_embeddings.csv`
-- `data/processed/skill_similarity_edges_k*_embeddings.csv`
-- `data/processed/job_family_skill_specialisation.csv` (or equivalent `{group_col}` lift outputs)
+- `data/processed/skill_similarity_matrix/skill_similarity_edges_k5_embeddings.csv`
+- `data/processed/skill_specialisation/*.csv` (lift tables by group)
+
+Chapter 1/5 (Fairness summaries):
+- `data/processed/fairness/state_fairness.csv`
+- `data/processed/fairness/sector_fairness.csv`
+- `data/processed/fairness/title_fairness.csv`
+- `data/processed/fairness/size_fairness.csv`
+- `data/processed/fairness/ownership_fairness.csv`
+- `data/processed/fairness/seniority_fairness.csv`
+- `data/processed/df_with_residuals.csv` (jobs + salary predictions + residuals)
 
 Chapter 5 (App assets):
 - `data/processed/ch5_assets/fairness_group_summary_long.csv`
 - `data/processed/ch5_assets/fairness_residual_box_stats.json`
 - `data/processed/ch5_assets/fairness_residual_hist_bins.csv`
 - `data/processed/ch5_assets/shap_salary_explanation.npz` (saved SHAP Explanation object for app plots)
-- `data/processed/ch5_assets/skill_value_index.csv`
+- `data/processed/ch5_assets/skill_value_index.csv` (app-ready copy of Skill Value Index)
 
 Evaluation / reproducibility:
-- `evaluation/recommender_demo.json`
-- evaluation tables/plots produced by evaluators (if enabled), e.g.:
-  - `evaluation/skill_model_evaluation_results.csv`
-  - `{feature}_fairness.csv` (if produced)
+- `src/job_intel/evaluation/recommender_demo.json` (demo persona + pipeline params used by evaluators and smoke tests)
 
 ## 7.2 Runtime Outputs (Not Persisted by Default)
 Produced per user run (returned by APIs/pipelines):
@@ -626,4 +662,3 @@ Chapter 3:
 Chapter 4:
 - “best_now” vs “stretch” is operational (competitiveness threshold proxy), not a guarantee
 - upskilling + simulation are counterfactual model responses (token injections), not guaranteed labour-market outcomes
-```
