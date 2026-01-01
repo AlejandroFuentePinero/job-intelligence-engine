@@ -299,7 +299,6 @@ _Last updated: 2025-12-31_
 - [x] CI smoke check (GitHub Actions): run `python -m src.job_intel.evaluation.ch5_smoke_test`
 - [x] App “build info” stamp (git commit hash + artefact date/version shown in UI) *(implemented: `get_build_info()` + sidebar panel in `app.py`)*
 
-
 ## Optional (only if fast)
 - [ ] Deploy app online (Streamlit Cloud / HF Spaces / Render) OR publish local-only with demo video
 - [ ] LinkedIn update (project + 2-paragraph description)
