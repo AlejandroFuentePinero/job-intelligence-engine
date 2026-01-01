@@ -60,34 +60,11 @@ docs/interim/
 # but TRACK the minimal CI + app-shipping bundle.
 # ------------------------------------------------------------
 
-# Ignore data by default
-data/
-!data/processed/
 
-# Ignore everything under processed by default...
-data/processed/*
+data/external
+data/interim
+docs/interim
 
-# ...but keep minimal app/CI assets
-!data/processed/ch5_assets/
-!data/processed/ch5_assets/**
-
-!data/processed/df_with_residuals.csv
-
-!data/processed/skill_similarity_matrix/
-!data/processed/skill_similarity_matrix/**
-
-# If your pipeline expects these at runtime, track them too:
-!data/processed/salary_model_dfv03_pca_jobid.csv
-!data/processed/skill_prob_matrix.csv
-!data/processed/ch2_processed_df.csv
-
-# Models: ignore by default
-models/
-models/*
-
-# ...but keep minimal inference artefacts for CI/app
-!models/salary_model_v4.pkl
-!models/skill_pca_v1.pkl
 
 # Optional local outputs
 logs/
