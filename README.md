@@ -1,5 +1,5 @@
 # Job Intelligence Engine
-A deterministic, end-to-end job-market intelligence system that converts raw job ads into interpretable market signals and a constraint-aware recommender (best_now vs stretch) surfaced via a lightweight Streamlit app.
+A deterministic, end-to-end job-market intelligence system that converts job ads into interpretable market signals and a constraint-aware recommender (**best-now** vs **stretch**) surfaced via a lightweight Streamlit app.
 
 ![Job Intelligence Engine — engine path](docs/narrative/figures/engine_path.png)
 
@@ -11,7 +11,7 @@ A deterministic, end-to-end job-market intelligence system that converts raw job
 - [Reproducibility and scope](#reproducibility-and-scope)
 - [Data and licensing](#data-and-licensing)
 - [Documentation](#documentation)
-
+- [Contact](#contact)
 
 ## About the project
 
@@ -24,14 +24,13 @@ Job Intelligence Engine turns the market into something you can query. It learns
 The motivation is straightforward: reduce job-search noise by making trade-offs legible. Instead of scanning postings one by one, you get an evidence-based view of where you fit, what you’re missing, and which improvements are most likely to change the set of roles you can credibly target.
 
 **How to read recommendations**
-- **Best-now:** roles where you score well on fit and have few critical gaps.
-- **Stretch:** roles with strong directional fit but clearer gaps / higher entry barrier.
-- **Upskilling:** ranks missing skill families by simulated lift—“if you add this skill family, how much do your stretch roles improve and how often do they promote into best-now,” while penalising changes that harm your current best-now set.
-
+- **Best-now:** high fit with few critical gaps.
+- **Stretch:** strong directional fit, but clearer gaps and a higher entry barrier.
+- **Upskilling:** ranks missing skill families by simulated lift—how much adding a skill family improves stretch outcomes (including “stretch → best-now” promotions), while penalising changes that harm the current best-now set.
 
 ## Quickstart
 
-The fastest and easiest way to experience the project is the deployed app.
+The fastest way to experience the project is the deployed app.
 
 **Live app:** [link]  
 ![Job Intelligence Engine — Demo](docs/narrative/figures/app_demo.gif)
@@ -46,7 +45,7 @@ python -m pip install -r requirements.txt
 python -m src.job_intel.pipelines.ch5_app_build
 streamlit run app.py
 ```
-Note: local run **does not train**. It loads persisted models and artefacts (built by the pipelines) and assembles an app-ready bundle via `ch5_app_build`.
+Local run does not train. It loads persisted models and artefacts (built by the pipelines) and assembles an app-ready bundle via `ch5_app_build`.
 
 **Requirements:** Python 3.10+ (3.11 recommended). 
 
@@ -54,22 +53,13 @@ Full environment notes and troubleshooting: `docs/plan_and_structure/how_to_run_
 
 ## Usage
 
-**Recommended flow**
-1. **Market overview:** scan salary + skill signals to calibrate the landscape.
-2. **Recommender:** set constraints, generate **best-now** and **stretch**, and inspect “why”.
-3. **Upskilling:** review the top skill families by simulated lift and open the role-level deltas.
+A typical run follows a simple loop. Start with the market overview to calibrate what the data is rewarding (skills, role structure, and salary signal). Then run the recommender to generate **best-now** and **stretch** roles and inspect the “why” explanations to understand the drivers behind each result. Finally, open the upskilling view to see which skill families produce the largest counterfactual lift and explore the role-level deltas.
 
-The app is designed to be usable in two modes: a fast demo path for first-time visitors, and a configurable path for exploring different profiles and constraints.
-
-For a quick tour, follow the demo video and reproduce the same flow in the live app: start from the market overview, run the recommender to generate **best-now** and **stretch** roles, and then open the upskilling view to see which skill families produce the largest counterfactual lift.
-
-For your own scenario, enter a profile and constraints (role preferences, location/filters, and current skill signals). The system builds a constrained candidate universe, ranks roles into best-now vs stretch, and attaches explanations showing the main drivers of each recommendation. Upskilling then evaluates “what changes if I add this skill family?” by temporarily adding it to your profile and recomputing positioning deltas, producing an ROI-ranked plan grounded in demand from the stretch set.
-
-The app has supporting interpretation blocks throughout. However, if you wish to explore the full set of supported inputs, demo persona config, and interpretation notes, they are documented in `docs/narrative/technical_report.md` .
+The app includes interpretation blocks throughout. For the full set of supported inputs, the demo persona configuration, and deeper guidance on how to interpret outputs, see `docs/narrative/technical_report.md`.
 
 ## How it works
 
-Job Intelligence Engine is built as a single, end-to-end pipeline that turns messy job postings into a market representation you can reason about, then uses that representation to produce personalised decision support. It starts by normalising job ads into a consistent dataset (titles, seniority, location/sector metadata, salary fields, and structured skill signals). From there, the system learns the “shape” of the market: a salary response model captures how job attributes and skill structure relate to compensation, and a set of skill-demand models produces a calibrated job × skill probability layer that smooths noisy binary keywords into a reusable demand signal. Those signals also power the app’s market summary and interpretability views.
+Job Intelligence Engine is built as a single, end-to-end pipeline that turns messy job postings into a market representation you can reason about, then uses that representation to produce personalised decision support. It starts by normalising job postings into a consistent dataset (titles, seniority, location/sector metadata, salary fields, and structured skill signals). From there, the system learns the “shape” of the market: a salary response model captures how job attributes and skill structure relate to compensation, and a set of skill-demand models produces a calibrated job × skill probability layer that smooths noisy binary keywords into a reusable demand signal. Those signals also power the app’s market summary and interpretability views.
 
 When a user enters the system, their profile is mapped into the same skill space used for jobs, then hard constraints define a feasible candidate universe. Within that universe, the engine separates two ideas that job search often mixes: **suitability** (fit to the user’s current profile) and **competitiveness** (barrier to entry driven by missing, rare skill requirements and job seniority/pay expectations). The recommender turns those signals into two shortlists—**best-now** and **stretch**—and attaches a simple explanation layer that makes each result inspectable. Upskilling is handled as counterfactual decision support: the system holds the job universe constant, simulates adding missing skill families, recomputes positioning, and ranks skills by measurable lift (including “stretch → best-now” promotion effects), so recommendations stay grounded in observed job-posting demand rather than generic advice.
 
@@ -98,19 +88,20 @@ The intent is decision support, not hiring guarantees. The engine summarises pat
   ![Job Intelligence Engine — full pipeline map](docs/narrative/figures/visual_overview.png)
 </details>
 
-
 ## Data and licensing
 
 This project uses two public Kaggle datasets:
 - [Data Scientist Jobs (DataScientist.csv)](https://www.kaggle.com/datasets/andrewmvd/data-scientist-jobs?select=DataScientist.csv)
 - [Data Analyst Jobs](https://www.kaggle.com/datasets/andrewmvd/data-analyst-jobs)
 
-Code licensing is defined in `LICENSE`. Dataset usage is governed by Kaggle and the dataset authors’ terms; please review those terms before reuse or redistribution.
+A snapshot of the Kaggle source data used for this project is included under `data/raw/` for reproducibility. Please review Kaggle and the dataset authors’ terms before reusing or redistributing the data.
+
+Code licensing is defined in `LICENSE`.
 
 ## Documentation
 
 - `docs/engineering/architecture.md` — canonical system map (modules, pipelines, artefacts)
-- `docs/engineering/artefact_manifest_ch5_app.md` - manifest lists every persisted file the app expects at runtime
+- `docs/engineering/artefact_manifest_ch5_app.md` — manifest lists every persisted file the app expects at runtime
 - `docs/engineering/data_dictionary.md` — engineered fields and definitions
 - `docs/narrative/technical_report.md` — full narrative, methodology, and results
 - `docs/plan_and_structure/how_to_run_v1.md` — environment setup, local run, troubleshooting

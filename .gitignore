@@ -52,20 +52,17 @@ Thumbs.db
 desktop.ini
 $RECYCLE.BIN/
 
-# Ignore interim docs (work-in-progress, not shipped)
+# ------------------------------------------------------------
+# Project-specific: ignore interim / archived docs (not shipped)
+# ------------------------------------------------------------
 docs/interim/
-
-# ------------------------------------------------------------
-# Project-specific: ignore derived artefacts (reproducible),
-# but TRACK the minimal CI + app-shipping bundle.
-# ------------------------------------------------------------
-
-
-data/external
-data/interim
 docs/archive/
-docs/interim/
 
+# ------------------------------------------------------------
+# Project-specific: ignore data folders that should not ship
+# ------------------------------------------------------------
+data/external/
+data/interim/
 
 # Optional local outputs
 logs/

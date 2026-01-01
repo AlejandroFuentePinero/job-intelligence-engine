@@ -280,22 +280,20 @@ _Last updated: 2025-12-31_
 ---
 
 # Chapter 6 — V1 Final Steps (Shipping + Portfolio)
-**Progress:** ~32%  
-[██████..............] 32%
+**Progress:** ~80%  
+[███████████████.....] 80%
 
 ## Core deliverables (LOCKED)
 - [ ] Portfolio write-up (unified narrative)
-- [ ] Project README consolidation (single front door)
-    - README: **demo persona quickstart** (1–2 commands + what to expect) + link to `docs/how_to_run_v1.md`
-    - README: **data/artefact availability note** (what is committed vs what must be generated/downloaded) to prevent reviewer confusion
+- [x] Project README consolidation (single front door)
 - [x] How to run (one command) + environment notes
 - [x] requirements.txt review + pinning strategy (prod vs dev if needed)
 - [x] gitignore review
 - [x] Dictionary documents
 - [x] Architecture documents
-- [ ] App screenshots (6–10) + short GIF (demo path)
+- [x] App short GIF (demo path)
 - [x] Explicit v2 improvement list (scoped, ranked)
-- [ ] Licensing / attribution (dataset sources; external assets)
+- [x] Licensing / attribution (dataset sources; external assets)
 
 ## Shipping proof points (HIGH SIGNAL)
 - [x] CI smoke check (GitHub Actions): run `python -m src.job_intel.evaluation.ch5_smoke_test`

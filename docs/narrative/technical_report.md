@@ -1,6 +1,6 @@
 # Job Intelligence Engine — Technical Report
-Version: YYYY-MM-DD  
-Repo: <link>  
+Version: 2026-01-02  
+Repo: <https://github.com/AlejandroFuentePinero/job-intelligence-engine>  
 Live App: <link>  
 Author: Alejandro de la Fuente  
 License: <MIT/Apache-2.0/etc>  
