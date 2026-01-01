@@ -9,30 +9,10 @@ __pycache__/
 # Distribution / packaging
 .Python
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
 *.egg-info/
-.installed.cfg
 *.egg
 MANIFEST
-
-# PyInstaller
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
 
 # Unit test / coverage reports
 htmlcov/
@@ -41,44 +21,11 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py.cover
-.hypothesis/
 .pytest_cache/
 cover/
 
-# Translations
-*.mo
-*.pot
-
-# Django stuff
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff
-instance/
-.webassets-cache
-
-# Scrapy stuff
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-.pybuilder/
-target/
-
 # Jupyter Notebook checkpoints (DO NOT ignore notebooks themselves)
 .ipynb_checkpoints/
-
-# IPython
-profile_default/
-ipython_config.py
 
 # Environments
 .env
@@ -91,32 +38,13 @@ env.bak/
 venv.bak/
 
 # IDE/editor caches
-.spyderproject
-.spyproject
-.ropeproject
 .ruff_cache/
 .mypy_cache/
-.dmypy.json
-dmypy.json
 .pyre/
 .pytype/
 cython_debug/
-.pypirc
-
-# Cursor
 .cursorignore
 .cursorindexingignore
-
-# Marimo
-marimo/_static/
-marimo/_lsp/
-__marimo__/
-
-# Pixi / PDM
-.pixi/
-.pdm-python
-.pdm-build/
-__pypackages__/
 
 # OS / filesystem noise
 .DS_Store
@@ -124,37 +52,44 @@ Thumbs.db
 desktop.ini
 $RECYCLE.BIN/
 
-# ------------------------------------------------------------
-# Project-specific: ignore derived artefacts (reproducible)
-# ------------------------------------------------------------
-
-# Ignore all data by default
-data/
-
-# Keep only the minimal app/CI runtime bundle (committed)
-!data/processed/
-!data/processed/ch5_assets/
-!data/processed/ch5_assets/**
-
-# CI / app runtime dependencies (minimal, committed)
-!data/processed/df_with_residuals.csv
-!data/processed/skill_similarity_matrix/
-!data/processed/skill_similarity_matrix/**
-
-# Everything else in processed stays ignored
-data/processed/*
-!data/processed/ch5_assets/
-!data/processed/ch5_assets/**
-!data/processed/df_with_residuals.csv
-!data/processed/skill_similarity_matrix/
-!data/processed/skill_similarity_matrix/**
-
-# Trained models / persisted artefacts (reproducible)
-models/
-**/*.pkl
-**/*.joblib
-**/*.npz
-**/*.onnx
-
-# Ignore interim scratch docs (not shipped)
+# Ignore interim docs (work-in-progress, not shipped)
 docs/interim/
+
+# ------------------------------------------------------------
+# Project-specific: ignore derived artefacts (reproducible),
+# but TRACK the minimal CI + app-shipping bundle.
+# ------------------------------------------------------------
+
+# Ignore data by default
+data/
+!data/processed/
+
+# Ignore everything under processed by default...
+data/processed/*
+
+# ...but keep minimal app/CI assets
+!data/processed/ch5_assets/
+!data/processed/ch5_assets/**
+
+!data/processed/df_with_residuals.csv
+
+!data/processed/skill_similarity_matrix/
+!data/processed/skill_similarity_matrix/**
+
+# If your pipeline expects these at runtime, track them too:
+!data/processed/salary_model_dfv03_pca_jobid.csv
+!data/processed/skill_prob_matrix.csv
+!data/processed/ch2_processed_df.csv
+
+# Models: ignore by default
+models/
+models/*
+
+# ...but keep minimal inference artefacts for CI/app
+!models/salary_model_v4.pkl
+!models/skill_pca_v1.pkl
+
+# Optional local outputs
+logs/
+reports/_build/
+reports/figures/_build/
