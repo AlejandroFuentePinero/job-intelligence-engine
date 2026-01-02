@@ -11,28 +11,28 @@
 
 ---
 
-> ## Important notes
->
-> ### How to read this (routing)
->
-> - **Fast overview:** start with the **README** for the project narrative, scope, and how to run.
-> - **Project in action & primary visualisations:** open the **Streamlit app**, which contains the primary result figures and interpretation panels (salary model, residual slices, SHAP, calibration, clustering diagnostics, recommender behaviour checks).
-> - **Deep technical detail (this document):** use this report for methods, artefact contracts, determinism/testing guarantees, and interpretation boundaries.
->
-> The [Executive Summary](#1-executive-summary) overlaps substantially in content with the [Abstract](#0-abstract) and [Introduction](#2-introduction). However, the **Executive Summary** is designed for readers who want a fast, standalone overview beyond the README, while the Abstract and Introduction follow a research-style narrative that frames the project’s context, motivation, and scope.
->
-> ### Evidence and traceability (where plots and evaluations live)
->
-> This technical report is intentionally **plot-light**. The project includes many supporting figures and evaluation outputs that are **already generated and stored in the repo**; duplicating them here would add noise and inflate the document without improving auditability.
->
-> - **Figures supporting results and conclusions:** `docs/narrative/figures/`  
->   The most decision-relevant figures are also surfaced directly in the app (especially the **Landscape** page), alongside short interpretation notes.
->
-> - **Evaluation + guardrails (runnable):** `src/job_intel/evaluation/`  
->   In addition to per-script checks inside the pipelines, the project includes an evaluation layer that runs in parallel to enforce schema integrity, index alignment, determinism, and behavioural invariants. These evaluators are designed to be executed alongside the pipelines and interpreted in-context, so full evaluation logs are omitted here.
->
-> To avoid unnecessary duplication and clutter, interpretation is kept high-level in Sections **13–14**, and only essential metrics are included throughout the report. For primary evidence, use the **app** and the **figure directory** above.
+## Read this first
 
+### How to read this (routing)
+
+- **Fast overview (5–10 min):** start with the **README** for the project narrative, scope, and how to run.
+- **Project in action (10–25 min):** open the **Streamlit app**, which surfaces the primary results and the final recommender/upskilling product.
+- **Deep technical detail (this document):** use this report for methods, artefact contracts, determinism/testing guarantees, and interpretation boundaries.
+
+> **Caution:** This is a dense technical reference. Budget **60–120 minutes** for a careful read (or **20–35 minutes** to skim).
+
+### Content overlap
+
+The [Executive Summary](#1-executive-summary) overlaps substantially with the [Abstract](#0-abstract) and [Introduction](#2-introduction). However, the **Executive Summary** is designed for readers who want a fast, standalone overview beyond the README, while the Abstract and Introduction follow a research-style narrative that frames the project’s context, motivation, and scope.
+
+### Evidence and traceability (where plots and evaluations live)
+
+> **Note:** This technical report is intentionally **plot-light**. Supporting figures and evaluation outputs are **already generated and stored in the repo**; duplicating them here would add noise and inflate the document without improving auditability. For primary evidence, use the **app** and the **figure directory** below.
+
+- **Figures supporting results and conclusions:** `docs/narrative/figures/`  
+  The most decision-relevant figures are also surfaced directly in the app (especially the **Landscape** page), alongside short interpretation notes.
+- **Evaluation + guardrails (runnable):** `src/job_intel/evaluation/`  
+  In addition to per-script checks inside the pipelines, the project includes an evaluation layer that runs in parallel to enforce schema integrity, index alignment, determinism, and behavioural invariants. These evaluators are designed to be executed alongside the pipelines and interpreted in-context, so full evaluation logs are omitted here.
 
 ---
 
@@ -126,7 +126,7 @@
 - [18. Future Work (Prioritized Roadmap)](#18-future-work-prioritized-roadmap)
   - [18.1 High-ROI next steps (recommended v2 priorities)](#181-high-roi-next-steps-recommended-v2-priorities)
   - [18.2 Nice-to-have extensions (value-add once v2 foundations are stable)](#182-nice-to-have-extensions-value-add-once-v2-foundations-are-stable)
-  - [18.3 Explicit dependencies (what additional data/infrastructure enables)](#183-explicit-dependencies-what-additional-data-infrastructure-enables)
+  - [18.3 Explicit dependencies (what additional data/infrastructure enables)](#183-explicit-dependencies-what-additional-datainfrastructure-enables)
 - [19. Reproducibility pointers](#19-reproducibility-pointers)
 - [Appendices](#appendices)
   - [Appendix A — Canonical Project Documents (Further Reading)](#appendix-a--canonical-project-documents-further-reading)
@@ -1089,7 +1089,7 @@ Finally, positioning an individual within this landscape reveals a consistent pa
 > Note: The figures in `docs/narrative/figures` provide deeper interpretation of these findings. The most important results are also highlighted in the app, especially on the **Landscape** page.
 
 <details>
-  <summary><strong>Expand: deeper interpretation of key results</strong></summary>
+  <summary><strong>Expand: deeper interpretation of key results</strong> <em>(~11 min read)</em></summary>
 
   <br/>
 
