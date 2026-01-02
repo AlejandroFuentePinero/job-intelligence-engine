@@ -1,0 +1,5 @@
+# Training / pipeline-only deps (not needed for Streamlit runtime)
+lightgbm
+nltk
+sentence-transformers
+node2vec
