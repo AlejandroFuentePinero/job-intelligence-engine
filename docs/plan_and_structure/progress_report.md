@@ -8,8 +8,8 @@ _Last updated: 2026-01-01_
 ---
 
 # OVERALL PROJECT PROGRESS (V1)
-[███████████████████.] 90%
-~90% complete
+[███████████████████.] 99%
+~99% complete
 
 ---
 
@@ -284,7 +284,7 @@ _Last updated: 2026-01-01_
 [███████████████.....] 80%
 
 ## Core deliverables (LOCKED)
-- [ ] Portfolio write-up (unified narrative)
+- [x] Portfolio write-up (unified narrative)
 - [x] Project README consolidation (single front door)
 - [x] How to run (one command) + environment notes
 - [x] requirements.txt review + pinning strategy (prod vs dev if needed)
