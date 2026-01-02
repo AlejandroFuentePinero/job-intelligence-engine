@@ -1,13 +1,13 @@
 # Job Intelligence Engine — Technical Report
 
-Version: 2026-01-02
-Repo: <https://github.com/AlejandroFuentePinero/job-intelligence-engine>
-Live App: <link>
-Author: Alejandro de la Fuente
-Data access:
-    - [Data Scientist Jobs](https://www.kaggle.com/datasets/andrewmvd/data-scientist-jobs?select=DataScientist.csv)
-    - [Data Analyst Jobs](https://www.kaggle.com/datasets/andrewmvd/data-analyst-jobs)
-    - or `data/raw/`
+* Version: 2026-01-02
+* Repo: <https://github.com/AlejandroFuentePinero/job-intelligence-engine>
+* Live App: <link>
+* Author: Alejandro de la Fuente
+* Data access:
+  - [Data Scientist Jobs](https://www.kaggle.com/datasets/andrewmvd/data-scientist-jobs?select=DataScientist.csv)
+  - [Data Analyst Jobs](https://www.kaggle.com/datasets/andrewmvd/data-analyst-jobs)
+  - or `data/raw/`
 
 ---
 
