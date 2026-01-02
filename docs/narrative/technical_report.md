@@ -322,7 +322,7 @@ The canonical dataset distinguishes between “unknown but categorical” fields
 
 `Rating` and `Founded` are retained in the canonical dataset for completeness/auditing, but excluded from v1 modelling feature sets due to coverage/utility constraints.
 
-> Downstream pipelines rely on explicit schema contracts (e.g., skill flags must be present and binary; `job_id` uniqueness; salary fields numeric where present).
+> Note: Downstream pipelines rely on explicit schema contracts (e.g., skill flags must be present and binary; `job_id` uniqueness; salary fields numeric where present).
 
 ### 4.5 Train/test strategy and leakage controls (modelling layers)
 
@@ -372,7 +372,7 @@ All model training uses a fixed, reproducible **80/20 train/test split** with **
 **High-missingness raw fields excluded from modelling (for clarity):**  
 `Easy Apply` (96.04%), `Competitors` (72.90%), `Founded` (26.57%), `Rating` (11.05%), `Headquarters` (6.69%), and `Revenue` (6.36%) were not used downstream due to poor coverage and weak decision-support value.
 
-> These fields remain in the canonical dataset for completeness/auditing, but are not used as modelling predictors in v1.
+> Note: These fields remain in the canonical dataset for completeness/auditing, but are not used as modelling predictors in v1.
 
 **Key field quality contracts enforced downstream**
 - `job_id` must be unique and stable across all artefacts (jobs table, skill matrices, embeddings, clustering).
@@ -440,7 +440,7 @@ The macro overlay uses the market-geometry artefacts to contextualise recommenda
 
 ## 6. Representation Layer
 
-This section documents the **shared representational “language”** used across the engine. These representations are produced deterministically in Chapter 0 and are reused downstream by the modelling layers (Chapter 1), market-geometry layer (Chapter 2), and the positioning/recommender logic (Chapters 3–5). Figure 2 is the reference map for where each representation is consumed.
+> This section documents the **shared representational “language”** used across the engine. These representations are produced deterministically in Chapter 0 and are reused downstream by the modelling layers (Chapter 1), market-geometry layer (Chapter 2), and the positioning/recommender logic (Chapters 3–5). Figure 2 is the reference map for where each representation is consumed.
 
 ### 6.1 Job Title Normalization
 
@@ -455,7 +455,7 @@ The engine separates “title” into multiple fields with distinct purposes, ra
 - `seniority_combined`: seniority inferred from **both title and description**, collapsed into a single ordinal category.
 - `domain`: higher-level semantic grouping assigned via a deterministic SBERT-based lookup layer (title embeddings mapped through a fixed clustering/mapping).
 
-This design supports two distinct needs: (i) a compact and stable categorical representation for modelling (salary and skill-demand models), and (ii) an interpretable navigation layer for analysis and UI (job families, seniority, domain summaries).
+> Note: This design supports two distinct needs: (i) a compact and stable categorical representation for modelling (salary and skill-demand models), and (ii) an interpretable navigation layer for analysis and UI (job families, seniority, domain summaries).
 
 #### Normalization method (deterministic pipeline)
 
@@ -531,13 +531,13 @@ Dictionary-based extraction is designed for stability and interpretability, with
 | Databases & Storage | 3 | basic / intermediate / advanced | SQL/DBs, data storage/query systems |
 | Productivity & Workflow | 3 | basic / intermediate / advanced | Version control, collaboration, reproducible workflow tools |
 | Soft Skills | 2 | core / leadership | Communication, stakeholder work, leadership signals |
-| Domain-specific | 1 | none | v1 placeholder (`domain_specific__none`) |
+| Domain-specific | 1 | none | microscopy imaging, medical imaging, fraud scoring, supermarket operations |
 
 ---
 
 ## 7. Predictive Modelling Layer
 
-This layer learns two complementary market signals from the canonical representation: (i) an interpretable **salary response function** and (ii) a probabilistic **skill-demand surface**. Both are trained under a fixed evaluation protocol (80/20 split; `random_state=101`) and are persisted as reusable artefacts that feed downstream geometry, positioning, and recommendation components.
+> This layer learns two complementary market signals from the canonical representation: (i) an interpretable **salary response function** and (ii) a probabilistic **skill-demand surface**. Both are trained under a fixed evaluation protocol (80/20 split; `random_state=101`) and are persisted as reusable artefacts that feed downstream geometry, positioning, and recommendation components.
 
 ### 7.1 Salary Model
 
@@ -557,7 +557,7 @@ The final modelling matrix combines structural job attributes with a compressed 
 - **Skill structure:**  
   27 binary skill-family indicators are reduced with **PCA** to **10 components** (`skill_PC1..skill_PC10`), explaining ~**70%** of skill-space variance (stored as `skill_pca_v1.pkl` and reused for inference).
 
-Categorical predictors are encoded as integer-coded pandas categoricals, compatible with XGBoost’s native categorical handling (no one-hot expansion required).
+> Note: Categorical predictors are encoded as integer-coded pandas categoricals, compatible with XGBoost’s native categorical handling (no one-hot expansion required).
 
 #### Training and model selection
 - **Model:** XGBoost regressor (**Salary Response Model v4**)  
@@ -574,7 +574,7 @@ Evaluation uses standard regression metrics and interpretability-oriented diagno
 
 **Residual slice definition (fairness views).** Residuals are defined as `residual = y_true − y_pred` for the salary model, computed on the held-out test split (80/20 with `random_state=101`) under the full set of covariates used by the model (role/seniority, sector, location, company attributes, and PCA skill components). “Fairness residual” summaries then report group-level aggregates of this residual (e.g., mean/median and size-weighted mean) by groupings such as state, sector, company size, ownership, seniority, and job title, as materialised in `data/processed/ch5_assets/fairness_group_summary_long.csv`. These views are **descriptive, model-conditioned deviations**: they indicate where the model systematically over- or under-predicts for a group given observed covariates, but they are **not causal estimates of discrimination** and should not be used as such.
 
-**Table 4** summarises the overall performance and the primary residual slices produced for reporting.
+> **Table 4** summarises the overall performance and the primary residual slices produced for reporting.
 
 ### 7.2 Skill Requirement Models
 
@@ -607,7 +607,7 @@ The fitted models are applied to the full dataset to produce a dense **6,162 × 
 **Evaluation and known behaviour across skill prevalence.** Because these models output calibrated probabilities that drive downstream gap and competitiveness logic, evaluation prioritises probability quality (calibration) and ranking quality (discrimination). Metrics are therefore reported as ROC AUC and PR AUC (average precision), alongside Brier score and calibration curves. Performance is expected to vary systematically with prevalence: common and mid-frequency skill families tend to yield stable discrimination and calibration, while rare “advanced” families are sparsity-limited and exhibit noisier PR behaviour even when ROC AUC remains acceptable.
 
 
-**Table 5** summarises overall quality, expected performance by prevalence tier, and the lowest-signal (“hardest”) skills.
+> **Table 5** summarises overall quality, expected performance by prevalence tier, and the lowest-signal (“hardest”) skills.
 
 ### Table 4. Salary model performance (overall + reporting slices)
 
@@ -631,7 +631,7 @@ The fitted models are applied to the full dataset to produce a dense **6,162 × 
 
 Shipped artefact: `data/processed/ch5_assets/fairness_group_summary_long.csv`
 
-Residual diagnostic can be inspected in the landscape page within the App.
+> Note: Residual diagnostic can be inspected in the landscape page within the App.
 
 ### Table 5. Skill requirement model performance (overall + tiers + hardest skills)
 
@@ -657,12 +657,11 @@ Residual diagnostic can be inspected in the landscape page within the App.
 |---|---|
 | `*_advanced` families (e.g., `ml_ai__advanced`, `cloud__advanced`, `data_engineering_pipelines__advanced`, etc.) | low prevalence → lower PR AUC; model relies more on contextual role/sector/title signals |
 
-
 ---
 
 ## 8. Market Structure Layer (Hidden Geometry)
 
-This layer converts the probabilistic demand surface into a **latent market geometry** that supports navigation, similarity search, and macro context. Rather than relying on titles (which are coarse and terminologically unstable), the geometry is driven by the **job × skill probability matrix** produced in the modelling layer. The result is a set of persisted structural artefacts: a weighted bipartite graph, dense embeddings for jobs and skills, a stable job-family clustering, and a sparse skill–skill similarity network (Figure 2).
+> This layer converts the probabilistic demand surface into a **latent market geometry** that supports navigation, similarity search, and macro context. Rather than relying on titles (which are coarse and terminologically unstable), the geometry is driven by the **job × skill probability matrix** produced in the modelling layer. The result is a set of persisted structural artefacts: a weighted bipartite graph, dense embeddings for jobs and skills, a stable job-family clustering, and a sparse skill–skill similarity network (Figure 2).
 
 ### 8.1 Job–Skill Bipartite Graph
 
@@ -700,12 +699,12 @@ To obtain an interpretable segmentation layer, job embeddings are clustered with
 - Output: `km_jobs_df` with columns `job_id` and `job_family_id`
 - Canonical choice: **\(k = 20\)** job families
 
-The clustering artefact is used as a *navigation overlay* (family summaries, macro adjacency, and UI grouping) rather than a claim of a “true” taxonomy.
+> Note: The clustering artefact is used as a *navigation overlay* (family summaries, macro adjacency, and UI grouping) rather than a claim of a “true” taxonomy.
 
 #### Model selection (K choice) and stability checks
 The choice **\(k=20\)** is selected by **maximising silhouette score** over a candidate range of \(k\) values (2-100) using the learned job-embedding space. This provides a quantitative criterion for choosing a resolution that separates distinct job ecosystems while avoiding over-fragmentation. Stability is enforced via two mechanisms:
 
-1) **Deterministic builds:** embedding and clustering are executed with fixed random seeds (canonical seed **42** for Chapter 2 build checks) to prevent cluster relabelling across runs.
+1) **Deterministic builds:** embedding and clustering are executed with fixed random seeds (canonical seed **42** for Chapter 2 build checks) to prevent cluster relabelling across runs.>
 2) **Integrity invariants (contract checks):** Chapter 2 evaluation asserts that:
    - every job receives exactly one family label (full coverage),
    - the number of unique clusters equals \(k\) (no silent collapse),
@@ -713,7 +712,7 @@ The choice **\(k=20\)** is selected by **maximising silhouette score** over a ca
    - embeddings have the expected dimension and are finite,
    - all indices align exactly across `df_ch1`, `prob_mat`, and `job_emb`.
 
-These checks ensure that latent artefacts remain stable and compatible with downstream components even as upstream code evolves.
+> Note: These checks ensure that latent artefacts remain stable and compatible with downstream components even as upstream code evolves.
 
 <figure>
   <img src="../../media/silhouette.png" alt="Job Intelligence Engine — silhouette" style="width:100%; max-width:1100px;">
@@ -800,7 +799,7 @@ To make barriers actionable, the system translates competitiveness drivers into 
 - **Gap severity:** requirement strength restricted to skill families absent from the user profile (0 for present skills).
 - **Ranked gaps:** missing families are sorted by severity, providing a compact summary of which skill families most consistently block the user from their high-fit targets.
 
-These ranked gaps are used directly by the recommender explanations (job-level “main missing families”) and by the upskilling module to define the counterfactual scenario set.
+> Note: These ranked gaps are used directly by the recommender explanations (job-level “main missing families”) and by the upskilling module to define the counterfactual scenario set.
 
 ### Table 6. Positioning output schema (core tables)
 
@@ -852,7 +851,7 @@ For each recommended job, the engine generates a compact explanation payload use
 - the top missing skill families contributing to barrier (from \(P(\text{skill}\mid\text{job})\)),
 - optional short text summaries constructed from these components.
 
-These explanations are computed from persisted artefacts (probability matrix + salary prediction + user skill vector) and are therefore reproducible.
+> Note: These explanations are computed from persisted artefacts (probability matrix + salary prediction + user skill vector) and are therefore reproducible.
 
 #### 10.1.1 Policy summary (v1 defaults)
 
@@ -865,7 +864,7 @@ Recommendations are produced by a deterministic policy that (i) gates to a suffi
 - **Top-N outputs:** return the top `top_n_best = 10` best_now jobs and top `top_n_stretch = 5` stretch jobs from the ranked lists.
 - **Guardrail warnings (not hard failures):** emit warnings if the gated set contains fewer than `min_bucket_size_bestnow = 10` best_now jobs or fewer than `min_bucket_size_stretch = 5` stretch jobs, recommending constraint relaxation or upskilling.
 
-The v1 decision rule and defaults are recorded above to keep the report self-contained.
+> Note: The v1 decision rule and defaults are recorded above to keep the report self-contained.
 
 ### 10.2 Counterfactual Upskilling
 
@@ -912,7 +911,7 @@ Upskilling outputs are reported at two levels:
 
 ## 11. Macro Lens Overlay (Context, Not Re-ranking)
 
-The macro overlay adds structured context to the upskilling plan without modifying the core recommendation scores or shortlist composition. It reuses the market-structure artefacts (skill embeddings and the derived sparse skill–skill network) to answer a different question than the recommender: *given a recommended skill family, what tends to be learned alongside it in the market?* This produces “co-learning neighbours” that help users convert a ranked skill family list into coherent learning bundles and realistic next-step sequences.
+> The macro overlay adds structured context to the upskilling plan without modifying the core recommendation scores or shortlist composition. It reuses the market-structure artefacts (skill embeddings and the derived sparse skill–skill network) to answer a different question than the recommender: *given a recommended skill family, what tends to be learned alongside it in the market?* This produces “co-learning neighbours” that help users convert a ranked skill family list into coherent learning bundles and realistic next-step sequences.
 
 ### 11.1 Co-learning Neighbours
 
@@ -967,7 +966,7 @@ The hidden-geometry layer is validated primarily through integrity contracts bec
 - **Clustering contracts:** every job receives exactly one family label; number of unique clusters equals the chosen \(k\); IDs valid and stable.
 - **Skill-network contracts:** no self-edges; no duplicate undirected pairs; similarity values finite and within valid cosine range; edge counts consistent with kNN sparsification.
 
-These checks prevent silent corruption of the market-geometry artefacts that would otherwise produce incorrect similarity search, family summaries, or macro overlays.
+> Note: These checks prevent silent corruption of the market-geometry artefacts that would otherwise produce incorrect similarity search, family summaries, or macro overlays.
 
 ### 12.4 Positioning and recommender correctness (Chapters 3–4)
 
@@ -979,7 +978,7 @@ Decision-support layers are evaluated with behavioural invariants and determinis
 - **Alignment contracts:** salary predictions must align 1:1 with the candidate job rows; probability lookups for gap and competitiveness must be present for every candidate job.
 - **Failure-mode correctness:** empty candidate universes must trigger explicit errors; missing artefacts or mismatched indices must raise errors (rather than silently dropping rows or producing partial results).
 
-These checks are designed to ensure that the recommender remains a reliable consumer of upstream artefacts and that its outputs remain stable across code changes.
+> Note: These checks are designed to ensure that the recommender remains a reliable consumer of upstream artefacts and that its outputs remain stable across code changes.
 
 ### 12.5 App-level smoke testing (Chapter 5)
 
@@ -1011,8 +1010,7 @@ We test rank stability of the top-N lists under a small grid around default weig
 **(4) Calibration-to-action link: gaps for stretch jobs are stronger than gaps for best_now jobs.**  
 We aggregate predicted requirement probabilities for the top missing families and compare distributions between the best_now set and the stretch set. The expected pattern is that stretch jobs exhibit higher missingness mass concentrated in fewer families, which is the operational basis for targeted upskilling.
 
-These behavioural checks are intentionally minimal: they do not claim “ground truth recommendation accuracy,” but they ensure that the recommender’s mechanics are coherent, stable, and aligned with the probability matrix that defines demand.
-
+> Note: These behavioural checks are intentionally minimal: they do not claim “ground truth recommendation accuracy,” but they ensure that the recommender’s mechanics are coherent, stable, and aligned with the probability matrix that defines demand.
 
 > Summary: credibility in this project is enforced through the coupling of deterministic pipelines with contract-style evaluation suites. Models contribute quantitative metrics; geometry and recommendation components contribute invariants and reproducibility guarantees. Together, these checks ensure that the engine can be rebuilt, refactored, and run end-to-end without silent drift or brittle failure in decision outputs.
 
@@ -1020,7 +1018,7 @@ These behavioural checks are intentionally minimal: they do not claim “ground 
 
 ## 13. Results, Discussion, and Conclusions (Unified)
 
-Across Chapters 0–5, the Job Intelligence Engine succeeds in converting a high-variance job-posting landscape into a **queryable decision-support surface**: a canonical processed dataset, a probabilistic skill-demand layer, a latent market geometry, and user-conditioned positioning outputs that support targeted recommendations and counterfactual upskilling. The strongest result is not any single model score, but the *coherence* of the system: independent components (salary modelling, skill-demand inference, embeddings, and user positioning) produce mutually consistent signals that can be joined, audited, and reused without brittle glue code.
+> Across Chapters 0–5, the Job Intelligence Engine succeeds in converting a high-variance job-posting landscape into a **queryable decision-support surface**: a canonical processed dataset, a probabilistic skill-demand layer, a latent market geometry, and user-conditioned positioning outputs that support targeted recommendations and counterfactual upskilling. The strongest result is not any single model score, but the *coherence* of the system: independent components (salary modelling, skill-demand inference, embeddings, and user positioning) produce mutually consistent signals that can be joined, audited, and reused without brittle glue code.
 
 ### What worked well (evidence-backed)
 
@@ -1088,11 +1086,62 @@ The latent geometry analysis reinforces that the market is organised into **dist
 
 Finally, positioning an individual within this landscape reveals a consistent pattern: high-fit roles separate into “accessible now” versus “credible stretch” primarily via demand-weighted skill gaps, not via salary. Salary predictions provide useful context and alignment checks, but the decisive mechanism for moving roles between buckets is closing a small number of high-severity missing families that are repeatedly required across the user’s target set. Counterfactual upskilling makes this visible by quantifying which single skill-family acquisitions produce the largest realised lift in suitability, the largest drop in competitiveness, and the most promotions of stretch roles into best-now feasibility. In summary, the analysis supports a coherent market perspective: the data-job market is structured, not chaotic; the structure is learnable from postings; and the most effective user actions are those that close a small number of dominant barriers within a nearby ecosystem rather than pursuing broad, unfocused coverage.
 
+> Note: The figures in `docs/narrative/figures` provide deeper interpretation of these findings. The most important results are also highlighted in the app, especially on the **Landscape** page.
+
+<details>
+  <summary><strong>Expand: deeper interpretation of key results</strong></summary>
+
+  <br/>
+
+### Chapter 1 — What the model outputs reveal about the labour market
+
+Chapter 1 produces a consistent message across its outputs: compensation in this dataset is primarily governed by **market structure**, while skills matter most as **access thresholds** and **role-regime signals** rather than as smooth, linear “more skill → more pay” levers. The project becomes interpretable when you read the outputs in that order: first understand the market regimes the model has learned, then interpret how skills move jobs within (or across) those regimes.
+
+The first key output that makes the rest of Chapter 1 readable is the skill PCA space. The practical meaning of PCA here is not dimensionality reduction for its own sake, but that the job market’s skill demand collapses into a small number of coherent **bundles** that travel together. One bundle behaves like foundational infrastructure competence: core programming, databases, pipelines, and cloud/infrastructure signals cohere into a “minimum viable technical stack.” In the interpretability outputs, this bundle behaves like a gate. When the latent score is low, the model imposes a strong penalty; when the baseline is reached, the benefit saturates. This is an important labour-market insight: foundational competence is priced as **entry permission**, not as a constant marginal return.
+
+A second bundle reads less like “more capability” and more like “different work.” The analytics/BI-oriented component functions as a role-type signature: higher values correspond to analyst-aligned work, which is widely demanded but often priced below specialised modelling roles. Interpreting this correctly prevents a common mistake. When a component is associated with negative contributions, the story is typically not “those skills are bad,” but “those skills identify a job class with a different pricing regime.” A third bundle isolates modelling and ML intensity. In the explainability layer, this bundle produces stepwise positive jumps rather than smooth gradients, implying that the market rewards *crossing into* ML-heavy role classes more than incremental changes once you are already inside them.
+
+Once these latent regimes are visible, the salary model’s behaviour becomes straightforward to interpret. The model’s largest salary contributions come from compressed signals of **what the role is** and **where it sits in the market**, not from granular skill differences. Enriched title semantics act as the strongest “regime selector”: roles explicitly aligned with ML/AI receive persistent premiums, while analyst-oriented titles carry consistent penalties. Geography behaves like a wage multiplier: some locations reliably push predicted salary upward even after controlling for title and skill composition, while most others impose persistent discounts. Sector then acts as a baseline pay norm, separating premium regimes (innovation- and tech-intense sectors) from constrained regimes (public-good and lower-margin sectors). Company size contributes as an institutional scaler: large organisations tend to pay above expectation in ways that are more consistent with compensation capacity and competitive leveling than with purely different skill requirements.
+
+The fairness and residual views provide a complementary read on the same structure, but framed as “where the market deviates from the model’s expectations.” Interpreted properly, these outputs do not claim causality. They provide a model-adjusted compensation landscape that highlights persistent pricing patterns. The strongest positive residual patterns align with high-cost/high-demand markets and premium sectors; persistent negative patterns align with constrained sectors and nonprofit ownership; analyst-oriented role classes tend to underperform after adjustment; large organisations tend to overperform. The value of these outputs is their coherence: they show that the model is not inventing arbitrary structure, but reflecting stable gradients that resemble real labour-market regimes.
+
+SHAP then explains the model’s internal logic for constructing these predictions, and the same story appears again: structural context dominates, and skills refine within those contexts. The most useful interpretive takeaway from SHAP is the distinction between two kinds of skill effects. Some skill axes behave like **gatekeepers**, where missing the baseline triggers penalties and meeting it largely removes them. Other axes behave like **regime indicators**, where the component is rewarded because it signals entry into a higher-priced role class. This is why “negative SHAP” should often be interpreted as “this looks like a different job regime,” not “this is an undesirable skill.” PDP and ICE reinforce the same point in a different language: the model’s response surfaces look like discrete steps and plateaus rather than smooth curves, and the job-level trajectories are broadly stable across contexts once structural attributes are present. In other words, the big levers are mostly threshold-like and regime-like, not gradual.
+
+The chapter’s most consequential representational output is the job × skill probability matrix from the skill requirement models. Interpreted at the market level, this matrix reveals that demand is best described as **graded**, not binary. Jobs don’t simply “have” or “not have” a skill; they sit on probability gradients that distinguish “clearly required,” “adjacent/optional,” and “unlikely.” That continuous signal is what enables coherent downstream reasoning: calibrated gap analysis, weighted graph edges, and rarity-weighted competitiveness all become stable because they operate on probabilities rather than brittle mentions. The probability matrix also exposes meaningful relationships among skills: clusters that resemble analytics↔ML↔programming progressions and infrastructure↔data-engineering↔pipelines bundles emerge naturally because the matrix encodes co-occurrence in a smooth way.
+
+Finally, the Global Skill Value Index is best understood as a narrative artefact that compresses the model’s learned valuation logic into a readable ranking. The index is useful insofar as it summarises which skill families are associated with higher predicted salaries *within the model*, after conditioning on title and market context. It should not be used as causal ROI. Its most defensible interpretation is directional: specialised modelling/technical depth families rise because they signal entry into premium regimes; foundational technical families appear valuable because they remove large gatekeeping penalties; analyst/BI-aligned families may appear neutral or negative because they identify a different pricing regime rather than a lack of competence.
+
+---
+
+### Chapter 2 — What the structural layer reveals about job ecosystems
+
+If Chapter 1 explains “how the market prices jobs,” Chapter 2 explains “how jobs and skills organise themselves relative to one another.” The shift is conceptual and important: jobs stop being independent rows in a table and become positions in a **relational market map**. The job–skill bipartite graph makes that map explicit. Each job is connected to skill families with probability-weighted edges, so similarity becomes a property of shared neighbourhoods rather than shared keywords. In practice, this is where the project begins to resemble a navigable labour-market representation rather than a collection of separate models.
+
+Node2Vec embeddings translate the graph into a continuous geometry where jobs that rely on similar constellations of skills cluster naturally, and skills that co-occur in similar job contexts become neighbours. The most important interpretive consequence is that the labour market looks continuous rather than cleanly partitioned. The report’s clustering narrative reflects this: the silhouette behaviour is described as a plateau rather than a sharp optimum, which is exactly what you would expect in a domain where boundaries are fuzzy and many resolutions are plausible. The job-family clustering is therefore best interpreted as ecosystem-level navigation. It creates stable groupings that can be used for aggregation and exploration, but it should not be mistaken for a ground-truth occupational ontology.
+
+Skill embeddings and skill similarity structures add a second layer of meaning by distinguishing **bundles** from **bridges**. Bundles are tight clusters of skills that tend to travel together across many roles; bridges are skills that connect otherwise distinct ecosystems. This distinction matters because it implies different strategic roles for skills in the labour market. Some skills deepen you within a neighbourhood, while others expand the set of neighbourhoods you can plausibly move between. This is the conceptual foundation for later “co-learning neighbours” and macro transition suggestions, and it is grounded in how the embedding space organises skill proximity.
+
+Specialisation maps (“lift” tables) then reconnect the abstract embedding space back to interpretable groupings and show where the strongest structure actually lives. The most consistent pattern described in the report is that **title/role type** produces the clearest specialisation signatures, sector produces strong secondary differentiation, and seniority behaves like a gradient rather than a separate universe. Ownership and company size contribute weaker but interpretable patterns. Geography, importantly, appears to carry modest skill-composition signal relative to role and sector, which aligns cleanly with Chapter 1’s story: location strongly prices jobs, but it does not appear to be the primary driver of which skills are demanded in the first place, at least in this dataset snapshot.
+
+---
+
+## Integrated meaning — What Chapters 1–2 establish together
+
+Read together, Chapters 1 and 2 establish a coherent market picture. Salary appears to be structured around a small number of dominant regimes defined by role semantics, location, sector, and institutional context. Skills matter most by enabling entry into certain regimes and by distinguishing neighbouring ecosystems once inside them, rather than by providing uniform marginal returns. The probability matrix makes skill demand legible as graded requirements, and the graph/embedding layer turns those graded requirements into a navigable map of job ecosystems and skill neighbourhoods. This is why the downstream positioning and recommendation design choices make sense: the project is not optimising a checklist, it is modelling **movement through a structured space** where thresholds, regimes, and neighbourhood proximity are the main interpretive primitives.
+
+---
+
+## Interpretation boundaries to keep explicit
+
+All insights here are conditional on the dataset snapshot and the model’s representational choices. Salary patterns and residual “over/underpay” signals are descriptive and can reflect omitted variables such as leveling systems, bonuses/equity, remote premiums, negotiation, and brand effects. Skill-demand probabilities reflect posting language and extraction coverage rather than ground-truth necessity. The value of the system is therefore not causal claims, but a transparent, reproducible, and internally consistent map of market structure and model-implied positioning signals.
+
+</details>
+
 ---
 
 ## 15. Deployment and Public App
 
-Chapter 5 provides the project’s product surface: a lightweight Streamlit application that exposes the market landscape views (fairness residuals, SHAP, skill value ranking) and the full decision-support workflow (recommender + counterfactual upskilling + macro co-learning). The app is intentionally designed to run **without training**: compute-heavy artefacts are pre-trained (Chapter 1 models; Chapter 2 embeddings) or prebuilt into a small deterministic “app asset bundle” (Chapter 5), while user-specific runs execute fast inference only (Chapter 4).
+> Chapter 5 provides the project’s product surface: a lightweight Streamlit application that exposes the market landscape views (fairness residuals, SHAP, skill value ranking) and the full decision-support workflow (recommender + counterfactual upskilling + macro co-learning). The app is intentionally designed to run **without training**: compute-heavy artefacts are pre-trained (Chapter 1 models; Chapter 2 embeddings) or prebuilt into a small deterministic “app asset bundle” (Chapter 5), while user-specific runs execute fast inference only (Chapter 4).
 
 ### 15.1 Platform choice and rationale (Streamlit)
 Streamlit is used as the deployment surface because it is Python-native (direct reuse of the same modules and artefacts produced by the pipelines), demo-friendly (single-command local run for reviewers), and well-suited to narrative analytics (interactive plots/tables with minimal UI overhead). This aligns with the project’s product goal: a deterministic engine whose outputs can be explored and audited interactively without introducing a separate frontend stack.
@@ -1132,8 +1181,7 @@ The v1 app is privacy-preserving by default:
 
 **CI/CD (minimal).** The repo includes a lightweight GitHub Actions workflow (`.github/workflows/smoke_test.yml`) that runs the Chapter 5 smoke test entrypoint (`src/job_intel/evaluation/ch5_smoke_test.py`). The goal is to protect the shipping surface: verify artefact presence, schema/alignment contracts, and deterministic recommender execution under a fixed demo persona, without retraining models in CI.
 
-
-To run the app or rebuild artefacts, see README Quickstart and `docs/plan_and_structure/how_to_run_v1.md`. This report documents design, methods, evaluation, and limitations.
+> Note: To run the app or rebuild artefacts, see README Quickstart and `docs/plan_and_structure/how_to_run_v1.md`. This report documents design, methods, evaluation, and limitations.
 
 ---
 
@@ -1141,13 +1189,13 @@ To run the app or rebuild artefacts, see README Quickstart and `docs/plan_and_st
 
 Engineering quality in v1 is enforced primarily through the evaluation and contract suite described in Section 12. The system is designed around persisted artefacts with fixed schemas/indices, and downstream pipelines validate these contracts before computation (fail-fast on schema drift, misalignment, empty candidate universes, or missing artefacts).
 
-For full engineering detail beyond this report, see: `docs/engineering/architecture.md` (modules/pipelines/contracts) and `docs/engineering/artefact_manifest_ch5_app.md` (runtime asset inventory). Section 12 documents the checks that protect reproducibility and deterministic decision outputs.
+> Note: For full engineering detail beyond this report, see: `docs/engineering/architecture.md` (modules/pipelines/contracts) and `docs/engineering/artefact_manifest_ch5_app.md` (runtime asset inventory). Section 12 documents the checks that protect reproducibility and deterministic decision outputs.
 
 ---
 
 ## 17. Assumptions, Limitations, and Ethical Use
 
-This section states the operating assumptions under which the Job Intelligence Engine produces reliable decision-support outputs, and the boundaries that should govern interpretation. The engine is intentionally framed as a **descriptive, association-driven** market intelligence system: it learns patterns in a fixed snapshot of postings, and uses those learned response surfaces to position individuals and simulate counterfactual changes in *modelled* fit.
+> This section states the operating assumptions under which the Job Intelligence Engine produces reliable decision-support outputs, and the boundaries that should govern interpretation. The engine is intentionally framed as a **descriptive, association-driven** market intelligence system: it learns patterns in a fixed snapshot of postings, and uses those learned response surfaces to position individuals and simulate counterfactual changes in *modelled* fit.
 
 ### 17.1 Data bias and representativeness
 The dataset is a **static snapshot** of job postings and therefore reflects the composition and biases of the source marketplace at the time of collection. Postings are not a uniform sample of “the labour market”; they can overrepresent particular industries, company sizes, job styles, and regions. Conclusions and recommendations should therefore be interpreted as *within-dataset market intelligence* rather than universal truths. The system’s strongest claims are comparative (e.g., “within this dataset, these skill ecosystems and valuation gradients are consistently observed”) rather than global.
@@ -1193,7 +1241,7 @@ Misuse risks include:
 - using the system as an automated screening tool for hiring decisions,
 - over-interpreting rare-skill outputs where sparsity limits signal quality.
 
-A responsible stance is to treat outputs as **evidence-backed hypotheses** about market structure that require contextual judgement (role descriptions, seniority expectations, and user evidence) before acting—especially for high-stakes decisions.
+> Note: A responsible stance is to treat outputs as **evidence-backed hypotheses** about market structure that require contextual judgement (role descriptions, seniority expectations, and user evidence) before acting—especially for high-stakes decisions.
 
 ---
 
