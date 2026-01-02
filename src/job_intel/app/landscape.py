@@ -706,7 +706,9 @@ This Landscape page summarises the global market signal learned from the job-ad 
     # if st.button("Reload assets"):
     #    st.cache_data.clear()
     #    st.rerun()
+    st.divider()
 
+    st.markdown("## Landscape view menu")
     view = st.selectbox(
         "Landscape view menu",
         [
@@ -715,7 +717,10 @@ This Landscape page summarises the global market signal learned from the job-ad 
             "SHAP importance",
         ],
         index=0,
+        label_visibility="collapsed",
     )
+
+    st.divider()
 
     # -----------------------------
     # Skill value ranking
