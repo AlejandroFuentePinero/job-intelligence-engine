@@ -23,7 +23,7 @@ Job Intelligence Engine turns the market into something you can query. It learns
 
 The motivation is straightforward: reduce job-search noise by making trade-offs legible. Instead of scanning postings one by one, you get an evidence-based view of where you fit, what you’re missing, and which improvements are most likely to change the set of roles you can credibly target.
 
-**How to read recommendations**
+### **How to read recommendations**
 - **Best-now:** high fit with few critical gaps.
 - **Stretch:** strong directional fit, but clearer gaps and a higher entry barrier.
 - **Upskilling:** ranks missing skill families by simulated lift—how much adding a skill family improves stretch outcomes (including “stretch → best-now” promotions), while penalising changes that harm the current best-now set.
@@ -65,6 +65,7 @@ When a user enters the system, their profile is mapped into the same skill space
 
 A full technical description (features, models, evaluation, and artifacts) is provided in `docs/narrative/technical_report.md`, with the canonical system map in `docs/engineering/architecture.md`.
 
+
 ![Job Intelligence Engine — Simple App Workflow](media/simple_workflow.png)
 
 ## Reproducibility and scope
@@ -100,6 +101,7 @@ Code licensing is defined in `LICENSE`.
 
 ## Documentation and repository structure
 
+### Project documentation
 - `docs/engineering/architecture.md` — canonical system map (modules, pipelines, artefacts)
 - `docs/engineering/artefact_manifest_ch5_app.md` — manifest lists every persisted file the app expects at runtime
 - `docs/engineering/data_dictionary.md` — engineered fields and definitions
@@ -107,6 +109,7 @@ Code licensing is defined in `LICENSE`.
 - `docs/plan_and_structure/how_to_run_v1.md` — environment setup, local run, troubleshooting
 - `docs/plan_and_structure/v2_improvements.md` — scoped, ranked backlog
 
+### Repository structure
 ![Job Intelligence Engine — Repo Structure](media/repo_structure.png)
 
 ## Contact
