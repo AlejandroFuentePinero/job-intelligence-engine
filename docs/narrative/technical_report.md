@@ -147,65 +147,61 @@ A lightweight Streamlit app packages the workflow using persisted artefacts, cal
 ---
 
 
-<details>
-<summary><strong>1. Executive Summary</strong></summary>
-
-**Job Intelligence Engine** is a deterministic, end-to-end job-market intelligence system that converts job postings into interpretable market signals and a constraint-aware recommender. It addresses a practical job-search failure mode: roles and skills overlap heavily in meaning while being described with inconsistent terminology, so “fit”, “stretch”, and “what to learn next” often devolve into manual scanning and generic advice. This project learns a structured market landscape from real postings (salary structure + probabilistic skill demand), then positions an individual within that landscape under explicit constraints to produce **best-now** roles, **stretch** roles, and an **ROI-ranked upskilling plan** grounded in observed demand rather than guesswork.
-
-<figure>
-  <img src="../../media/project_pipeline_simple.png" alt="Job Intelligence Engine — simple pipeline" style="width:100%; max-width:1100px;">
-  <figcaption style="text-align:center; font-size:0.9em; color:#666;">
-    Figure 1. Summarised project pipeline.
-  </figcaption>
-</figure>
-
-### What it delivers (high-level outcomes, surfaced as products)
-
-- **Queryable market landscape:** a canonical processed dataset with normalised titles/seniority, harmonised salary targets, and a curated skill taxonomy mapped into aggregated skill families—enabling analysis without brittle keyword matching.
-- **Salary structure + “why” explanations:** a tuned salary response model that estimates expected pay and supports both **residual-based diagnostics** (where pay deviates after controlling for job mix) and **SHAP explainability** (which factors the model values and how).
-- **Probabilistic skill demand layer:** per-skill requirement models that convert sparse skill mentions into calibrated probabilities, producing a dense job × skill demand surface suitable for ranking, weighting, clustering, and gap analysis.
-- **Hidden market organisation:** graph/embedding-based structure that reveals job families and skill ecosystems (co-occurrence/similarity), used for macro context and “co-learning neighbour” signals.
-- **Individual positioning + recommendations:** a constraint-aware recommender that generates **best_now** vs **stretch** job shortlists, explicit skill-gap explanations, and an **ROI-ranked upskilling plan** via counterfactual skill additions.
-- **App surface:** a Streamlit UI that loads artefacts and runs the recommender deterministically for a demo persona or custom inputs, producing exportable tables/figures for inspection.
-
-### Why it’s credible
-
-The project enforces **cross-component contracts** and **reproducibility across multiple scopes** (single modules or the full system) through dedicated evaluation pipelines.
-
-- **Contract-first evaluations across artefacts:** integrity checks enforce consistent `job_id` universes and ordering across jobs tables, skill-probability matrices, embeddings, and cluster assignments; probabilities are bounded and finite; schemas and required columns must exist.
-- **Regression benchmark for the base dataset:** a rebuild-vs-benchmark comparison detects silent changes in the processed dataset after refactors (schema drift, parsing changes, value-level mismatches).
-- **Fail-fast input validation:** empty candidate universes, missing required probability columns, misaligned IDs, or malformed profile inputs raise explicit errors early (preventing “quietly wrong” outputs).
-- **Module-level + integration-level evaluation:** positioning, recommender, and app-entry pipelines are tested for expected output schemas, non-overlap constraints (best_now vs stretch), sorted rankings, type correctness, and scenario-table integrity.
-- **Determinism checks where it matters:** repeated runs under fixed inputs must reproduce the same rankings and key tables; sensitivity outputs are bounded and normalised.
-- **Reproducible at multiple levels:** you can rebuild a single layer (e.g., salary explainability assets, job-family clustering, recommender outputs) or run the full orchestration end-to-end—pipelines are stackable and selectively callable.
-
-### Key results snapshot
-
-**Market mechanisms: salary**
-- The salary model learns that **market structure dominates** pay: enriched role identity, location, sector, and company size explain most systematic variation, with skill composition shaping outcomes *within* those structures rather than replacing them.
-- Residual diagnostics show coherent, model-adjusted gradients: high-demand states trend above expectation; innovation- and tech-intensive sectors pay premiums; large/public organisations tend to overpay relative to mix; analyst-oriented role families systematically underpay relative to modelling/ML-heavy roles.
-- SHAP analysis supports this mechanism-level interpretation: role/market context drives the largest contributions; some skill components act as **gatekeepers** (penalise low baseline competence), while ML-intensity components produce **threshold-like premiums** rather than smooth linear effects.
-
-**Market mechanisms: skill demand**
-- The probabilistic requirement layer is strong and well-calibrated for most skills, producing realistic probability gradients rather than binary jumps.
-- Skill demand is driven primarily by **role identity + market context** (title/domain, sector, location), with co-occurring skills providing structured conditional signals (e.g., analytics ↔ ML ↔ programming; cloud ↔ data engineering).
-
-**Hidden structure**
-- Weighted job–skill graphs and embeddings expose stable job families and skill ecosystems that align with interpretable functional groupings, enabling macro context (adjacent families) and “co-learning neighbour” suggestions without re-ranking the core recommendations.
-
-**Decision support quality**
-- **Two ranked job shortlists:** a **best_now** list of roles the user can credibly target under their constraints with high current-fit, and a **stretch** list of higher-upside roles that remain plausible but require material upskilling.
-- **Job-specific explanations:** for each recommended role, the engine returns a concise “why” summary plus a structured breakdown of the dominant drivers (fit factors and the main barriers).
-- **Skill-gap map tied to targets:** an aggregated view of which **skill families** are most consistently missing across the user’s top stretch targets, and which requirements are most probable in those jobs.
-- **ROI-ranked upskilling plan:** a ranked set of skill families where acquiring each one is estimated to produce the largest positioning lift, computed via counterfactual simulation (temporarily adding the skill family and recomputing suitability/competitiveness and bucket movement).
-- **Stability + validity guarantees:** recommendation outputs are deterministic for fixed inputs, buckets are non-overlapping by construction, and all tables satisfy strict schema and alignment contracts validated by evaluation pipelines.
-
-**Minimal metric snapshot**
-- Salary response model: test performance in the expected range for noisy posting salaries (R² ≈ 0.30; MAE ≈ 25k).
-- Skill requirement models: strong discrimination for most skills (typical ROC AUC ≈ 0.88–0.95; PR AUC highest for common skills and lower for rare “advanced” skills as expected).
-
-</details>
-
+> ## 1. Executive Summary
+>
+> **Job Intelligence Engine** is a deterministic, end-to-end job-market intelligence system that converts job postings into interpretable market signals and a constraint-aware recommender. It addresses a practical job-search failure mode: roles and skills overlap heavily in meaning while being described with inconsistent terminology, so “fit”, “stretch”, and “what to learn next” often devolve into manual scanning and generic advice. This project learns a structured market landscape from real postings (salary structure + probabilistic skill demand), then positions an individual within that landscape under explicit constraints to produce **best-now** roles, **stretch** roles, and an **ROI-ranked upskilling plan** grounded in observed demand rather than guesswork.
+>
+> <figure>
+>   <img src="../../media/project_pipeline_simple.png" alt="Job Intelligence Engine — simple pipeline" style="width:100%; max-width:1100px;">
+>   <figcaption style="text-align:center; font-size:0.9em; color:#666;">
+>     Figure 1. Summarised project pipeline.
+>   </figcaption>
+> </figure>
+>
+> ### What it delivers (high-level outcomes, surfaced as products)
+>
+> - **Queryable market landscape:** a canonical processed dataset with normalised titles/seniority, harmonised salary targets, and a curated skill taxonomy mapped into aggregated skill families—enabling analysis without brittle keyword matching.
+> - **Salary structure + “why” explanations:** a tuned salary response model that estimates expected pay and supports both **residual-based diagnostics** (where pay deviates after controlling for job mix) and **SHAP explainability** (which factors the model values and how).
+> - **Probabilistic skill demand layer:** per-skill requirement models that convert sparse skill mentions into calibrated probabilities, producing a dense job × skill demand surface suitable for ranking, weighting, clustering, and gap analysis.
+> - **Hidden market organisation:** graph/embedding-based structure that reveals job families and skill ecosystems (co-occurrence/similarity), used for macro context and “co-learning neighbour” signals.
+> - **Individual positioning + recommendations:** a constraint-aware recommender that generates **best_now** vs **stretch** job shortlists, explicit skill-gap explanations, and an **ROI-ranked upskilling plan** via counterfactual skill additions.
+> - **App surface:** a Streamlit UI that loads artefacts and runs the recommender deterministically for a demo persona or custom inputs, producing exportable tables/figures for inspection.
+>
+> ### Why it’s credible
+>
+> The project enforces **cross-component contracts** and **reproducibility across multiple scopes** (single modules or the full system) through dedicated evaluation pipelines.
+>
+> - **Contract-first evaluations across artefacts:** integrity checks enforce consistent `job_id` universes and ordering across jobs tables, skill-probability matrices, embeddings, and cluster assignments; probabilities are bounded and finite; schemas and required columns must exist.
+> - **Regression benchmark for the base dataset:** a rebuild-vs-benchmark comparison detects silent changes in the processed dataset after refactors (schema drift, parsing changes, value-level mismatches).
+> - **Fail-fast input validation:** empty candidate universes, missing required probability columns, misaligned IDs, or malformed profile inputs raise explicit errors early (preventing “quietly wrong” outputs).
+> - **Module-level + integration-level evaluation:** positioning, recommender, and app-entry pipelines are tested for expected output schemas, non-overlap constraints (best_now vs stretch), sorted rankings, type correctness, and scenario-table integrity.
+> - **Determinism checks where it matters:** repeated runs under fixed inputs must reproduce the same rankings and key tables; sensitivity outputs are bounded and normalised.
+> - **Reproducible at multiple levels:** you can rebuild a single layer (e.g., salary explainability assets, job-family clustering, recommender outputs) or run the full orchestration end-to-end—pipelines are stackable and selectively callable.
+>
+> ### Key results snapshot
+>
+> **Market mechanisms: salary**
+> - The salary model learns that **market structure dominates** pay: enriched role identity, location, sector, and company size explain most systematic variation, with skill composition shaping outcomes *within* those structures rather than replacing them.
+> - Residual diagnostics show coherent, model-adjusted gradients: high-demand states trend above expectation; innovation- and tech-intensive sectors pay premiums; large/public organisations tend to overpay relative to mix; analyst-oriented role families systematically underpay relative to modelling/ML-heavy roles.
+> - SHAP analysis supports this mechanism-level interpretation: role/market context drives the largest contributions; some skill components act as **gatekeepers** (penalise low baseline competence), while ML-intensity components produce **threshold-like premiums** rather than smooth linear effects.
+>
+> **Market mechanisms: skill demand**
+> - The probabilistic requirement layer is strong and well-calibrated for most skills, producing realistic probability gradients rather than binary jumps.
+> - Skill demand is driven primarily by **role identity + market context** (title/domain, sector, location), with co-occurring skills providing structured conditional signals (e.g., analytics ↔ ML ↔ programming; cloud ↔ data engineering).
+>
+> **Hidden structure**
+> - Weighted job–skill graphs and embeddings expose stable job families and skill ecosystems that align with interpretable functional groupings, enabling macro context (adjacent families) and “co-learning neighbour” suggestions without re-ranking the core recommendations.
+>
+> **Decision support quality**
+> - **Two ranked job shortlists:** a **best_now** list of roles the user can credibly target under their constraints with high current-fit, and a **stretch** list of higher-upside roles that remain plausible but require material upskilling.
+> - **Job-specific explanations:** for each recommended role, the engine returns a concise “why” summary plus a structured breakdown of the dominant drivers (fit factors and the main barriers).
+> - **Skill-gap map tied to targets:** an aggregated view of which **skill families** are most consistently missing across the user’s top stretch targets, and which requirements are most probable in those jobs.
+> - **ROI-ranked upskilling plan:** a ranked set of skill families where acquiring each one is estimated to produce the largest positioning lift, computed via counterfactual simulation (temporarily adding the skill family and recomputing suitability/competitiveness and bucket movement).
+> - **Stability + validity guarantees:** recommendation outputs are deterministic for fixed inputs, buckets are non-overlapping by construction, and all tables satisfy strict schema and alignment contracts validated by evaluation pipelines.
+>
+> **Minimal metric snapshot**
+> - Salary response model: test performance in the expected range for noisy posting salaries (R² ≈ 0.30; MAE ≈ 25k).
+> - Skill requirement models: strong discrimination for most skills (typical ROC AUC ≈ 0.88–0.95; PR AUC highest for common skills and lower for rare “advanced” skills as expected).
 
 ---
 
@@ -227,34 +223,34 @@ The core contribution is an **end-to-end system design** that makes these compon
 
 A core design principle is explicit **chapter-to-chapter contracts**. Each chapter exports a small set of persisted artefacts with fixed schemas and stable indices (notably `job_id`), and downstream chapters are written to consume only these artefacts—not intermediate notebook objects. Evaluation modules enforce these contracts (schema, dtype, index alignment, dimension invariants) so that refactors cannot silently change the meaning of downstream computations. This contract-oriented architecture is what allows the system to be reproducible at multiple granularities (single chapter rebuilds or full end-to-end rebuilds) without drift.
 
-> ### Design principles
->
-> The system is engineered around three principles that are reflected in both the architecture and the evaluation suite:
->
-> 1. **Reproducibility as a build contract.** Each chapter can be executed independently to reproduce its outputs, and the full pipeline can be run end-to-end to regenerate all artefacts.
->
-> 2. **Explicit contracts between layers.** Downstream modules consume upstream artefacts under strict schema and index-alignment assumptions. These assumptions are enforced by integrity checks to prevent “quietly wrong” runs when artefacts drift.
->
-> 3. **Deterministic artefacts and stable orchestration.** Randomness is controlled at build time so embeddings, clustering, and recommendation outputs are stable under fixed inputs. Where determinism matters for decision outputs (rankings, bucket membership, explanations), it is validated via repeat-run checks.
+### Design principles
 
-> ### High-level artefact map (what is saved and reused)
->
-> The engine enforces a deliberate separation between **persisted market artefacts** (built once, reused many times) and **runtime decision outputs** (computed per user run):
->
-> - **Persisted market artefacts (reused across runs):**
->   - Canonical processed jobs table (cleaned job attributes + extracted skill-family indicators).
->   - Salary-model artefacts (trained model + explainability/fairness assets, including SHAP bundles used by the app).
->   - Skill-demand artefacts (per-skill models and the job × skill probability matrix).
->   - Hidden-structure artefacts (job–skill graph; job/skill embeddings; job-family clustering; skill co-occurrence/similarity structures; skill specialisation/lift tables).
->   - Demo persona and evaluation configs used consistently by the app and smoke tests.
->
-> - **Runtime decision outputs (computed per user run):**
->   - Candidate universe under constraints and the positioning tables (suitability, competitiveness, gaps, sensitivity).
->   - Recommendation tables (best_now, stretch, job explanations).
->   - Counterfactual upskilling tables (ranked skill families + affected target sets).
->   - Optional macro context tables (adjacent job families, co-learning neighbour skills for the top upskilling items).
->
-> This architecture makes the system “product-like”: heavy computation is performed in build steps and saved as deterministic artefacts, while interactive usage is reduced to loading those artefacts and running lightweight scoring and positioning logic. The result is an end-to-end engine whose outputs are inspectable (tables + explanations) and robust to refactors through contract-style evaluations.
+The system is engineered around three principles that are visible in both the architecture and the evaluation suite:
+
+1. **Reproducibility as a build contract.** Every chapter can be executed independently to reproduce its outputs, and the full pipeline can be executed end-to-end to regenerate all artefacts.
+
+2. **Explicit contracts between layers.** Downstream modules consume previous pipelines' artefacts with strict schema and alignment assumptions. These assumptions are enforced by integrity checks to prevent “quietly wrong” runs when artefacts drift.
+
+3. **Deterministic artefacts and stable orchestration.** Randomness is controlled at build time so that embeddings, clustering, and recommendation outputs are stable under fixed inputs. Where determinism matters for decision outputs (rankings, bucket membership, explanations), it is validated by repeat-run checks.
+
+### High-level artefact map (what is saved and reused)
+
+The engine follows a deliberate separation between **persisted market artefacts** (built once, reused many times) and **runtime decision outputs** (computed per user run):
+
+- **Persisted market artefacts (reused across runs):**
+  - Canonical processed jobs table (cleaned job attributes + extracted skill-family indicators).
+  - Salary-model artefacts (trained model + explainability/fairness assets, including SHAP bundles used by the app).
+  - Skill-demand artefacts (per-skill models and the job × skill probability matrix).
+  - Hidden-structure artefacts (job–skill graph; job/skill embeddings; job-family clustering; skill co-occurrence/similarity structures; skill specialisation/lift tables).
+  - Demo persona and evaluation configs used consistently by app and smoke tests.
+
+- **Runtime decision outputs (computed per user run):**
+  - Candidate universe under constraints and the positioning tables (suitability, competitiveness, gaps, sensitivity).
+  - Recommendation tables (best_now, stretch, job explanations).
+  - Counterfactual upskilling tables (ranked skill families + affected target sets).
+  - Optional macro context tables (adjacent job families, co-learning neighbour skills for the top upskilling items).
+
+This architecture makes the system “product-like”: heavy computation is performed in build steps and saved as deterministic artefacts, while interactive usage is reduced to loading those artefacts and running lightweight scoring/positioning logic. The result is an end-to-end engine whose outputs are both inspectable (tables + explanations) and robust to refactors through contract-style evaluations.
 
 ## Artefact Index (Core Outputs Referenced in This Report)
 
@@ -295,7 +291,7 @@ The project uses two public Kaggle datasets derived from Glassdoor job postings:
 
 These datasets are merged into a single canonical table with **one row per job ad**. The canonical output of Chapter 0 is the modelling and analysis backbone for all downstream chapters.
 
-**Primary join key:** `job_id` (stable identifier carried across chapters and artefacts).
+> **Primary join key:** `job_id` (stable identifier carried across chapters and artefacts).
 
 ### 4.2 Inclusion / exclusion rules
 
@@ -326,7 +322,7 @@ The canonical dataset distinguishes between “unknown but categorical” fields
 
 `Rating` and `Founded` are retained in the canonical dataset for completeness/auditing, but excluded from v1 modelling feature sets due to coverage/utility constraints.
 
-Downstream pipelines rely on explicit schema contracts (e.g., skill flags must be present and binary; `job_id` uniqueness; salary fields numeric where present).
+> Downstream pipelines rely on explicit schema contracts (e.g., skill flags must be present and binary; `job_id` uniqueness; salary fields numeric where present).
 
 ### 4.5 Train/test strategy and leakage controls (modelling layers)
 
@@ -376,7 +372,7 @@ All model training uses a fixed, reproducible **80/20 train/test split** with **
 **High-missingness raw fields excluded from modelling (for clarity):**  
 `Easy Apply` (96.04%), `Competitors` (72.90%), `Founded` (26.57%), `Rating` (11.05%), `Headquarters` (6.69%), and `Revenue` (6.36%) were not used downstream due to poor coverage and weak decision-support value.
 
-These fields remain in the canonical dataset for completeness/auditing, but are not used as modelling predictors in v1.
+> These fields remain in the canonical dataset for completeness/auditing, but are not used as modelling predictors in v1.
 
 **Key field quality contracts enforced downstream**
 - `job_id` must be unique and stable across all artefacts (jobs table, skill matrices, embeddings, clustering).
@@ -388,7 +384,7 @@ These fields remain in the canonical dataset for completeness/auditing, but are 
 
 ## 5. Unified Methods
 
-This section describes the Job Intelligence Engine as a single coherent system that transforms raw job ads into (i) learned market representations and (ii) user-conditioned decision outputs. The design is modular and reproducible: each stage produces **persisted artefacts** that are reused downstream, enabling reviewers to rebuild a single layer (e.g., salary assets) or run the entire chain end-to-end. Figure 2 summarises the dependency map; the methods below follow the same left-to-right flow.
+> This section describes the Job Intelligence Engine as a single coherent system that transforms raw job ads into (i) learned market representations and (ii) user-conditioned decision outputs. The design is modular and reproducible: each stage produces **persisted artefacts** that are reused downstream, enabling reviewers to rebuild a single layer (e.g., salary assets) or run the entire chain end-to-end. Figure 2 summarises the dependency map; the methods below follow the same left-to-right flow.
 
 ### 5.1 Title normalisation (role identity, seniority, domain)
 
