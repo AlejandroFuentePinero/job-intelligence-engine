@@ -342,7 +342,7 @@ def _plot_local_bar_and_box(
     axes[0].grid(True, linestyle="--", alpha=0.25, axis="x")
 
     axes[1].boxplot(
-        data,
+        data[::-1],
         labels=order[::-1],
         vert=False,
         showfliers=False,
