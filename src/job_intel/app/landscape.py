@@ -703,12 +703,12 @@ This Landscape page summarises the global market signal learned from the job-ad 
         expanded=False,
     )
 
-    if st.button("Reload assets"):
-        st.cache_data.clear()
-        st.rerun()
+    # if st.button("Reload assets"):
+    #    st.cache_data.clear()
+    #    st.rerun()
 
     view = st.selectbox(
-        "Landscape view",
+        "Landscape view menu",
         [
             "Fairness insights",
             "Skill value ranking and similarity",

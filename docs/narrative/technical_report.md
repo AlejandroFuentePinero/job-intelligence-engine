@@ -2,7 +2,7 @@
 
 * Version: 2026-01-02
 * Repo: <https://github.com/AlejandroFuentePinero/job-intelligence-engine>
-* Live App: <link>
+* Live App: <https://job-intelligence-engine.streamlit.app/>
 * Author: Alejandro de la Fuente
 * Data access:
   - [Data Scientist Jobs](https://www.kaggle.com/datasets/andrewmvd/data-scientist-jobs?select=DataScientist.csv)

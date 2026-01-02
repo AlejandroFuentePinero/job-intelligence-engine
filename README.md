@@ -32,7 +32,7 @@ The motivation is straightforward: reduce job-search noise by making trade-offs 
 
 The fastest way to experience the project is the deployed app.
 
-**Live app:** [link]  
+[**Live app:**](https://job-intelligence-engine.streamlit.app/)  
 ![Job Intelligence Engine — Demo](media/app_demo.gif)
 
 To run it locally, clone the repository, install dependencies, and launch the app. The build step assembles the app assets and validates required artefacts before Streamlit starts.
