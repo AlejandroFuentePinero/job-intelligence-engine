@@ -1,4 +1,5 @@
 # Job Intelligence Engine — Technical Report
+
 Version: 2026-01-02  
 Repo: <https://github.com/AlejandroFuentePinero/job-intelligence-engine>  
 Live App: <link>  
@@ -7,6 +8,7 @@ Data access:
     - [Data Scientist Jobs](https://www.kaggle.com/datasets/andrewmvd/data-scientist-jobs?select=DataScientist.csv)
     - [Data Analyst Jobs](https://www.kaggle.com/datasets/andrewmvd/data-analyst-jobs)
     or `data/raw/`
+
 ---
 
 ## Important notes
@@ -38,7 +40,6 @@ To avoid unnecessary duplication and clutter, interpretation is kept high-level 
   - [What it delivers (high-level outcomes, surfaced as products)](#what-it-delivers-high-level-outcomes-surfaced-as-products)
   - [Why it’s credible](#why-its-credible)
   - [Key results snapshot](#key-results-snapshot)
-  - [Where to see it (app + demo scenario)](#where-to-see-it-app--demo-scenario)
 - [2. Introduction](#2-introduction)
 - [3. System Overview and Contributions](#3-system-overview-and-contributions)
   - [Design principles](#design-principles)
@@ -153,8 +154,6 @@ A lightweight Streamlit app packages the workflow using persisted artefacts (no 
   </figcaption>
 </figure>
 
----
-
 ### What it delivers (high-level outcomes, surfaced as products)
 
 - **Queryable market landscape:** a canonical processed dataset with normalised titles/seniority, harmonised salary targets, and a curated skill taxonomy mapped into aggregated skill families—enabling analysis without brittle keyword matching.
@@ -163,8 +162,6 @@ A lightweight Streamlit app packages the workflow using persisted artefacts (no 
 - **Hidden market organisation:** graph/embedding-based structure that reveals job families and skill ecosystems (co-occurrence/similarity), used for macro context and “co-learning neighbour” signals.
 - **Individual positioning + recommendations:** a constraint-aware recommender that generates **best_now** vs **stretch** job shortlists, explicit skill-gap explanations, and an **ROI-ranked upskilling plan** via counterfactual skill additions.
 - **App surface:** a Streamlit UI that loads artefacts and runs the recommender deterministically for a demo persona or custom inputs, producing exportable tables/figures for inspection.
-
----
 
 ### Why it’s credible
 
@@ -176,8 +173,6 @@ The project enforces **cross-component contracts** and **reproducibility across 
 - **Module-level + integration-level evaluation:** positioning, recommender, and app-entry pipelines are tested for expected output schemas, non-overlap constraints (best_now vs stretch), sorted rankings, type correctness, and scenario-table integrity.
 - **Determinism checks where it matters:** repeated runs under fixed inputs must reproduce the same rankings and key tables; sensitivity outputs are bounded and normalised.
 - **Reproducible at multiple levels:** you can rebuild a single layer (e.g., salary explainability assets, job-family clustering, recommender outputs) or run the full orchestration end-to-end—pipelines are stackable and selectively callable.
-
----
 
 ### Key results snapshot
 
@@ -203,14 +198,6 @@ The project enforces **cross-component contracts** and **reproducibility across 
 **Minimal metric snapshot**
 - Salary response model: test performance in the expected range for noisy posting salaries (R² ≈ 0.30; MAE ≈ 25k).
 - Skill requirement models: strong discrimination for most skills (typical ROC AUC ≈ 0.88–0.95; PR AUC highest for common skills and lower for rare “advanced” skills as expected).
-
----
-
-### Where to see it (app + demo scenario)
-
-- [**Repository**](https://github.com/AlejandroFuentePinero/job-intelligence-engine)
-- **Live app:** [PLACEHOLDER: Live App URL]
-
 
 ---
 
@@ -302,8 +289,6 @@ These datasets are merged into a single canonical table with **one row per job a
 
 **Primary join key:** `job_id` (stable identifier carried across chapters and artefacts).
 
----
-
 ### 4.2 Inclusion / exclusion rules
 
 The Chapter 0 pipeline applies deterministic cleaning and schema harmonisation before the dataset is admitted into modelling:
@@ -313,8 +298,6 @@ The Chapter 0 pipeline applies deterministic cleaning and schema harmonisation b
 - **Row-level exclusion:** rows missing **both** salary information **and** job description are dropped (insufficient signal for modelling or skill extraction).
 - **Field-level exclusion:** sparse or unreliable raw fields are removed where they do not support stable downstream modelling.
 
----
-
 ### 4.3 Salary parsing and normalisation
 
 Salary strings in the raw data appear as ranges and/or hourly rates. A custom parser converts salary text into comparable annualised numeric targets:
@@ -323,8 +306,6 @@ Salary strings in the raw data appear as ranges and/or hourly rates. A custom pa
 - `sal_is_hourly`: indicator for hourly-to-annual conversion
 
 Salary absence is preserved as a valid signal (i.e., salary fields may remain null).
-
----
 
 ### 4.4 Missingness policy and key-field robustness
 
@@ -339,8 +320,6 @@ The canonical dataset distinguishes between “unknown but categorical” fields
 
 Downstream pipelines rely on explicit schema contracts (e.g., skill flags must be present and binary; `job_id` uniqueness; salary fields numeric where present).
 
----
-
 ### 4.5 Train/test strategy and leakage controls (modelling layers)
 
 All model training uses a fixed, reproducible **80/20 train/test split** with **random_state = 101**.
@@ -353,9 +332,6 @@ All model training uses a fixed, reproducible **80/20 train/test split** with **
 - For the salary response model, target-derived salary text/fields are excluded from predictors; the model predicts `sal_mean` from job/company features and skill structure.
 - For skill requirement models, the target skill column is excluded from the predictor set (features are “all skills except the target”), preventing direct label leakage.
 - PCA is fit on the training partition and the transform is persisted and reused at inference (consistent feature space; reduced multicollinearity).
-
-
----
 
 ### Table 1. Dataset overview (canonical processed dataset)
 
@@ -406,21 +382,15 @@ These fields remain in the canonical dataset for completeness/auditing, but are 
 
 This section describes the Job Intelligence Engine as a single coherent system that transforms raw job ads into (i) learned market representations and (ii) user-conditioned decision outputs. The design is modular and reproducible: each stage produces **persisted artefacts** that are reused downstream, enabling reviewers to rebuild a single layer (e.g., salary assets) or run the entire chain end-to-end. Figure 2 summarises the dependency map; the methods below follow the same left-to-right flow.
 
----
-
 ### 5.1 Title normalisation (role identity, seniority, domain)
 
 Raw job titles contain high lexical variance and are not reliable identifiers of role identity. The pipeline standardises titles into a canonical representation used consistently across modelling and navigation. Titles are cleaned into a base form (`job_title_base`) and normalised for taxonomy lookup (`job_title_norm`). A curated title-family mapping assigns each posting to an interpretable `job_title_family`, and an enriched representation (`title_rich`) retains meaningful modifiers (e.g., high-level domain families) without exploding the vocabulary. Seniority cues are extracted from both title and description and combined into `seniority_combined`, reducing ambiguity where seniority is implied rather than explicitly stated.
 
 To support segmentation beyond titles, each posting is assigned a `domain` label via a deterministic embedding-based lookup: titles are embedded with SBERT (sentence transformer) and mapped through a fixed clustering structure (KMeans) to assign stable domain labels. These role-identity fields—`job_title_family`, `title_rich`, `seniority_combined`, `domain`, and `state`—form the scaffold used by both the salary model and the skill-demand models, and they anchor user-side constraint filters.
 
----
-
 ### 5.2 Skill extraction and skill-family representation (taxonomy-driven, deterministic)
 
 Skills are represented using a curated dictionary of ~1,300 skill tokens mapped into **27 aggregated skill families** (the canonical skill space used throughout the project). Skill extraction is deterministic and lightweight by design: each job’s title and cleaned description are concatenated into a unified text field and matched against multi-word phrases and unigrams using case-normalised rules. The output is a 27-dimensional multi-hot vector (0/1 family indicators) per job. This representation collapses synonym noise into stable families, supports joins across all artefacts, and provides a consistent interface for user inputs: free-text user skills are processed through the same extractor so that user and job skill vectors are directly comparable.
-
----
 
 ### 5.3 Salary modelling (response layer + explainability)
 
@@ -428,23 +398,17 @@ Salary text is parsed and normalised into annualised numeric targets (`sal_min`,
 
 Model selection follows a reproducible split and search strategy: all modelling uses an **80/20 train/test split** (`random_state = 101`), and hyperparameter selection is performed on the training partition via scikit-learn’s `GridSearchCV` with cross-validation. The final response model (XGBoost) is persisted as a versioned artefact to support downstream pipelines and app inference without retraining. Evaluation reports standard regression metrics (R², RMSE, MAE) and is paired with interpretability outputs: residual diagnostics summarise systematic deviations by segments (model-adjusted structure), and SHAP explanations decompose predictions into additive feature contributions to support “why” narratives for both global drivers and job-level examples.
 
----
-
 ### 5.4 Skill requirement modelling (probabilistic demand layer)
 
 Binary skill flags extracted from text are sparse and phrasing-dependent. To produce a smooth demand surface, the system fits **one classifier per skill family** to estimate calibrated probabilities \(P(\text{skill}_k=1 \mid \text{job})\). Each model (LightGBM) predicts a single skill-family indicator using role/company features and the remaining skill indicators as contextual predictors, with an explicit leakage control: the target skill column is excluded from the feature matrix (“all skills except the target”). Training uses the same **80/20 split** and fixed random state, and evaluation emphasises both discrimination and calibration (ROC AUC, PR AUC, Brier score; plus ROC/PR and calibration curves).
 
 The result is a dense **job × skill probability matrix** with one `{skill}_prob` column per family. This becomes a central shared artefact: it supports probability-weighted gap analysis, graph construction, competitiveness estimation, and robust downstream joins without relying on literal token overlap.
 
----
-
 ### 5.5 Market geometry (job–skill graph → embeddings → job families)
 
 Market structure is encoded as a **weighted bipartite graph** (Figure 2). One node set contains job postings (`job_id`), the other contains the 27 skill-family nodes. Edges connect each job to each skill family with weights equal to predicted requirement probabilities. This construction ensures that similarity is defined by shared probabilistic neighbourhoods: jobs are close when they require similar skill mixtures, and skills are related when they co-occur across job contexts.
 
 To obtain a continuous representation, Node2Vec is applied to the weighted bipartite graph to learn low-dimensional embeddings for both jobs and skills. Job embeddings are L2-normalised and clustered with KMeans to obtain an interpretable segmentation into job families with full assignment coverage. The clustering configuration is fixed and persisted to ensure stable family IDs across builds. Skill structure is retained in continuous space and operationalised via nearest-neighbour similarity graphs derived from embedding proximity; these are later used for “co-learning neighbour” suggestions. In addition, “skill specialisation” is quantified using lift-style comparisons: for each job family, mean skill-demand probabilities are contrasted against global baselines to identify overrepresented (specialist) vs broadly shared (generalist) skills.
-
----
 
 ### 5.6 Individual positioning (suitability, competitiveness, gaps, robustness)
 
@@ -454,21 +418,15 @@ Positioning separates two orthogonal concepts. **Suitability** measures alignmen
 
 Skill-gap analysis is computed over the user’s most relevant targets (top-K by suitability): jobs are joined to the job × skill probability matrix and mean requirement probabilities are aggregated by skill family; gap severity is defined by the requirement mass that lies on skills absent from the user profile. Robustness is assessed through sensitivity grids: suitability/competitiveness are recomputed over weight grids and rank stability is summarised (e.g., Spearman correlation vs baseline), producing diagnostics that quantify dependence on subjective weighting choices.
 
----
-
 ### 5.7 Recommender (best_now vs stretch + salary alignment)
 
 The recommender composes positioning outputs into two actionable shortlists. Salary predictions are attached to candidate jobs using row-aligned feature matrices and the persisted salary model. Salary alignment enters through the suitability component described above. The engine partitions eligible jobs into **best_now** and **stretch** using an operational competitiveness threshold (with suitability gating to ensure relevance). Within each bucket, jobs are ranked deterministically with stable tie-breakers, and the system emits both the scored candidate universe and the two top-N lists.
 
 Job-level explanations are generated alongside rankings to keep outputs inspectable. Explanations summarise the dominant drivers of suitability and competitiveness and surface the primary missing skill families implied by probabilistic requirements for each recommended job.
 
----
-
 ### 5.8 Counterfactual upskilling (ROI-ranked skill investments)
 
 Upskilling is implemented as counterfactual positioning over a **frozen job universe** to preserve comparability across scenarios. Starting from the user baseline, missing skill families are identified from probability-based gap analysis and iterated as one-at-a-time counterfactual additions. For each scenario, the engine recomputes positioning and recommender outputs and measures deltas relative to baseline (e.g., suitability uplift, competitiveness reduction, salary alignment changes, and bucket movement such as stretch → best_now promotions). Scenario outputs are stored in long-form tables (job × scenario) and aggregated into a ranked list of skill families prioritised by measurable lift.
-
----
 
 ### 5.9 Macro overlay (adjacent families + co-learning skills)
 
@@ -479,8 +437,6 @@ The macro overlay uses the market-geometry artefacts to contextualise recommenda
 ## 6. Representation Layer
 
 This section documents the **shared representational “language”** used across the engine. These representations are produced deterministically in Chapter 0 and are reused downstream by the modelling layers (Chapter 1), market-geometry layer (Chapter 2), and the positioning/recommender logic (Chapters 3–5). Figure 2 is the reference map for where each representation is consumed.
-
----
 
 ### 6.1 Job Title Normalization
 
@@ -519,8 +475,6 @@ Title normalisation is designed to be robust to common real-world failure modes.
 
 These cases are treated as representation-level concerns rather than modelling concerns: downstream modules assume that `job_title_family`, `title_rich`, `seniority_combined`, and `domain` exist and are stable.
 
----
-
 ### 6.2 Skill Extraction and Skill Families
 
 **Terminology note.** The schema contains **27 canonical skill columns** (stable modelling units). In narrative prose, we use **skill family groupings** to refer to higher-level conceptual bundles (e.g., “Data Engineering”, “ML/AI”), which may aggregate multiple tokens into one canonical column.
@@ -557,8 +511,6 @@ Dictionary-based extraction is designed for stability and interpretability, with
 - **Out-of-vocabulary tokens** can become “no-ops” in counterfactual modules (e.g., upskilling simulation). For this reason, counterfactual pipelines include explicit **no-op detection** (scenarios are skipped when injected tokens do not change the extracted user skill vector).
 - Downstream probability models help mitigate binary extraction sparsity by smoothing skill signals into calibrated requirement probabilities \(P(\text{skill}\mid\text{job})\), improving robustness for gap and competitiveness scoring even when raw mentions are inconsistent.
 
----
-
 ### Table 3. Skill family summary (schema-level; v1 canonical)
 
 > Note: counts below reflect the **number of canonical columns per family** in the processed dataset.  
@@ -582,8 +534,6 @@ Dictionary-based extraction is designed for stability and interpretability, with
 ## 7. Predictive Modelling Layer
 
 This layer learns two complementary market signals from the canonical representation: (i) an interpretable **salary response function** and (ii) a probabilistic **skill-demand surface**. Both are trained under a fixed evaluation protocol (80/20 split; `random_state=101`) and are persisted as reusable artefacts that feed downstream geometry, positioning, and recommendation components.
-
----
 
 ### 7.1 Salary Model
 
@@ -622,8 +572,6 @@ Evaluation uses standard regression metrics and interpretability-oriented diagno
 
 **Table 4** summarises the overall performance and the primary residual slices produced for reporting.
 
----
-
 ### 7.2 Skill Requirement Models
 
 #### Objective: per-skill probability inference
@@ -657,8 +605,6 @@ The fitted models are applied to the full dataset to produce a dense **6,162 × 
 
 **Table 5** summarises overall quality, expected performance by prevalence tier, and the lowest-signal (“hardest”) skills.
 
----
-
 ### Table 4. Salary model performance (overall + reporting slices)
 
 **Overall regression performance (XGBoost v4):**
@@ -682,8 +628,6 @@ The fitted models are applied to the full dataset to produce a dense **6,162 × 
 Shipped artefact: `data/processed/ch5_assets/fairness_group_summary_long.csv`
 
 Residual diagnostic can be inspected in the landscape page within the App.
-
----
 
 ### Table 5. Skill requirement model performance (overall + tiers + hardest skills)
 
@@ -716,8 +660,6 @@ Residual diagnostic can be inspected in the landscape page within the App.
 
 This layer converts the probabilistic demand surface into a **latent market geometry** that supports navigation, similarity search, and macro context. Rather than relying on titles (which are coarse and terminologically unstable), the geometry is driven by the **job × skill probability matrix** produced in the modelling layer. The result is a set of persisted structural artefacts: a weighted bipartite graph, dense embeddings for jobs and skills, a stable job-family clustering, and a sparse skill–skill similarity network (Figure 2).
 
----
-
 ### 8.1 Job–Skill Bipartite Graph
 
 The market is represented as a **weighted bipartite graph** \(G = (V_J \cup V_S, E)\), where:
@@ -735,8 +677,6 @@ w(j, s) \;=\; P(\text{skill}_s = 1 \mid \text{job } j)
 This choice makes the graph robust to text sparsity and synonym noise: two jobs become similar if they share *probabilistic* skill neighbourhoods, not just literal mentions. In practice, the graph can be optionally **sparsified** by removing low-weight edges below a fixed threshold \(\tau\) (used for downstream efficiency), while retaining weights as continuous values for embedding and analysis.
 
 **Why weighted:** binary edges force a brittle “mentioned / not mentioned” regime and produce unstable neighbourhoods for many postings; probability weights preserve ranking signal and encode graded requirement strength.
-
----
 
 ### 8.2 Embeddings and Job Families
 
@@ -778,8 +718,6 @@ These checks ensure that latent artefacts remain stable and compatible with down
   </figcaption>
 </figure>
 
----
-
 ### 8.3 Skill Co-occurrence Network
 
 The skill co-occurrence layer is implemented as a **sparse skill–skill similarity network** derived from the learned `skill_emb`. Similarity is computed in embedding space using cosine similarity, producing a weighted edge list:
@@ -800,20 +738,15 @@ This network is used as a macro “co-learning” surface rather than a modellin
 
 The resulting artefacts provide a stable, queryable representation of hidden structure: job similarity emerges from shared probabilistic demand, job families provide interpretable segmentation, and skill similarity provides a lightweight macro lens for learning pathways and market navigation.
 
----
-
 ### 8.4 Skill Specialisation (Lift Analysis)
 
 In addition to embeddings and clustering, the project derives interpretable “specialisation maps” that quantify how strongly each skill family is over- or under-represented in different market slices. For a grouping variable \(g\) (e.g., job family, seniority, sector, state), the method computes a **lift score** per skill family as the ratio (or difference) between the mean predicted requirement probability within the group and the global mean across all jobs. Lift-based summaries serve two roles: (i) they provide an interpretable bridge between latent families and recognisable job ecosystems (“what defines this cluster”), and (ii) they expose mechanism-like regularities (which skill bundles reliably differentiate roles and strata) without requiring causal claims. These maps are materialised as report/app assets (heatmaps and group summaries) and are used primarily for narrative interpretation and sanity-checking of the embedding space.
-
 
 ---
 
 ## 9. Individual Positioning (User → Market)
 
 This layer maps an individual profile into the learned market landscape and produces user-conditioned signals that are reused verbatim by the recommender and upskilling modules. Inputs are validated, transformed into the engine’s canonical skill space, filtered into a feasible job universe, and scored along two orthogonal axes—**suitability** and **competitiveness**—with explicit skill-gap explanations.
-
----
 
 ### 9.1 User profile schema and validation
 
@@ -826,8 +759,6 @@ User input is formalised as a single structured object (UserProfile) designed to
 
 Validation is strict and fail-fast: required fields must be present, weights must be valid (finite, non-negative, normalisable), and skill injection that produces no change in extracted skill families is detected and treated as a no-op in counterfactual modules. This entrypoint contract ensures that downstream scoring logic never runs on malformed or ambiguous inputs.
 
----
-
 ### 9.2 Candidate retrieval and constraint filters
 
 Positioning is computed only over a **candidate universe** defined by hard constraints imposed by the user. Candidate retrieval applies deterministic filters over the canonical jobs table (and associated artefacts) such as:
@@ -839,8 +770,6 @@ Positioning is computed only over a **candidate universe** defined by hard const
 
 All joins in this step are alignment-safe: `job_id` is the primary key and candidate sets are enforced to be subsets of the persisted artefact universe (jobs table ↔ probability matrix ↔ embeddings). If constraints yield an empty candidate set, the system returns a clear error rather than falling back to unconstrained recommendations.
 
----
-
 ### 9.3 Suitability: definition and interpretability
 
 **Suitability** estimates how well a job aligns with the user’s current profile and targets. It is computed as a normalised weighted combination of:
@@ -849,8 +778,6 @@ All joins in this step are alignment-safe: `job_id` is the primary key and candi
 2) **Salary alignment:** a one-sided score that rewards jobs consistent with the user’s target salary range (computed using the salary model prediction attached to each candidate job).
 
 Weights are normalised to sum to 1 so that suitability remains on a consistent scale across different user settings. The score is interpretable by construction: each job’s suitability can be decomposed into its skill-match component and salary-alignment component, allowing the app and report tables to show “why” a job ranks highly (skills, salary, or both).
-
----
 
 ### 9.4 Competitiveness: definition and rationale
 
@@ -861,8 +788,6 @@ Weights are normalised to sum to 1 so that suitability remains on a consistent s
 
 This missingness signal is combined with a salary-position term (salary percentile within the candidate universe) to reflect that higher-paying jobs tend to have higher barrier profiles even when role identity is similar. The resulting competitiveness index is scaled consistently and is used as the axis for best_now/stretch partitioning downstream.
 
----
-
 ### 9.5 Skill gap analysis and severity ranking
 
 To make barriers actionable, the system translates competitiveness drivers into an explicit **gap map**. For a user’s most relevant targets (e.g., top-K jobs by suitability), jobs are joined to the job × skill probability matrix and aggregated:
@@ -872,8 +797,6 @@ To make barriers actionable, the system translates competitiveness drivers into 
 - **Ranked gaps:** missing families are sorted by severity, providing a compact summary of which skill families most consistently block the user from their high-fit targets.
 
 These ranked gaps are used directly by the recommender explanations (job-level “main missing families”) and by the upskilling module to define the counterfactual scenario set.
-
----
 
 ### Table 6. Positioning output schema (core tables)
 
@@ -894,8 +817,6 @@ These ranked gaps are used directly by the recommender explanations (job-level �
 
 This layer converts user-conditioned positioning signals into actionable decisions: two ranked job shortlists and an ROI-ranked upskilling plan grounded in observed demand. It consumes the outputs of Section 9—candidate universe, suitability \(S(j)\), competitiveness \(C(j)\), and probability-based gap surfaces—and produces deterministic, inspectable recommendation tables used directly by the Streamlit app and reporting artefacts.
 
----
-
 ### 10.1 Recommendations (best_now vs stretch)
 
 #### Definitions and guardrails
@@ -903,8 +824,6 @@ Recommendations are generated from the **candidate universe** defined by hard co
 
 - **best_now:** roles that combine high suitability \(S(j)\) with lower barriers \(C(j)\) given the user’s current profile.
 - **stretch:** roles that remain high suitability but sit at higher barrier levels (typically dominated by missing high-probability requirements).
-
-
 
 The recommender enforces guardrails before ranking:
 - the candidate universe must be non-empty and aligned across required artefacts (`job_id` contracts);
@@ -972,8 +891,6 @@ Upskilling outputs are reported at two levels:
 1) **Skill families (decision layer):** ranked list with lift metrics and affected target sets.
 2) **Concrete demanded tokens (evidence layer):** for each top family, representative tokens demanded by the user’s target jobs are surfaced from the skill dictionary, linking recommendations back to employer language and enabling specific learning plans.
 
----
-
 ### Table 7. Recommendation output schema (core tables)
 
 | Output table | Grain | Key fields | Description |
@@ -992,8 +909,6 @@ Upskilling outputs are reported at two levels:
 ## 11. Macro Lens Overlay (Context, Not Re-ranking)
 
 The macro overlay adds structured context to the upskilling plan without modifying the core recommendation scores or shortlist composition. It reuses the market-structure artefacts (skill embeddings and the derived sparse skill–skill network) to answer a different question than the recommender: *given a recommended skill family, what tends to be learned alongside it in the market?* This produces “co-learning neighbours” that help users convert a ranked skill family list into coherent learning bundles and realistic next-step sequences.
-
----
 
 ### 11.1 Co-learning Neighbours
 
@@ -1096,7 +1011,6 @@ These behavioural checks are intentionally minimal: they do not claim “ground 
 
 
 > Summary: credibility in this project is enforced through the coupling of deterministic pipelines with contract-style evaluation suites. Models contribute quantitative metrics; geometry and recommendation components contribute invariants and reproducibility guarantees. Together, these checks ensure that the engine can be rebuilt, refactored, and run end-to-end without silent drift or brittle failure in decision outputs.
-
 
 ---
 
@@ -1225,7 +1139,6 @@ Engineering quality in v1 is enforced primarily through the evaluation and contr
 
 For full engineering detail beyond this report, see: `docs/engineering/architecture.md` (modules/pipelines/contracts) and `docs/engineering/artefact_manifest_ch5_app.md` (runtime asset inventory). Section 12 documents the checks that protect reproducibility and deterministic decision outputs.
 
-
 ---
 
 ## 17. Assumptions, Limitations, and Ethical Use
@@ -1277,7 +1190,6 @@ Misuse risks include:
 - over-interpreting rare-skill outputs where sparsity limits signal quality.
 
 A responsible stance is to treat outputs as **evidence-backed hypotheses** about market structure that require contextual judgement (role descriptions, seniority expectations, and user evidence) before acting—especially for high-stakes decisions.
-
 
 ---
 
