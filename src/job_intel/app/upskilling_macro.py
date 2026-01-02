@@ -49,6 +49,58 @@ def _scenario_to_family(s: str) -> str:
 
 
 # -----------------------------
+# Style + name cleaning
+# -----------------------------
+import numpy as np  # add (you already use it in plotting)
+
+_ACCENT = "#2F3E46"
+_NEUTRAL = "#374151"
+_TEXT = "#0B1220"
+_GRID = "#E5E7EB"
+
+
+def _set_mpl_style() -> None:
+    plt.rcParams.update(
+        {
+            "figure.facecolor": "white",
+            "axes.facecolor": "white",
+            "savefig.facecolor": "white",
+            "font.size": 12,
+            "axes.titlesize": 16,
+            "axes.labelsize": 13,
+            "xtick.labelsize": 12,
+            "ytick.labelsize": 12,
+            "axes.edgecolor": _GRID,
+            "axes.linewidth": 0.8,
+            "grid.color": _GRID,
+            "grid.linestyle": "-",
+            "grid.linewidth": 0.8,
+            "axes.grid": False,
+        }
+    )
+
+
+def _clean_axes(ax: plt.Axes, *, grid_axis: str = "y") -> None:
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_color(_GRID)
+    ax.spines["bottom"].set_color(_GRID)
+    ax.tick_params(colors=_NEUTRAL)
+    ax.xaxis.label.set_color(_NEUTRAL)
+    ax.yaxis.label.set_color(_NEUTRAL)
+    ax.title.set_color(_TEXT)
+    ax.grid(True, axis=grid_axis, alpha=0.9)
+
+
+def _clean_skill_name(s: str) -> str:
+    s = str(s)
+    s = s.replace("__", " — ")
+    s = s.replace("_prob", "")
+    s = s.replace("_", " ")
+    return s.strip()
+
+
+# -----------------------------
 # Tables (Upskilling)
 # -----------------------------
 def _build_missing_families_table(upskill_out: dict[str, Any]) -> pd.DataFrame:
@@ -152,7 +204,7 @@ def _strip_prob_suffix(s: str) -> str:
 def _load_similarity_edges() -> pd.DataFrame:
     """
     Loads undirected edge list with columns: skill_1, skill_2, similarity
-    Strips _prob suffix from both skill columns.
+    Cleans skill names to match Landscape plot naming.
     """
     path = _default_similarity_edges_path()
     if not path.exists():
@@ -168,8 +220,8 @@ def _load_similarity_edges() -> pd.DataFrame:
         raise KeyError(f"Similarity edges file missing columns: {sorted(missing)}")
 
     edges = edges.copy()
-    edges["skill_1"] = edges["skill_1"].astype(str).apply(_strip_prob_suffix)
-    edges["skill_2"] = edges["skill_2"].astype(str).apply(_strip_prob_suffix)
+    edges["skill_1"] = edges["skill_1"].astype(str).apply(_clean_skill_name)
+    edges["skill_2"] = edges["skill_2"].astype(str).apply(_clean_skill_name)
     edges["similarity"] = pd.to_numeric(edges["similarity"], errors="coerce")
     edges = edges.dropna(subset=["skill_1", "skill_2", "similarity"]).reset_index(
         drop=True
@@ -182,10 +234,9 @@ def _neighbors_for_focal(
 ) -> pd.DataFrame:
     """
     edges: undirected edge list (skill_1, skill_2, similarity)
-    focal: skill name (already without _prob)
-    Returns: focal_skill, co_learning_skill, similarity, rank
+    focal: skill name (any raw format) -> cleaned to match edges
     """
-    f = str(focal)
+    f = _clean_skill_name(focal)
 
     a = edges.loc[edges["skill_1"] == f, ["skill_2", "similarity"]].rename(
         columns={"skill_2": "co_learning_skill"}
@@ -217,21 +268,18 @@ def _build_neighbors_all(
     return pd.concat(out, ignore_index=True) if out else pd.DataFrame()
 
 
+# -----------------------------
+# MODIFY _plot_grouped_colearning() to match Landscape style + safer label spacing
+# -----------------------------
 def _plot_grouped_colearning(
     nei_all: pd.DataFrame, *, focal_order: list[str], top_k: int = 5
 ) -> None:
-    """
-    Single plot:
-      - x axis: 3 focal skills
-      - for each: up to top_k bars (top neighbours), ordered by similarity
-      - labels: neighbour skill names, vertical, anchored just above each bar
-      - colors: blue gradient mapped to similarity (higher = darker), constrained to avoid too-light tones
-    """
     if nei_all is None or nei_all.empty:
         st.info("No co-learning neighbours found for the current recommended skills.")
         return
 
-    focals = [str(x) for x in focal_order]
+    # Clean and keep order
+    focals = [_clean_skill_name(x) for x in focal_order]
     focals = [f for f in focals if f in set(nei_all["focal_skill"])]
     if not focals:
         st.info("No co-learning neighbours found for the current recommended skills.")
@@ -247,33 +295,29 @@ def _plot_grouped_colearning(
         .copy()
     )
 
-    # --- gradient by similarity (avoid very light blues)
+    # Similarity scaling
     vmin = float(plot_df["similarity"].min())
     vmax = float(plot_df["similarity"].max())
-    if vmin == vmax:
+    if np.isclose(vmin, vmax):
         vmax = vmin + 1e-9
 
     norm = plt.Normalize(vmin=vmin, vmax=vmax)
-    cmap = plt.cm.Blues
 
-    def _blue(v: float):
-        # map to darker band of Blues: [0.55, 0.98]
+    # Minimal monochrome palette: map similarity to alpha in a single accent
+    def _rgba(v: float):
         t = float(norm(v))
-        return cmap(0.55 + 0.43 * t)
+        return (*plt.matplotlib.colors.to_rgb(_ACCENT), 0.55 + 0.40 * t)
 
     base = list(range(n_foc))
-    width = 0.14  # tuned for k=5
+    width = 0.14  # keep (your layout assumption)
 
-    fig, ax = plt.subplots(figsize=(16, 6))
+    fig, ax = plt.subplots(figsize=(16, 8))
 
     max_h = float(plot_df["similarity"].max()) if not plot_df.empty else 1.0
-    # create headroom for labels above bars
-    ax.set_ylim(0.0, max_h * 2)
+    ax.set_ylim(0.0, max_h * 2.0)  # keep your headroom ratio
 
-    # small vertical padding between bar top and label
     pad = max_h * 0.03
 
-    # draw grouped bars by rank
     for j in range(k):
         rank = j + 1
         sub = plot_df[plot_df["rank"] == rank]
@@ -284,16 +328,25 @@ def _plot_grouped_colearning(
             m = sub["focal_skill"] == f
             if m.any():
                 y.append(float(sub.loc[m, "similarity"].iloc[0]))
-                labels.append(str(sub.loc[m, "co_learning_skill"].iloc[0]))
+                labels.append(
+                    _clean_skill_name(sub.loc[m, "co_learning_skill"].iloc[0])
+                )
             else:
                 y.append(0.0)
                 labels.append("")
 
         x = [b + (j - (k - 1) / 2) * width for b in base]
-        colors = [_blue(v) if v > 0 else (0, 0, 0, 0) for v in y]
-        bars = ax.bar(x, y, width=width, color=colors, edgecolor="white", linewidth=0.7)
+        colors = [_rgba(v) if v > 0 else (0, 0, 0, 0) for v in y]
 
-        # labels anchored above each bar
+        bars = ax.bar(
+            x,
+            y,
+            width=width,
+            color=colors,
+            edgecolor=_GRID,
+            linewidth=0.8,
+        )
+
         for rect, lab, v in zip(bars, labels, y):
             if not lab or v <= 0:
                 continue
@@ -304,24 +357,25 @@ def _plot_grouped_colearning(
                 ha="center",
                 va="bottom",
                 rotation=90,
-                fontsize=10,
+                fontsize=12,
+                color=_TEXT,
                 clip_on=True,
             )
 
     ax.set_title(
         "Macro co-learning: top skill neighbours for the recommended upskilling targets",
-        pad=18,
+        loc="left",
+        pad=14,
     )
     ax.set_xlabel("Recommended skill to upskill")
     ax.set_ylabel("Similarity")
     ax.set_xticks(base)
-    ax.set_xticklabels(focals)
+    ax.set_xticklabels(focals, color=_TEXT)
 
-    ax.grid(True, linestyle="--", alpha=0.35, axis="y")
+    _clean_axes(ax, grid_axis="y")
 
-    # give extra top margin so rotated labels don't clip
     fig.tight_layout()
-    fig.subplots_adjust(top=0.88)
+    fig.subplots_adjust(top=0.88)  # keep extra top margin so labels don't collide
 
     st.pyplot(fig, clear_figure=True)
 
@@ -331,6 +385,7 @@ def _plot_grouped_colearning(
 # -----------------------------
 def render() -> None:
     st.title("Upskilling")
+    _set_mpl_style()
 
     upskill_out = _get_upskilling_out_from_session()
     if upskill_out is None:
@@ -464,6 +519,7 @@ def render() -> None:
     if not top_table.empty and "skill family" in top_table.columns:
         focals = top_table["skill family"].astype(str).head(3).tolist()
 
+    focals = [_clean_skill_name(f) for f in focals]
     focals = [f for f in focals if f and f != "baseline"]
     if not focals:
         st.info(

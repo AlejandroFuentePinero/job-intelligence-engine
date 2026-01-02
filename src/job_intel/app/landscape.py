@@ -20,6 +20,48 @@ def _assets_dir() -> Path:
 
 
 # -----------------------------
+# Matplotlib styling (minimal + professional)
+# -----------------------------
+_ACCENT = "#2F3E46"  # deep blue-grey
+_NEUTRAL = "#6B7280"  # muted grey
+_GRID = "#E5E7EB"  # light grey
+_TEXT = "#111827"  # near-black
+
+
+def _set_mpl_style() -> None:
+    plt.rcParams.update(
+        {
+            "figure.facecolor": "white",
+            "axes.facecolor": "white",
+            "savefig.facecolor": "white",
+            "font.size": 10,
+            "axes.titlesize": 12,
+            "axes.labelsize": 10,
+            "xtick.labelsize": 9,
+            "ytick.labelsize": 9,
+            "axes.edgecolor": _GRID,
+            "axes.linewidth": 0.8,
+            "grid.color": _GRID,
+            "grid.linestyle": "-",
+            "grid.linewidth": 0.8,
+            "axes.grid": False,  # opt-in per plot
+        }
+    )
+
+
+def _clean_axes(ax: plt.Axes, *, grid_axis: str = "x") -> None:
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_color(_GRID)
+    ax.spines["bottom"].set_color(_GRID)
+    ax.tick_params(colors=_NEUTRAL)
+    ax.xaxis.label.set_color(_NEUTRAL)
+    ax.yaxis.label.set_color(_NEUTRAL)
+    ax.title.set_color(_TEXT)
+    ax.grid(True, axis=grid_axis, alpha=0.9)
+
+
+# -----------------------------
 # UI helpers
 # -----------------------------
 def _top_box(body_md: str) -> None:
@@ -36,6 +78,17 @@ def _interp_expander(title: str, body_md: str, *, expanded: bool = False) -> Non
     """
     with st.expander(title, expanded=expanded):
         st.markdown(body_md)
+
+
+# -----------------------------
+# Skill name cleaning (shared)
+# -----------------------------
+def _clean_skill_name(s: str) -> str:
+    s = str(s)
+    s = s.replace("__", " — ")
+    s = s.replace("_prob", "")
+    s = s.replace("_", " ")
+    return s.strip()
 
 
 # -----------------------------
@@ -61,10 +114,23 @@ def _load_residuals_series() -> pd.Series:
 def _load_skill_value_index() -> pd.DataFrame:
     p = _assets_dir() / "skill_value_index.csv"
     df = pd.read_csv(p)
+
     if not {"skill", "value"}.issubset(df.columns):
         raise ValueError("skill_value_index.csv must have columns: skill, value")
+
+    # Clean skill names to match the similarity plot
+    df["skill"] = df["skill"].astype(str).map(_clean_skill_name)
+
     df["value"] = pd.to_numeric(df["value"], errors="coerce")
-    df = df.dropna(subset=["value"]).copy()
+    df = df.dropna(subset=["skill", "value"]).copy()
+
+    # If cleaning creates duplicates, collapse deterministically
+    df = (
+        df.groupby("skill", as_index=False)
+        .agg(value=("value", "mean"))
+        .sort_values("value", ascending=False)
+        .reset_index(drop=True)
+    )
     return df
 
 
@@ -143,49 +209,90 @@ def _load_shap_explanation() -> Any:
     )
 
 
+@st.cache_data(show_spinner=False)
+def _load_skill_similarity_matrix() -> pd.DataFrame:
+    p = _assets_dir() / "skill_similarity_matrix.csv"
+    df = pd.read_csv(p)
+
+    if "skill" not in df.columns:
+        raise ValueError("skill_similarity_matrix.csv must include a 'skill' column")
+
+    df = df.set_index("skill")
+    df.index = df.index.map(_clean_skill_name)
+    df.columns = [_clean_skill_name(c) for c in df.columns]
+    df.index = df.index.astype(str)
+    df.columns = [str(c) for c in df.columns]
+
+    df = df.apply(pd.to_numeric, errors="coerce")
+    df = df.replace([np.inf, -np.inf], np.nan)
+
+    if set(df.columns) == set(df.index):
+        df = df.loc[df.index, df.index]
+
+    arr = df.to_numpy(copy=True)
+    np.fill_diagonal(arr, np.nan)
+    df = pd.DataFrame(arr, index=df.index, columns=df.columns)
+    return df
+
+
 # -----------------------------
 # Plot helpers
 # -----------------------------
 def _plot_residual_hist(residuals: pd.Series, bins: int = 40) -> None:
-    fig, ax = plt.subplots(figsize=(10, 3.5))
+    fig, ax = plt.subplots(figsize=(10, 3.8))
     ax.hist(
         residuals,
         bins=bins,
-        color="#4C72B0",
+        color=_ACCENT,
         edgecolor="white",
+        linewidth=0.6,
         alpha=0.9,
     )
-    ax.axvline(0, linewidth=1)
-    ax.set_title("Residual Distribution")
-    ax.set_xlabel("Residuals")
+    ax.axvline(0, linewidth=1, color=_GRID)
+    ax.set_title("Residual distribution", loc="left", pad=10)
+    ax.set_xlabel("Residual")
     ax.set_ylabel("Count")
-    ax.grid(True, linestyle="--", alpha=0.4)
+    _clean_axes(ax, grid_axis="x")
+    fig.tight_layout()
     st.pyplot(fig, clear_figure=True)
 
 
-def _plot_group_bars(df: pd.DataFrame, metric: str, top_n: int, title: str) -> None:
-    d = df.head(top_n).copy()
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.barh(d["group_value"].astype(str), d[metric])
-    ax.axvline(0, linewidth=1)
+def _plot_group_bars(df: pd.DataFrame, metric: str, title: str) -> None:
+    d = df.copy()
+    d["group_value"] = d["group_value"].astype(str)
+
+    n = len(d)
+    fig_h = min(18.0, max(5.5, 0.28 * n + 1.5))
+    fig, ax = plt.subplots(figsize=(10, fig_h))
+
+    ax.barh(d["group_value"][::-1], d[metric][::-1], color=_ACCENT, alpha=0.92)
+    ax.axvline(0, linewidth=1, color=_GRID)
+
+    ax.set_title(title, loc="left", pad=10)
     ax.set_xlabel(metric)
     ax.set_ylabel("")
-    ax.set_title(title)
-    ax.grid(True, linestyle="--", alpha=0.3, axis="x")
-    ax.invert_yaxis()
+
+    _clean_axes(ax, grid_axis="x")
+    fig.tight_layout()
     st.pyplot(fig, clear_figure=True)
 
 
-def _plot_skill_value_bars(df: pd.DataFrame, top_n: int) -> None:
-    d = df.sort_values("value", ascending=False).head(top_n).copy()
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.barh(d["skill"].astype(str), d["value"])
-    ax.axvline(0, linewidth=1)
-    ax.set_title(f"Global Skill Value Index (GSVI) — top {top_n}")
+def _plot_skill_value_bars(df: pd.DataFrame) -> None:
+    d = df.sort_values("value", ascending=False).copy()
+
+    n = len(d)
+    fig_h = min(14.0, max(5.5, 0.32 * n + 1.5))
+    fig, ax = plt.subplots(figsize=(10, fig_h))
+
+    ax.barh(d["skill"].astype(str)[::-1], d["value"][::-1], color=_ACCENT, alpha=0.92)
+    ax.axvline(0, linewidth=1, color=_GRID)
+
+    ax.set_title("Global Skill Value Index (GSVI)", loc="left", pad=10)
     ax.set_xlabel("Value (higher = more associated with higher salary)")
     ax.set_ylabel("")
-    ax.grid(True, linestyle="--", alpha=0.3, axis="x")
-    ax.invert_yaxis()
+
+    _clean_axes(ax, grid_axis="x")
+    fig.tight_layout()
     st.pyplot(fig, clear_figure=True)
 
 
@@ -201,13 +308,14 @@ def _global_shap_bar_fig(shap_values: Any) -> plt.Figure:
     ordered_vals = mean_abs[order]
 
     n = len(ordered_names)
-    fig_h = min(12.0, max(7.7, 0.18 * n))
+    fig_h = min(13.5, max(7.9, 0.28 * n + 1.5))
 
-    fig, ax = plt.subplots(figsize=(7.6, fig_h))
-    ax.barh(ordered_names[::-1], ordered_vals[::-1])
-    ax.set_title("Global SHAP — mean(|contribution|) by feature")
+    fig, ax = plt.subplots(figsize=(7.8, fig_h))
+    ax.barh(ordered_names[::-1], ordered_vals[::-1], color=_ACCENT, alpha=0.92)
+    ax.set_title("Global SHAP — mean(|contribution|) by feature", loc="left", pad=10)
     ax.set_xlabel("Mean absolute SHAP value")
-    ax.grid(True, linestyle="--", alpha=0.25, axis="x")
+
+    _clean_axes(ax, grid_axis="x")
     fig.tight_layout()
     return fig
 
@@ -219,7 +327,7 @@ def _beeswarm_fig(shap_values: Any, max_display: int = 20) -> plt.Figure:
     import shap  # type: ignore
 
     try:
-        plt.figure(figsize=(7.6, 5.6))
+        plt.figure(figsize=(7.8, 5.8))
         shap.plots.beeswarm(shap_values, max_display=int(max_display), show=False)
         fig = plt.gcf()
         fig.tight_layout()
@@ -233,7 +341,7 @@ def _beeswarm_fig(shap_values: Any, max_display: int = 20) -> plt.Figure:
         names = list(shap_values.feature_names)
 
         if data is None:
-            plt.figure(figsize=(7.6, 5.6))
+            plt.figure(figsize=(7.8, 5.8))
             shap.plots.beeswarm(shap_values, max_display=int(max_display), show=False)
             fig = plt.gcf()
             fig.tight_layout()
@@ -245,13 +353,14 @@ def _beeswarm_fig(shap_values: Any, max_display: int = 20) -> plt.Figure:
         keep = np.where(np.isfinite(v) & (v > 0))[0]
 
         if keep.size == 0:
-            fig, ax = plt.subplots(figsize=(7.6, 5.6))
+            fig, ax = plt.subplots(figsize=(7.8, 5.8))
             ax.text(
                 0.5,
                 0.5,
                 "Beeswarm unavailable (all displayed features are constant).",
                 ha="center",
                 va="center",
+                color=_NEUTRAL,
             )
             ax.axis("off")
             return fig
@@ -263,15 +372,22 @@ def _beeswarm_fig(shap_values: Any, max_display: int = 20) -> plt.Figure:
             feature_names=[names[i] for i in keep],
         )
 
-        plt.figure(figsize=(7.6, 5.6))
+        plt.figure(figsize=(7.8, 5.8))
         shap.plots.beeswarm(expl, max_display=int(max_display), show=False)
         fig = plt.gcf()
         fig.tight_layout()
         return fig
 
     except Exception as e:
-        fig, ax = plt.subplots(figsize=(7.6, 5.6))
-        ax.text(0.5, 0.5, f"Could not render beeswarm: {e}", ha="center", va="center")
+        fig, ax = plt.subplots(figsize=(7.8, 5.8))
+        ax.text(
+            0.5,
+            0.5,
+            f"Could not render beeswarm: {e}",
+            ha="center",
+            va="center",
+            color=_NEUTRAL,
+        )
         ax.axis("off")
         return fig
 
@@ -333,27 +449,166 @@ def _plot_local_bar_and_box(
         df.loc[df[label_col] == lab, "shap_value"].astype(float).values for lab in order
     ]
 
-    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12.5, 4.8))
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12.5, 5.2))
 
-    axes[0].barh(order[::-1], summ["mean_shap"].values[::-1])
-    axes[0].axvline(0, linewidth=1)
-    axes[0].set_title(f"{title} — mean SHAP (premium/penalty)")
+    # Mean bar
+    axes[0].barh(order[::-1], summ["mean_shap"].values[::-1], color=_ACCENT, alpha=0.92)
+    axes[0].axvline(0, linewidth=1, color=_GRID)
+    axes[0].set_title(f"{title} — mean SHAP (premium / penalty)", loc="left", pad=10)
     axes[0].set_xlabel("Mean SHAP value")
-    axes[0].grid(True, linestyle="--", alpha=0.25, axis="x")
+    axes[0].set_ylabel("")
+    _clean_axes(axes[0], grid_axis="x")
 
-    axes[1].boxplot(
+    _STROKE = "#989DA3"
+
+    # Box (distribution)
+    bp = axes[1].boxplot(
         data[::-1],
         labels=order[::-1],
         vert=False,
         showfliers=False,
+        patch_artist=True,
+        widths=0.6,
+        medianprops={"color": _TEXT, "linewidth": 1.2},
+        boxprops={"edgecolor": _STROKE, "linewidth": 1.1},
+        whiskerprops={"color": _STROKE, "linewidth": 1.1},
+        capprops={"color": _STROKE, "linewidth": 1.1},
     )
-    axes[1].axvline(0, linewidth=1)
-    axes[1].set_title(f"{title} — distribution of SHAP effects")
-    axes[1].set_xlabel("SHAP value")
-    axes[1].grid(True, linestyle="--", alpha=0.25, axis="x")
+    for box in bp["boxes"]:
+        box.set_facecolor("#C3AB34")  # very light fill
 
-    plt.tight_layout()
+    axes[1].axvline(0, linewidth=1, color=_GRID)
+    axes[1].set_title(f"{title} — SHAP distribution", loc="left", pad=10)
+    axes[1].set_xlabel("SHAP value")
+    axes[1].set_ylabel("")
+    _clean_axes(axes[1], grid_axis="x")
+
+    fig.tight_layout()
     return fig
+
+
+def _order_by_similarity(sim: pd.DataFrame) -> list[str]:
+    """
+    Returns an ordering of skills that groups similar skills together
+    using hierarchical clustering on distance = 1 - similarity.
+
+    If scipy is unavailable, falls back to current order.
+    """
+    try:
+        from scipy.cluster.hierarchy import linkage, leaves_list
+        from scipy.spatial.distance import squareform
+    except Exception:
+        return sim.index.tolist()
+
+    m = sim.to_numpy(dtype=float, copy=True)
+    np.fill_diagonal(m, 1.0)
+
+    d = 1.0 - m
+    d = np.clip(d, 0.0, 2.0)
+    np.fill_diagonal(d, 0.0)
+
+    condensed = squareform(d, checks=False)
+    Z = linkage(condensed, method="average", optimal_ordering=True)
+    order_idx = leaves_list(Z)
+
+    labels = sim.index.to_numpy()
+    return labels[order_idx].tolist()
+
+
+def _orient_order_top_left(
+    sim: pd.DataFrame, order: list[str], k: int = 8
+) -> list[str]:
+    """
+    Choose between order and reversed(order) to push high-similarity structure
+    towards the top-left (heuristic: maximize mean similarity in the top-left k×k block).
+    """
+    k = max(3, min(int(k), len(order)))
+    A = sim.loc[order, order].to_numpy(dtype=float, copy=True)
+    B = sim.loc[list(reversed(order)), list(reversed(order))].to_numpy(
+        dtype=float, copy=True
+    )
+
+    np.fill_diagonal(A, np.nan)
+    np.fill_diagonal(B, np.nan)
+
+    score_a = float(np.nanmean(A[:k, :k]))
+    score_b = float(np.nanmean(B[:k, :k]))
+
+    return order if score_a >= score_b else list(reversed(order))
+
+
+def _plot_skill_similarity_heatmap(
+    sim: pd.DataFrame, *, triangle: str = "lower"
+) -> None:
+    """
+    Plots only one half of the symmetric similarity matrix and orders skills
+    to group similar skills together.
+
+    triangle: "lower" or "upper"
+    """
+    # Comment out to order skills by similarity
+    # order = _order_by_similarity(sim)
+    # order = _orient_order_top_left(sim, order, k=8)
+    # sim = sim.loc[order, order]
+
+    mat = sim.to_numpy(dtype=float, copy=True)
+
+    np.fill_diagonal(mat, np.nan)
+    if triangle == "lower":
+        mat[np.triu_indices_from(mat, k=1)] = np.nan
+    elif triangle == "upper":
+        mat[np.tril_indices_from(mat, k=-1)] = np.nan
+    else:
+        raise ValueError("triangle must be 'lower' or 'upper'")
+
+    finite = mat[np.isfinite(mat)]
+    if finite.size == 0:
+        st.info("Skill similarity matrix has no finite values to plot.")
+        return
+
+    vmin = float(np.nanpercentile(finite, 5))
+    vmax = float(np.nanpercentile(finite, 95))
+    if np.isclose(vmin, vmax):
+        vmin = float(np.nanmin(finite))
+        vmax = float(np.nanmax(finite))
+
+    n = sim.shape[0]
+    fig_w = min(12.5, max(7.5, 0.22 * n + 4.0))
+    fig_h = min(12.0, max(7.0, 0.22 * n + 3.5))
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+
+    cmap = plt.get_cmap("cividis").copy()
+    cmap.set_bad(color="white")
+
+    im = ax.imshow(
+        mat,
+        cmap=cmap,
+        vmin=vmin,
+        vmax=vmax,
+        interpolation="nearest",
+        aspect="equal",
+    )
+
+    ax.set_title("Skill similarity matrix", loc="left", pad=10)
+
+    ax.set_xticks(np.arange(n))
+    ax.set_yticks(np.arange(n))
+    ax.set_xticklabels(
+        sim.columns.tolist(), rotation=90, ha="center", va="top", color=_NEUTRAL
+    )
+    ax.set_yticklabels(sim.index.tolist(), color=_NEUTRAL)
+
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    ax.tick_params(length=0)
+
+    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.02)
+    cbar.set_label("Cosine similarity", color=_NEUTRAL)
+    cbar.ax.yaxis.set_tick_params(color=_NEUTRAL)
+    plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color=_NEUTRAL)
+
+    fig.tight_layout()
+    st.pyplot(fig, clear_figure=True)
 
 
 # -----------------------------
@@ -431,14 +686,14 @@ _SKILL_MODELS_SNAPSHOT = {
 # -----------------------------
 def render() -> None:
     st.title("Landscape")
+    _set_mpl_style()
 
     st.markdown(
         """
-    This Landscape page summarises the global market signal learned from the job-ad dataset: which job attributes most strongly shape salary, where persistent pay premiums/penalties remain after controls, and which skill bundles align with higher predicted pay. It combines global SHAP, residual (fairness) diagnostics, and the Global Skill Value Index to show that structural factors (role/title, location, sector, company context) dominate, with skills refining outcomes within those regimes. The goal is to provide the context that makes the Recommender and Upskilling outputs interpretable—explaining the “shape” of the market before positioning an individual user inside it.
-    """
+This Landscape page summarises the global market signal learned from the job-ad dataset: which job attributes most strongly shape salary, where persistent pay premiums/penalties remain after controls, and which skill bundles align with higher predicted pay. It combines global SHAP, residual (fairness) diagnostics, and the Global Skill Value Index to show that structural factors (role/title, location, sector, company context) dominate, with skills refining outcomes within those regimes. The goal is to provide the context that makes the Recommender and Upskilling outputs interpretable—explaining the “shape” of the market before positioning an individual user inside it.
+        """.strip()
     )
 
-    # Keep the top box visible (requested)
     _top_box(
         "The job market landscape is the project’s “map” of how data roles are priced and differentiated in the real world—what the market consistently rewards, what it discounts, and which constraints are structural rather than personal. It is the backbone of the recommender: the system is not guessing in a vacuum, it is positioning you inside this learned landscape so the recommendations are explainable rather than arbitrary. The strongest result in this project is that salary is driven first by structural context—role semantics (enriched job title), location (state), sector, and company context—and only then refined by skill bundles, meaning skills usually move you within a role/location regime more than they let you “escape” it. Residual (fairness) analysis reinforces this by showing persistent premiums and penalties by employer type and scale: large/public employers tend to pay above expectation, while small/private and especially non-profit roles underpay relative to comparable jobs. The model also learns an occupational hierarchy that will feel familiar: ML/AI-heavy scientist/engineer titles cluster in higher-paying regimes, while analyst-oriented titles cluster in lower-paying regimes, even after controlling for other factors. Skills appear as structured bundles (PCA components) with threshold-like effects—broad core infra/programming behaves like a gatekeeper, while ML/modelling depth is where the clearest uplift emerges. Use this page to understand the market context first, then interpret your personalised recommendations as “where you sit on the map” and your upskilling plan as the smallest set of moves that most reliably shifts your position toward better role regimes and better pay."
     )
@@ -450,8 +705,8 @@ def render() -> None:
     view = st.selectbox(
         "Landscape view",
         [
-            "Fairness (residuals)",
-            "Skill value ranking",
+            "Fairness insights",
+            "Skill value ranking and similarity",
             "SHAP importance",
         ],
         index=0,
@@ -460,7 +715,7 @@ def render() -> None:
     # -----------------------------
     # Skill value ranking
     # -----------------------------
-    if view == "Skill value ranking":
+    if view == "Skill value ranking and similarity":
         st.subheader("Global skill value ranking")
 
         _interp_expander(
@@ -476,20 +731,15 @@ It’s **global** (not personalised) and **not causal**—use the Recommender/Up
 - Rankings reflect the structure of the observed job market data
 - Results depend on how skills co-occur in real job postings
 - Skills should be interpreted as **signals within bundles**, not isolated levers
-""".strip(),
+            """.strip(),
             expanded=False,
         )
 
         svi = _load_skill_value_index()
-        top_n = st.slider(
-            "Show top N",
-            min_value=5,
-            max_value=int(min(27, len(svi))),
-            value=int(min(20, len(svi))),
-            step=1,
+        _plot_skill_value_bars(svi)
+        st.caption(
+            "Skill value signal derived from the fitted salary response model. GSVI captures relative, conditional associations with predicted salary."
         )
-
-        _plot_skill_value_bars(svi, top_n=top_n)
 
         _interp_expander(
             "Interpretation (GSVI)",
@@ -502,15 +752,35 @@ It is computed by **back-projecting** the salary model’s PCA component effects
 
 Higher values mean the skill band is more strongly associated with higher salaries in this dataset; negative values mean the opposite.
 This is a **global descriptive market signal**, not causal and not monetary.
-""".strip(),
+            """.strip(),
             expanded=False,
         )
+
+        st.divider()
+        st.subheader("Skill similarity heatmap")
+
+        sim = _load_skill_similarity_matrix()
+        _plot_skill_similarity_heatmap(sim, triangle="lower")
+
+        _interp_expander(
+            "Interpretation (Skill similarity matric)",
+            """
+This heatmap shows **pairwise skill similarity** computed as **cosine similarity** between **Node2Vec skill embeddings**
+learned from the job–skill graph. Similarity reflects **shared labour-market context**: skills that appear in similar roles,
+or represent adjacent proficiency progression within a domain, sit closer in embedding space.
+
+High similarity indicates **functional relatedness** (often basic → intermediate → advanced within the same domain, or tightly coupled transversal skills),
+not raw frequency and not a causal relationship. Use it to identify natural **skill bundles**, “co-learning neighbours”, and gateway skill structure.
+            """.strip(),
+            expanded=False,
+        )
+
         with st.expander("Skill models performance snapshot", expanded=False):
             st.markdown(
                 """
-        These numbers summarise the **quality of the underlying skill signals** that feed the Skill Value ranking and the recommender.
-        Lower PR AUC for rare, advanced skills is expected (class imbalance); Brier indicates probability calibration.
-        """.strip()
+These numbers summarise the **quality of the underlying skill signals** that feed the Skill Value ranking and the recommender.
+Lower PR AUC for rare, advanced skills is expected (class imbalance); Brier indicates probability calibration.
+                """.strip()
             )
             st.json(_SKILL_MODELS_SNAPSHOT)
 
@@ -522,7 +792,7 @@ This is a **global descriptive market signal**, not causal and not monetary.
     # -----------------------------
     # Fairness residuals
     # -----------------------------
-    if view == "Fairness (residuals)":
+    if view == "Fairness insights":
         st.subheader("Fairness (model residuals)")
         group, box = _load_fairness_tables()
 
@@ -535,7 +805,7 @@ after controlling for job characteristics.
 
 **How to read it:** This is a **descriptive fairness lens**, not a causal claim. It helps surface structural pay gradients
 (e.g., location/sector/title patterns) that persist even after accounting for skills and job attributes.
-""".strip(),
+            """.strip(),
             expanded=False,
         )
 
@@ -543,7 +813,6 @@ after controlling for job characteristics.
         residuals = _load_residuals_series()
         _plot_residual_hist(residuals, bins=40)
 
-        # Keep as expander (already matches your preference)
         with st.expander("Box summary stats", expanded=False):
             st.json(box)
 
@@ -611,14 +880,8 @@ after controlling for job characteristics.
             .sort_values(metric, ascending=False)
         )
 
-        top_n = st.slider("Show top N", min_value=5, max_value=30, value=20, step=5)
-
-        _plot_group_bars(
-            df,
-            metric=metric,
-            top_n=top_n,
-            title=f"{_LABELS.get(gt, gt)} — {metric} (top {top_n})",
-        )
+        _plot_group_bars(df, metric=metric, title=f"{_LABELS.get(gt, gt)} — {metric}")
+        st.caption("Feature-level fairness insights.")
 
         _interp_expander(
             f"Interpretation — {_LABELS.get(gt, gt)}",
@@ -627,7 +890,7 @@ after controlling for job characteristics.
         )
 
         st.markdown("### Table")
-        st.dataframe(df.head(top_n), use_container_width=True, hide_index=True)
+        st.dataframe(df, use_container_width=True, hide_index=True)
         return
 
     # -----------------------------
@@ -682,8 +945,8 @@ after controlling for job characteristics.
 
     code_col, label_col, lookup_df = local_opts[choice]
 
-    default_top = 12 if choice == "title_rich_code" else 15
-    top_n = st.slider("Show top N categories", 5, 25, default_top, step=1)
+    # Fixed (no slider) to keep the UI clean and consistent.
+    top_n = 12 if choice == "title_rich_code" else 30
 
     try:
         df_local = _local_shap_frames(
@@ -702,6 +965,7 @@ after controlling for job characteristics.
             df_local, label_col=label_col, title=choice, top_n=top_n
         )
         st.pyplot(fig_local, clear_figure=True)
+        st.caption("Showing absolute local mean SHAP.")
     except Exception as e:
         st.error(f"Could not plot local SHAP for {choice}: {e}")
         return

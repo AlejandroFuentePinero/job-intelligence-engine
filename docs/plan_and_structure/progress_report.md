@@ -301,7 +301,7 @@ _Last updated: 2026-01-01_
 
 ## Optional (only if fast)
 - [ ] Deploy app online (Streamlit Cloud / HF Spaces / Render) OR publish local-only with demo video
-- [ ] LinkedIn update (project + 2-paragraph description)
+- [x] LinkedIn update (project + 2-paragraph description)
 - [x] Portfolio entry
 - [ ] Final scope lock (explicit “v1 is closed” statement in README)
 
