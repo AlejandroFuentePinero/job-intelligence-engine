@@ -25,6 +25,9 @@ def _resolve_first_existing(paths: list[Path]) -> Path | None:
 def _figure_path(filename: str, *, mac_abs: str | None = None) -> Path | None:
     repo = _repo_root()
 
+    # Be robust if caller passes "media/foo.png" etc.
+    fname = Path(filename).name
+
     candidates: list[Path] = []
 
     # 1) User-provided absolute path (works locally)
@@ -32,9 +35,10 @@ def _figure_path(filename: str, *, mac_abs: str | None = None) -> Path | None:
         candidates.append(Path(mac_abs))
 
     # 2) Repo-relative (works on other machines / deployments)
-    candidates.append(repo / "docs" / "narrative" / "figures" / filename)
+    candidates.append(repo / "media" / fname)
+    candidates.append(repo / "docs" / "narrative" / "figures" / fname)
     candidates.append(
-        repo / "src" / "job_intel" / "docs" / "narrative" / "figures" / filename
+        repo / "src" / "job_intel" / "docs" / "narrative" / "figures" / fname
     )
 
     return _resolve_first_existing(candidates)
@@ -61,7 +65,6 @@ and which skills actually change outcomes (instead of just adding noise).
 
 Job Intelligence Engine turns the **data** job market into something you can **query**: it summarises the market signal, then maps your current
 skills to **best-now roles**, **stretch roles**, and an **ROI-ranked upskilling plan** that’s grounded in real job-posting patterns.
-
 
 This project addresses a common problem: job search is noisy and time-consuming, and it’s hard to know which roles are realistic now,
 which are worth stretching for, and which skills will move the needle most.
@@ -101,14 +104,14 @@ This app uses a unified pipeline built on **data-related** job-ad skill signals 
         st.subheader("How to use the app (recommended flow)")
         st.markdown(
             """
-1. **Start with Landscape**  
+1. **Start with Landscape**
    Get context on the market signal so the recommendations feel interpretable.
 
-2. **Run the Recommender**  
-   Provide your **skills** (free text) and optional constraints (state, sector, salary target).  
+2. **Run the Recommender**
+   Provide your **skills** (free text) and optional constraints (state, sector, salary target).
    The output includes explained ranking and bucket logic, job descriptions, and a small glossary.
 
-3. **Explore Upskilling**  
+3. **Explore Upskilling**
    After you run the recommender, this page proposes the best skill families to learn next (high ROI, low downside),
    plus co-learning neighbours from the market embedding space.
 """.strip()
