@@ -256,6 +256,21 @@ def _run_ch4(payload: dict[str, Any]) -> tuple[AppResult, dict[str, Any]]:
 def render() -> None:
     st.title("Recommender")
 
+    with st.container(border=True):
+        st.markdown(
+            """
+    **How to use the Recommender**
+
+    - **Fast demo:** click **Load demo persona** to auto-fill a realistic profile and constraints.  
+    - **Custom run:** enter your details in the **inputs table** (skills + constraints), then click **Update inputs / Run recommender** to compute your positioning and refresh all outputs (this may take a few moments).  
+    - **Results:** below you’ll see two ranked shortlists:
+    - **Best-now** roles (high fit with fewer critical gaps)
+    - **Stretch** roles (strong directional fit, but clearer barriers to entry)  
+    - **Explore in detail:** use the **lookup panel** to inspect any recommendation (why it ranked, predicted salary context, and the main missing skill families driving competitiveness).  
+    - When finished, go to **Upskilling** to get **ROI-ranked skill recommendations** based on counterfactual lift.
+            """.strip()
+        )
+
     if "profile" not in st.session_state:
         st.session_state["profile"] = {}
     if "demo_cfg" not in st.session_state:

@@ -385,6 +385,19 @@ def _plot_grouped_colearning(
 # -----------------------------
 def render() -> None:
     st.title("Upskilling")
+    with st.container(border=True):
+        st.markdown(
+            """
+    **How to use Upskilling**
+
+    - Run the **Recommender** first — Upskilling is generated from your current positioning and target shortlists.  
+    - Review the **missing skill families** for the top recommended roles to see what’s holding you back, and how each family contributes to improving your positioning.  
+    - The engine returns:
+    - **Top 3 skills to learn now** (highest expected positioning gain)
+    - **Co-learning suggestions** (related skills surfaced from the broader market landscape)
+            """.strip()
+        )
+
     _set_mpl_style()
 
     upskill_out = _get_upskilling_out_from_session()
