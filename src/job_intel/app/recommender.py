@@ -260,7 +260,6 @@ def render() -> None:
         st.markdown(
             """
     **How to use the Recommender**
-
     - **Fast demo:** click **Load demo persona** to auto-fill a realistic profile and constraints.  
     - **Custom run:** enter your details in the **inputs table** (skills + constraints), then click **Update inputs / Run recommender** to compute your positioning and refresh all outputs (this may take a few moments).  
     - **Results:** below you’ll see two ranked shortlists:
