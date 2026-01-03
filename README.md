@@ -1,5 +1,5 @@
 # Job Intelligence Engine
-A deterministic, end-to-end job-market intelligence system that converts job ads into interpretable market signals and a constraint-aware recommender (**best-now** vs **stretch**) surfaced via a lightweight Streamlit app.
+A deterministic, end-to-end job-market intelligence system that converts job ads into interpretable market signals and a constraint-aware recommender (**best-now** vs **stretch**) surfaced via a lightweight [Streamlit app](https://job-intelligence-engine.streamlit.app/).
 
 ![Job Intelligence Engine — engine path](media/engine_path.png)
 
