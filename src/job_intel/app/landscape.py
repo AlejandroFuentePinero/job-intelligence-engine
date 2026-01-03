@@ -324,15 +324,22 @@ def _global_shap_bar_fig(shap_values: Any) -> plt.Figure:
 
 
 def _beeswarm_fig(shap_values: Any, max_display: int = 20) -> plt.Figure:
+    """
+    Try notebook beeswarm call; if it fails due to constant features, drop constants for beeswarm only.
+    """
     import shap  # type: ignore
+
+    title = "Beeswarm (feature impact distribution)"
 
     try:
         plt.figure(figsize=(7.8, 5.8))
         shap.plots.beeswarm(shap_values, max_display=int(max_display), show=False)
+
+        ax = plt.gca()
+        ax.set_title(title, loc="center", pad=10)
+
         fig = plt.gcf()
-
         _apply_fig_text_sizes(fig, title_fs=16, label_fs=13, tick_fs=12)
-
         fig.tight_layout()
         return fig
     except Exception:
@@ -346,10 +353,12 @@ def _beeswarm_fig(shap_values: Any, max_display: int = 20) -> plt.Figure:
         if data is None:
             plt.figure(figsize=(7.8, 5.8))
             shap.plots.beeswarm(shap_values, max_display=int(max_display), show=False)
+
+            ax = plt.gca()
+            ax.set_title(title, loc="center", pad=10)
+
             fig = plt.gcf()
-
             _apply_fig_text_sizes(fig, title_fs=16, label_fs=13, tick_fs=12)
-
             fig.tight_layout()
             return fig
 
@@ -360,6 +369,7 @@ def _beeswarm_fig(shap_values: Any, max_display: int = 20) -> plt.Figure:
 
         if keep.size == 0:
             fig, ax = plt.subplots(figsize=(7.8, 5.8))
+            ax.set_title(title, loc="center", pad=10)
             ax.text(
                 0.5,
                 0.5,
@@ -380,15 +390,18 @@ def _beeswarm_fig(shap_values: Any, max_display: int = 20) -> plt.Figure:
 
         plt.figure(figsize=(7.8, 5.8))
         shap.plots.beeswarm(expl, max_display=int(max_display), show=False)
+
+        ax = plt.gca()
+        ax.set_title(title, loc="center", pad=10)
+
         fig = plt.gcf()
-
         _apply_fig_text_sizes(fig, title_fs=16, label_fs=13, tick_fs=12)
-
         fig.tight_layout()
         return fig
 
     except Exception as e:
         fig, ax = plt.subplots(figsize=(7.8, 5.8))
+        ax.set_title(title, loc="center", pad=10)
         ax.text(
             0.5,
             0.5,
@@ -398,9 +411,6 @@ def _beeswarm_fig(shap_values: Any, max_display: int = 20) -> plt.Figure:
             color=_NEUTRAL,
         )
         ax.axis("off")
-        ax = plt.gca()
-        ax.set_title("Beeswarm (feature impact distribution)", loc="left", pad=10)
-
         return fig
 
 
