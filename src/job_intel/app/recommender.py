@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from textwrap import dedent
 import json
 from dataclasses import dataclass
 from pathlib import Path
@@ -258,9 +259,19 @@ def render() -> None:
 
     with st.container(border=True):
         st.markdown(
+            dedent(
+                """
+        **How to use the Recommender:** 
+        
+        Use this page to compute your current job market positioning.
+        * Load a profile:
+            * For a fast walkthrough, click `Load demo persona` to auto-fill a realistic profile and constraints. 
+            * Otherwise, populate the inputs table with your details and click `Update inputs`.
+        * `Run recommender` to load the features and run the engine (this may take a few moments). 
+        * **Explore your recommendations**: Once results appear, use the tables and lookup panel to explore the top jobs in detail. 
+        When finished, go to `Upskilling` to get **ROI-ranked skill recommendations** based on counterfactual lift.
             """
-        Use this page to compute your current market positioning and generate two ranked shortlists: **best-now** roles (high fit with fewer critical gaps) and **stretch** roles (strong directional fit, but with clearer barriers to entry). For a fast walkthrough, click **Load demo persona** to auto-fill a realistic profile and constraints. Otherwise, populate the inputs table with your details and click **Update inputs / Run recommender** to load features and refresh all outputs (this may take a few moments). Once results appear, use the lookup panel to open any recommendation and inspect why it ranked, the salary context, and the main missing skill families driving competitiveness. When you’re done here, move to **Upskilling** to turn those gaps into a ranked learning plan.
-            """.strip()
+            ).strip()
         )
 
     if "profile" not in st.session_state:

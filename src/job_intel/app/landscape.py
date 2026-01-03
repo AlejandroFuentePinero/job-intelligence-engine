@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+from textwrap import dedent
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -733,11 +734,32 @@ def render() -> None:
     st.title("Landscape")
     _set_mpl_style()
 
-    st.markdown(
+    with st.container(border=True):
+        st.markdown(
+            dedent(
+                """
+**How to use the Landscape page**
+
+The Landscape page explains the market signal learned from the job-ad dataset. It shows (1) where pay premiums/penalties remain after controls, (2) which skills align with higher pay, and (3) which factors drive salary overall. Use it to understand the “shape” of the market before interpreting your personal Recommender and Upskilling results.
+
+**Suggested exploring order**
+
+1) **Residuals (premiums / penalties after controls)**  
+Start here to see where systematic differences remain even after accounting for observed job attributes. Think of this as “what the model can’t fully explain” in certain segments.
+
+2) **Skills (value + co-learning)**  
+Next, use the skills section in two ways:
+    - **Global Skill Value Index:** which skill bundles are most associated with higher predicted pay (given job context).  
+    - **Skill similarity matrix:** which skills tend to appear together in postings. Use this to spot natural **co-learning pairs** (skills that commonly come as a package).
+
+3) **Global SHAP (overall drivers)**  
+Finish with SHAP to confirm what dominates salary predictions across the dataset (e.g., role/title, location, sector, company context).
+
+**Main takeaway**  
+Structural factors tend to dominate the signal, and skills mostly refine outcomes within those regimes. This context makes the recommender rankings and upskilling priorities easier to interpret.
         """
-This Landscape page summarises the global market signal learned from the job-ad dataset: which job attributes most strongly shape salary, where persistent pay premiums/penalties remain after controls, and which skill bundles align with higher predicted pay. It combines global SHAP, residual (fairness) diagnostics, and the Global Skill Value Index to show that structural factors (role/title, location, sector, company context) dominate, with skills refining outcomes within those regimes. The goal is to provide the context that makes the Recommender and Upskilling outputs interpretable—explaining the “shape” of the market before positioning an individual user inside it.
-        """.strip()
-    )
+            ).strip()
+        )
 
     _interp_expander(
         "Learn more about the landsacape",
