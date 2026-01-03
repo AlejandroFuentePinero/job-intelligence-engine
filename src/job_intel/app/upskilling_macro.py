@@ -388,12 +388,7 @@ def render() -> None:
     with st.container(border=True):
         st.markdown(
             """
-    **How to use Upskilling**
-    - Run the **Recommender** first — Upskilling is generated from your current positioning and target shortlists.  
-    - Review the **missing skill families** for the top recommended roles to see what’s holding you back, and how each family contributes to improving your positioning.  
-    - The engine returns:
-    - **Top 3 skills to learn now** (highest expected positioning gain)
-    - **Co-learning suggestions** (related skills surfaced from the broader market landscape)
+        This page converts your recommender results into an actionable upskilling plan. Start by running the **Recommender** first—Upskilling is generated from your current positioning and the roles you’re targeting. You can then explore the missing skill families for the most suitable jobs and see how each family contributes to improving your positioning. The engine will surface **three high-impact skills to learn now**, plus **co-learning suggestions** drawn from the macro market landscape to help you build complementary capability efficiently.
             """.strip()
         )
 

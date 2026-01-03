@@ -259,14 +259,7 @@ def render() -> None:
     with st.container(border=True):
         st.markdown(
             """
-    **How to use the Recommender**
-    - **Fast demo:** click **Load demo persona** to auto-fill a realistic profile and constraints.  
-    - **Custom run:** enter your details in the **inputs table** (skills + constraints), then click **Update inputs / Run recommender** to compute your positioning and refresh all outputs (this may take a few moments).  
-    - **Results:** below you’ll see two ranked shortlists:
-    - **Best-now** roles (high fit with fewer critical gaps)
-    - **Stretch** roles (strong directional fit, but clearer barriers to entry)  
-    - **Explore in detail:** use the **lookup panel** to inspect any recommendation (why it ranked, predicted salary context, and the main missing skill families driving competitiveness).  
-    - When finished, go to **Upskilling** to get **ROI-ranked skill recommendations** based on counterfactual lift.
+        Use this page to compute your current market positioning and generate two ranked shortlists: **best-now** roles (high fit with fewer critical gaps) and **stretch** roles (strong directional fit, but with clearer barriers to entry). For a fast walkthrough, click **Load demo persona** to auto-fill a realistic profile and constraints. Otherwise, populate the inputs table with your details and click **Update inputs / Run recommender** to load features and refresh all outputs (this may take a few moments). Once results appear, use the lookup panel to open any recommendation and inspect why it ranked, the salary context, and the main missing skill families driving competitiveness. When you’re done here, move to **Upskilling** to turn those gaps into a ranked learning plan.
             """.strip()
         )
 
