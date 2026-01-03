@@ -7,34 +7,32 @@ from textwrap import dedent
 from typing import Any
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import streamlit as st
 
 
 # -----------------------------
-# Session access
+# Session access (explicit contract)
 # -----------------------------
 def _get_upskilling_out_from_session() -> dict[str, Any] | None:
     """
-    Expected storage pattern:
-      - recommender page stores AppResult in st.session_state["result"]
-      - AppResult.payload may store upskill output dict under a known key
+    Contract:
+      - Recommender stores a slim bundle in st.session_state["ch4_bundle"]
+      - Upskilling output lives at st.session_state["ch4_bundle"]["upskilling_out"]
+
+    Backward-compat:
+      - Also accept st.session_state["upskilling_out"] (set by recommender for legacy pages)
     """
-    res = st.session_state.get("result", None)
-    if res is not None and hasattr(res, "payload") and isinstance(res.payload, dict):
-        for k in ["upskill_out", "upskilling_out", "upskill", "upskilling"]:
-            v = res.payload.get(k)
-            if isinstance(v, dict):
-                return v
+    bundle = st.session_state.get("ch4_bundle", None)
+    if isinstance(bundle, dict):
+        up = bundle.get("upskilling_out", None)
+        if isinstance(up, dict):
+            return up
 
-    for k in ["upskill_out", "upskilling_out", "upskill"]:
-        v = st.session_state.get(k)
-        if isinstance(v, dict):
-            return v
-
-    pipe = st.session_state.get("pipeline_out", None)
-    if isinstance(pipe, (tuple, list)) and len(pipe) >= 3 and isinstance(pipe[2], dict):
-        return pipe[2]
+    up = st.session_state.get("upskilling_out", None)
+    if isinstance(up, dict):
+        return up
 
     return None
 
@@ -51,8 +49,6 @@ def _scenario_to_family(s: str) -> str:
 # -----------------------------
 # Style + name cleaning
 # -----------------------------
-import numpy as np  # add (you already use it in plotting)
-
 _ACCENT = "#2F3E46"
 _NEUTRAL = "#374151"
 _TEXT = "#0B1220"
@@ -196,15 +192,10 @@ def _default_similarity_edges_path() -> Path:
     )
 
 
-def _strip_prob_suffix(s: str) -> str:
-    s = str(s)
-    return s[:-5] if s.endswith("_prob") else s
-
-
 def _load_similarity_edges() -> pd.DataFrame:
     """
     Loads undirected edge list with columns: skill_1, skill_2, similarity
-    Cleans skill names to match Landscape plot naming.
+    Cleans skill names to match page naming.
     """
     path = _default_similarity_edges_path()
     if not path.exists():
@@ -232,10 +223,6 @@ def _load_similarity_edges() -> pd.DataFrame:
 def _neighbors_for_focal(
     edges: pd.DataFrame, focal: str, *, top_k: int = 5
 ) -> pd.DataFrame:
-    """
-    edges: undirected edge list (skill_1, skill_2, similarity)
-    focal: skill name (any raw format) -> cleaned to match edges
-    """
     f = _clean_skill_name(focal)
 
     a = edges.loc[edges["skill_1"] == f, ["skill_2", "similarity"]].rename(
@@ -268,9 +255,6 @@ def _build_neighbors_all(
     return pd.concat(out, ignore_index=True) if out else pd.DataFrame()
 
 
-# -----------------------------
-# MODIFY _plot_grouped_colearning() to match Landscape style + safer label spacing
-# -----------------------------
 def _plot_grouped_colearning(
     nei_all: pd.DataFrame, *, focal_order: list[str], top_k: int = 5
 ) -> None:
@@ -278,7 +262,6 @@ def _plot_grouped_colearning(
         st.info("No co-learning neighbours found for the current recommended skills.")
         return
 
-    # Clean and keep order
     focals = [_clean_skill_name(x) for x in focal_order]
     focals = [f for f in focals if f in set(nei_all["focal_skill"])]
     if not focals:
@@ -295,7 +278,6 @@ def _plot_grouped_colearning(
         .copy()
     )
 
-    # Similarity scaling
     vmin = float(plot_df["similarity"].min())
     vmax = float(plot_df["similarity"].max())
     if np.isclose(vmin, vmax):
@@ -303,19 +285,17 @@ def _plot_grouped_colearning(
 
     norm = plt.Normalize(vmin=vmin, vmax=vmax)
 
-    # Minimal monochrome palette: map similarity to alpha in a single accent
     def _rgba(v: float):
         t = float(norm(v))
         return (*plt.matplotlib.colors.to_rgb(_ACCENT), 0.55 + 0.40 * t)
 
     base = list(range(n_foc))
-    width = 0.14  # keep (your layout assumption)
+    width = 0.14
 
     fig, ax = plt.subplots(figsize=(16, 8))
 
     max_h = float(plot_df["similarity"].max()) if not plot_df.empty else 1.0
-    ax.set_ylim(0.0, max_h * 2.0)  # keep your headroom ratio
-
+    ax.set_ylim(0.0, max_h * 2.0)
     pad = max_h * 0.03
 
     for j in range(k):
@@ -375,7 +355,7 @@ def _plot_grouped_colearning(
     _clean_axes(ax, grid_axis="y")
 
     fig.tight_layout()
-    fig.subplots_adjust(top=0.88)  # keep extra top margin so labels don't collide
+    fig.subplots_adjust(top=0.88)
 
     st.pyplot(fig, clear_figure=True)
 

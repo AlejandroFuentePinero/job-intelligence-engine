@@ -134,7 +134,6 @@ def _candidate_positioning_summary(candidate_jobs: pd.DataFrame) -> dict[str, An
         if col in candidate_jobs.columns:
             out[col] = _series_summary(candidate_jobs[col])
 
-    # light categorical context (only if present)
     for col in ["state", "Sector", "Industry", "title_rich"]:
         if col in candidate_jobs.columns:
             vc = (
@@ -151,11 +150,54 @@ def _candidate_positioning_summary(candidate_jobs: pd.DataFrame) -> dict[str, An
     return out
 
 
+def _build_desc_lookup(
+    candidate_jobs: pd.DataFrame, top_ids: list[str]
+) -> tuple[pd.DataFrame | None, str | None]:
+    """
+    Create a tiny description lookup (job_id + description) for *only* the
+    job_ids shown in the UI (best+stretch). This avoids storing the full
+    candidate universe in session_state.
+    """
+    if not isinstance(candidate_jobs, pd.DataFrame) or not top_ids:
+        return None, None
+
+    cj = _ensure_job_id(candidate_jobs)
+    desc_col = _pick_desc_col(cj)
+    if desc_col is None:
+        return None, None
+
+    ids = set(map(str, top_ids))
+    out = cj.loc[cj["job_id"].astype(str).isin(ids), ["job_id", desc_col]].copy()
+    out["job_id"] = out["job_id"].astype(str)
+    return out.reset_index(drop=True), desc_col
+
+
+def _clear_heavy_session_state() -> None:
+    """
+    Reduce peak memory on sequential runs.
+    """
+    for k in [
+        "result",
+        "ch4_bundle",
+        "ch4_results",  # legacy key (if any)
+        "recommender_out",
+        "explanation_out",
+        "upskilling_out",
+    ]:
+        if k in st.session_state:
+            st.session_state.pop(k, None)
+
+    # Force collection; helps peak memory on constrained hosts
+    import gc
+
+    gc.collect()
+
+
 def _run_ch4(payload: dict[str, Any]) -> tuple[AppResult, dict[str, Any]]:
     """
-    Runs the Chapter 4 pipeline once, storing:
-      - AppResult for the Recommender page display
-      - ch4 bundle (rec/expl/up) for other pages (Upskilling + Macro etc.)
+    Runs the Chapter 4 pipeline once, then returns:
+      - AppResult for Recommender page display (LIGHT: no full candidate universe)
+      - ch4_bundle for other pages (Upskilling etc.) (SLIM + explicit contract)
 
     IMPORTANT: career simulation is ALWAYS disabled here.
     """
@@ -164,7 +206,7 @@ def _run_ch4(payload: dict[str, Any]) -> tuple[AppResult, dict[str, Any]]:
     # Copy then FORCE app defaults (fast + consistent)
     pipeline_params = dict(pipeline_params)
 
-    # CRITICAL: remove any sim keys so we don't pass duplicates
+    # Remove any sim keys so we don't pass duplicates
     pipeline_params.pop("run_career_sim", None)
     pipeline_params.pop("scenarios", None)
     pipeline_params.pop("config", None)
@@ -174,8 +216,7 @@ def _run_ch4(payload: dict[str, Any]) -> tuple[AppResult, dict[str, Any]]:
     pipeline_params["run_upskilling"] = True
     pipeline_params["print_report"] = False
     pipeline_params["verbose"] = False
-    # If your pipeline supports it, keep it light:
-    pipeline_params["include_scored_universe"] = False
+    pipeline_params["include_scored_universe"] = False  # keep light
 
     # Run pipeline (career sim explicitly disabled)
     rec_out, expl_out, up_out, sim_out = run_recommender_pipeline(
@@ -210,7 +251,9 @@ def _run_ch4(payload: dict[str, Any]) -> tuple[AppResult, dict[str, Any]]:
 
     if isinstance(rec_out, dict):
         tables = rec_out.get("tables", {}) or {}
-        candidate_jobs = tables.get("candidate_jobs")
+        candidate_jobs = tables.get(
+            "candidate_jobs"
+        )  # may be large; DO NOT persist whole
         counts = rec_out.get("counts", {}) or {}
         salary_summary = rec_out.get("salary_summary", {}) or {}
         warnings = rec_out.get("warnings", []) or []
@@ -227,28 +270,48 @@ def _run_ch4(payload: dict[str, Any]) -> tuple[AppResult, dict[str, Any]]:
         + f"). Returning {n_best} best_now and {n_stretch} stretch roles."
     )
 
+    # Build tiny description lookup for job detail panel (top best+stretch only)
+    top_ids: list[str] = []
+    if isinstance(best_df, pd.DataFrame) and "job_id" in best_df.columns:
+        top_ids.extend(best_df["job_id"].dropna().astype(str).tolist())
+    if isinstance(stretch_df, pd.DataFrame) and "job_id" in stretch_df.columns:
+        top_ids.extend(stretch_df["job_id"].dropna().astype(str).tolist())
+    top_ids = list(pd.Series(top_ids).dropna().astype(str).unique())
+
+    desc_lookup, desc_col = _build_desc_lookup(candidate_jobs, top_ids)
+
+    positioning_summary = (
+        _candidate_positioning_summary(candidate_jobs)
+        if isinstance(candidate_jobs, pd.DataFrame)
+        else {}
+    )
+
+    # LIGHT app payload (do NOT store full candidate_jobs)
     app_payload = {
         "best_now_explained": best_df,
         "stretch_explained": stretch_df,
-        "candidate_jobs": candidate_jobs,
         "metric_glossary": glossary,
         "counts": counts,
         "salary_summary": salary_summary,
         "warnings": warnings,
-        "positioning_summary": (
-            _candidate_positioning_summary(candidate_jobs)
-            if isinstance(candidate_jobs, pd.DataFrame)
-            else {}
-        ),
+        "positioning_summary": positioning_summary,
+        # for job detail panel only (small)
+        "desc_lookup": desc_lookup,
+        "desc_col": desc_col,
     }
 
     res = AppResult(narrative=narrative, payload=app_payload)
 
+    # SLIM cross-page bundle: Upskilling depends on up_out only
     ch4_bundle = {
-        "recommender_out": rec_out,
-        "explanation_out": expl_out,
-        "upskilling_out": up_out,
-        "career_sim": None,  # explicitly disabled for app runs
+        "user_inputs": dict(user_inputs),
+        "pipeline_params": dict(pipeline_params),
+        "upskilling_out": up_out,  # required by Upskilling page
+        # optional small context
+        "counts": counts,
+        "salary_summary": salary_summary,
+        "warnings": warnings,
+        "positioning_summary": positioning_summary,
     }
 
     return res, ch4_bundle
@@ -281,9 +344,9 @@ def render() -> None:
     if "result" not in st.session_state:
         st.session_state["result"] = None
 
-    # Shared bundle for other pages
-    if "ch4_results" not in st.session_state:
-        st.session_state["ch4_results"] = None
+    # Explicit, slim cross-page bundle (replaces ch4_results)
+    if "ch4_bundle" not in st.session_state:
+        st.session_state["ch4_bundle"] = None
 
     col1, col2, col3 = st.columns(3)
 
@@ -313,8 +376,10 @@ def render() -> None:
             st.session_state["profile"] = {}
             st.session_state["demo_cfg"] = None
             st.session_state["result"] = None
-            st.session_state["ch4_results"] = None
-            # convenience keys (optional)
+            st.session_state["ch4_bundle"] = None
+
+            # legacy keys if present
+            st.session_state.pop("ch4_results", None)
             st.session_state.pop("recommender_out", None)
             st.session_state.pop("explanation_out", None)
             st.session_state.pop("upskilling_out", None)
@@ -323,18 +388,20 @@ def render() -> None:
         if st.button("Run recommender", type="primary"):
             payload = st.session_state["demo_cfg"] or st.session_state["profile"]
             try:
+                # Reduce peak memory for consecutive runs
+                _clear_heavy_session_state()
+
                 with st.spinner(
                     "Running pipeline (recommender + explanations + upskilling)…"
                 ):
                     res, bundle = _run_ch4(payload)
 
                 st.session_state["result"] = res
-                st.session_state["ch4_results"] = bundle
+                st.session_state["ch4_bundle"] = bundle
 
-                # Convenience keys (optional)
-                st.session_state["recommender_out"] = bundle["recommender_out"]
-                st.session_state["explanation_out"] = bundle["explanation_out"]
-                st.session_state["upskilling_out"] = bundle["upskilling_out"]
+                # Backward-compat: some pages may read this directly
+                # (This is the only “duplicate” we keep; up_out is required anyway.)
+                st.session_state["upskilling_out"] = bundle.get("upskilling_out")
 
                 st.success("Run complete.")
             except Exception as e:
@@ -342,7 +409,8 @@ def render() -> None:
                     narrative="Pipeline error.",
                     payload={"error": str(e)},
                 )
-                st.session_state["ch4_results"] = None
+                st.session_state["ch4_bundle"] = None
+                st.session_state.pop("upskilling_out", None)
                 st.error(f"Pipeline failed: {e}")
 
     st.divider()
@@ -418,7 +486,6 @@ def render() -> None:
         st.json(res.payload)
         return
 
-    # --- positioning summary (dedicated, compact, optional) ---
     positioning = res.payload.get("positioning_summary", {}) or {}
     counts = res.payload.get("counts", {}) or {}
     salary_summary = res.payload.get("salary_summary", {}) or {}
@@ -436,7 +503,7 @@ def render() -> None:
 
             if positioning:
                 st.markdown(
-                    "**Candidate market under your constraints (computed from candidate_jobs)**"
+                    "**Candidate market under your constraints (computed from candidate universe; summary only)**"
                 )
                 st.json(positioning)
 
@@ -446,8 +513,11 @@ def render() -> None:
 
     best = _ensure_job_id(res.payload.get("best_now_explained"))
     stretch = _ensure_job_id(res.payload.get("stretch_explained"))
-    candidate_jobs = res.payload.get("candidate_jobs")
     glossary = res.payload.get("metric_glossary", {})
+
+    # tiny lookup for descriptions
+    desc_lookup = res.payload.get("desc_lookup")
+    desc_col = res.payload.get("desc_col")
 
     if not isinstance(best, pd.DataFrame) or not isinstance(stretch, pd.DataFrame):
         st.error("Missing tables in payload.")
@@ -476,39 +546,35 @@ def render() -> None:
 
     selected = st.selectbox("Select job_id", ids)
 
-    if isinstance(candidate_jobs, pd.DataFrame):
-        cj = _ensure_job_id(candidate_jobs)
-        desc_col = _pick_desc_col(cj)
+    # Explain row context (best/stretch tables already contain why fields)
+    row = None
+    m1 = best["job_id"].astype(str) == str(selected)
+    m2 = stretch["job_id"].astype(str) == str(selected)
+    if m1.any():
+        row = best.loc[m1].iloc[0]
+    elif m2.any():
+        row = stretch.loc[m2].iloc[0]
 
-        row = None
-        m1 = best["job_id"].astype(str) == str(selected)
-        m2 = stretch["job_id"].astype(str) == str(selected)
-        if m1.any():
-            row = best.loc[m1].iloc[0]
-        elif m2.any():
-            row = stretch.loc[m2].iloc[0]
+    if row is not None:
+        for k in ["why_bucket", "why_rank", "salary_context"]:
+            if k in row.index:
+                st.markdown(f"**{k}**: {row[k]}")
 
-        if row is not None:
-            for k in ["why_bucket", "why_rank", "salary_context"]:
-                if k in row.index:
-                    st.markdown(f"**{k}**: {row[k]}")
+        for k in ["covered_families", "missing_families"]:
+            if k in row.index:
+                st.markdown(f"**{k}**:")
+                st.write(row[k])
 
-            for k in ["covered_families", "missing_families"]:
-                if k in row.index:
-                    st.markdown(f"**{k}**:")
-                    st.write(row[k])
-
-        if desc_col is None:
-            st.info("No job description column found (expected 'Job Description').")
+    # Job description from slim lookup
+    if isinstance(desc_lookup, pd.DataFrame) and desc_col:
+        match = desc_lookup.loc[desc_lookup["job_id"].astype(str) == str(selected)]
+        if len(match) == 0:
+            st.info("No cached job description for this job_id (top tables only).")
         else:
-            match = cj.loc[cj["job_id"].astype(str) == str(selected)]
-            if len(match) == 0:
-                st.info("Selected job_id not found in candidate_jobs.")
-            else:
-                st.markdown("### Job description")
-                st.text_area("", value=str(match.iloc[0][desc_col]), height=260)
+            st.markdown("### Job description")
+            st.text_area("", value=str(match.iloc[0][desc_col]), height=260)
     else:
-        st.info("candidate_jobs missing; cannot show job descriptions yet.")
+        st.info("Job descriptions are not cached in this view (kept memory-light).")
 
     st.divider()
     st.subheader("Glossary")
