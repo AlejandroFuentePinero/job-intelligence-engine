@@ -312,7 +312,12 @@ def _global_shap_bar_fig(shap_values: Any) -> plt.Figure:
 
     fig, ax = plt.subplots(figsize=(7.8, fig_h))
     ax.barh(ordered_names[::-1], ordered_vals[::-1], color=_ACCENT, alpha=0.92)
-    ax.set_title("Global SHAP — mean(|contribution|) by feature", loc="left", pad=10)
+    ax.set_title(
+        "Global SHAP — mean(|contribution|) by feature",
+        loc="left",
+        pad=10,
+        fontsize=20,
+    )
     ax.set_xlabel("Mean absolute SHAP value")
 
     _clean_axes(ax, grid_axis="x")

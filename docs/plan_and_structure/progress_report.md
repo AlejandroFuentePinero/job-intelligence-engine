@@ -300,7 +300,7 @@ _Last updated: 2026-01-01_
 - [x] App “build info” stamp (git commit hash + artefact date/version shown in UI) *(implemented: `get_build_info()` + sidebar panel in `app.py`)*
 
 ## Optional (only if fast)
-- [ ] Deploy app online (Streamlit Cloud / HF Spaces / Render) OR publish local-only with demo video
+- [x] Deploy app online (Streamlit Cloud / HF Spaces / Render) OR publish local-only with demo video
 - [x] LinkedIn update (project + 2-paragraph description)
 - [x] Portfolio entry
 - [ ] Final scope lock (explicit “v1 is closed” statement in README)
