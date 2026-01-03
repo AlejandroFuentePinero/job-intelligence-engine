@@ -308,7 +308,7 @@ def _global_shap_bar_fig(shap_values: Any) -> plt.Figure:
     ordered_vals = mean_abs[order]
 
     n = len(ordered_names)
-    fig_h = min(13.5, max(7.9, 0.28 * n + 1.5))
+    fig_h = min(13.5, max(8, 0.28 * n + 1.5))
 
     fig, ax = plt.subplots(figsize=(7.8, fig_h))
     ax.barh(ordered_names[::-1], ordered_vals[::-1], color=_ACCENT, alpha=0.92)
