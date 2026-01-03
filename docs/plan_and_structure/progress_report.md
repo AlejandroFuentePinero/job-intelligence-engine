@@ -8,8 +8,8 @@ _Last updated: 2026-01-01_
 ---
 
 # OVERALL PROJECT PROGRESS (V1)
-[███████████████████.] 99%
-~99% complete
+[████████████████████] 100%
+~100% complete
 
 ---
 
@@ -279,9 +279,9 @@ _Last updated: 2026-01-01_
 
 ---
 
-# Chapter 6 — V1 Final Steps (Shipping + Portfolio)
-**Progress:** ~80%  
-[███████████████.....] 80%
+# ✅ Chapter 6 — V1 Final Steps (Shipping + Portfolio)
+**Progress:** ~100%  
+[████████████████████] 100%
 
 ## Core deliverables (LOCKED)
 - [x] Portfolio write-up (unified narrative)
@@ -303,7 +303,7 @@ _Last updated: 2026-01-01_
 - [x] Deploy app online (Streamlit Cloud / HF Spaces / Render) OR publish local-only with demo video
 - [x] LinkedIn update (project + 2-paragraph description)
 - [x] Portfolio entry
-- [ ] Final scope lock (explicit “v1 is closed” statement in README)
+- [x] Final scope lock (explicit “v1 is closed” statement in README)
 
 ---
 

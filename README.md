@@ -77,6 +77,11 @@ In practice, reproducibility comes from two things: the chapter pipelines that b
 
 The intent is decision support, not hiring guarantees. The engine summarises patterns in job-posting data and converts them into interpretable ranking and gap signals; it is useful for prioritising roles and planning upskilling, but it should not be interpreted as causal claims about what any specific employer will do. Deeper evaluation, assumptions, and limitations are documented in `docs/narrative/technical_report.md`.
 
+### Final scope lock (v1)
+
+This project is **scope-locked at v1**. The app, repo documentation, and technical report are complete and consistent with the current artefact contracts.  
+Changes from this point should be limited to **critical bug fixes** (broken links/assets, runtime errors, security) and otherwise deferred to `docs/plan_and_structure/v2_improvements.md` as **v2** work.
+
 **Limitations (high level)**
 - **Job ads are noisy proxies:** postings reflect stated requirements, not actual hiring decisions.
 - **Dataset bias:** coverage is limited to the Kaggle sources and their time/region mix.
