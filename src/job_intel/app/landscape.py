@@ -316,20 +316,23 @@ def _global_shap_bar_fig(shap_values: Any) -> plt.Figure:
     ax.set_xlabel("Mean absolute SHAP value")
 
     _clean_axes(ax, grid_axis="x")
+
+    _apply_fig_text_sizes(fig, title_fs=16, label_fs=13, tick_fs=12)
+
     fig.tight_layout()
     return fig
 
 
 def _beeswarm_fig(shap_values: Any, max_display: int = 20) -> plt.Figure:
-    """
-    Try notebook beeswarm call; if it fails due to constant features, drop constants for beeswarm only.
-    """
     import shap  # type: ignore
 
     try:
         plt.figure(figsize=(7.8, 5.8))
         shap.plots.beeswarm(shap_values, max_display=int(max_display), show=False)
         fig = plt.gcf()
+
+        _apply_fig_text_sizes(fig, title_fs=16, label_fs=13, tick_fs=12)
+
         fig.tight_layout()
         return fig
     except Exception:
@@ -344,6 +347,9 @@ def _beeswarm_fig(shap_values: Any, max_display: int = 20) -> plt.Figure:
             plt.figure(figsize=(7.8, 5.8))
             shap.plots.beeswarm(shap_values, max_display=int(max_display), show=False)
             fig = plt.gcf()
+
+            _apply_fig_text_sizes(fig, title_fs=16, label_fs=13, tick_fs=12)
+
             fig.tight_layout()
             return fig
 
@@ -375,6 +381,9 @@ def _beeswarm_fig(shap_values: Any, max_display: int = 20) -> plt.Figure:
         plt.figure(figsize=(7.8, 5.8))
         shap.plots.beeswarm(expl, max_display=int(max_display), show=False)
         fig = plt.gcf()
+
+        _apply_fig_text_sizes(fig, title_fs=16, label_fs=13, tick_fs=12)
+
         fig.tight_layout()
         return fig
 
@@ -389,7 +398,28 @@ def _beeswarm_fig(shap_values: Any, max_display: int = 20) -> plt.Figure:
             color=_NEUTRAL,
         )
         ax.axis("off")
+        ax = plt.gca()
+        ax.set_title("Beeswarm (feature impact distribution)", loc="left", pad=10)
+
         return fig
+
+
+def _apply_fig_text_sizes(
+    fig: plt.Figure,
+    *,
+    title_fs: int = 16,
+    label_fs: int = 13,
+    tick_fs: int = 12,
+) -> None:
+    # Apply to all axes (main + colorbar axis in SHAP)
+    for ax in fig.axes:
+        # Titles/labels (safe even if empty)
+        ax.title.set_fontsize(title_fs)
+        ax.xaxis.label.set_size(label_fs)
+        ax.yaxis.label.set_size(label_fs)
+
+        # Tick labels
+        ax.tick_params(axis="both", labelsize=tick_fs)
 
 
 def _local_shap_frames(
@@ -700,7 +730,7 @@ This Landscape page summarises the global market signal learned from the job-ad 
         "The job market landscape is the project’s “map” of how data roles are priced and differentiated in the real world—what the market consistently rewards, what it discounts, and which constraints are structural rather than personal. It is the backbone of the recommender: the system is not guessing in a vacuum, it is positioning you inside this learned landscape so the recommendations are explainable rather than arbitrary. The strongest result in this project is that salary is driven first by structural context—role semantics (enriched job title), location (state), sector, and company context—and only then refined by skill bundles, meaning skills usually move you within a role/location regime more than they let you “escape” it. Residual (fairness) analysis reinforces this by showing persistent premiums and penalties by employer type and scale: large/public employers tend to pay above expectation, while small/private and especially non-profit roles underpay relative to comparable jobs. The model also learns an occupational hierarchy that will feel familiar: ML/AI-heavy scientist/engineer titles cluster in higher-paying regimes, while analyst-oriented titles cluster in lower-paying regimes, even after controlling for other factors. Skills appear as structured bundles (PCA components) with threshold-like effects—broad core infra/programming behaves like a gatekeeper, while ML/modelling depth is where the clearest uplift emerges. Use this page to understand the market context first, then interpret your personalised recommendations as “where you sit on the map” and your upskilling plan as the smallest set of moves that most reliably shifts your position toward better role regimes and better pay."
 
             """.strip(),
-        expanded=False,
+        expanded=True,
     )
 
     # if st.button("Reload assets"):
