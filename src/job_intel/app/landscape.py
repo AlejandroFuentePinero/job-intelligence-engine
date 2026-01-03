@@ -316,7 +316,7 @@ def _global_shap_bar_fig(shap_values: Any) -> plt.Figure:
         "Global SHAP — mean(|contribution|) by feature",
         loc="left",
         pad=10,
-        fontsize=18,
+        fontsize=16,
     )
     ax.set_xlabel("Mean absolute SHAP value")
 
