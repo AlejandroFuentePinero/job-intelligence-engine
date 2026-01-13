@@ -10,7 +10,7 @@ A deterministic, end-to-end job-market intelligence system that converts job ads
 - [How it works](#how-it-works)
 - [Reproducibility and scope](#reproducibility-and-scope)
 - [Data and licensing](#data-and-licensing)
-- [Documentation](#documentation)
+- [Documentation and Structure](#Documentation-and-repository-structure)
 - [Contact](#contact)
 
 ## About the project
