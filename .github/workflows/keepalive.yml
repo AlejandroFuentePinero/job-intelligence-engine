@@ -12,4 +12,4 @@ jobs:
       - name: Ping Streamlit app
         run: |
           set -euo pipefail
-          curl -L --max-time 20 -A "keepalive" "https://job-intelligence-engine.streamlit.app/" > /dev/null
+          curl --max-time 20 -A "keepalive" "https://job-intelligence-engine.streamlit.app/" > /dev/null
