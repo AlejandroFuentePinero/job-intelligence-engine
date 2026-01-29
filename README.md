@@ -67,7 +67,7 @@ When a user enters the system, their profile is mapped into the same skill space
 A full technical description (features, models, evaluation, and artifacts) is provided in `docs/narrative/technical_report.md`, with the canonical system map in `docs/engineering/architecture.md`.
 
 
-![Job Intelligence Engine — Simple App Workflow](media/simple_workflow.png)
+![Job Intelligence Engine — Simple App Workflow](media/project_pipeline_simple.png)
 
 ## Reproducibility and scope
 
